@@ -10,7 +10,7 @@
 | ------------------- | ---------------------------------------------------------------------- |
 | **Session Start**   | 2026-09-11                                                             |
 | **Phase**           | Phase 0 — Core MVP                                                     |
-| **Status**          | Feature 04 completed — ready to begin Feature 05 (Knowledge Library)   |
+| **Status**          | Feature 05 completed — ready to begin Feature 06 (Chat with RAG)       |
 | **Unfinished Work** | None                                                                   |
 
 ---
@@ -80,6 +80,13 @@
 - **Decision**: Built Server-Sent Events endpoint `POST /chat/message` yielding real-time chunks from `@google/genai` (`gemini-2.0-flash`). Implemented resilient simulated generator fallback when `GEMINI_API_KEY` is not present, in-memory dev store fallback for Chat and Message schemas when MongoDB is offline, and automatic asynchronous title summarization after initial exchange.
 - **Reason**: Enables seamless zero-friction local testing, e2e test automation, and robust production streaming complying with `context/code-standards.md` Section 2.4 and free-tier 20-message context cap.
 - **Impact**: Real-time token streaming with pulsing cursor, syntax-highlighted code blocks with clipboard copy, full session CRUD (create, rename, pin, delete).
+
+### Decision 010 — Suggest → Review → Confirm Knowledge Ingestion & Hybrid Vector Store
+
+- **Date**: 2026-09-11
+- **Decision**: Implemented two-stage Knowledge Library ingestion. Saving an item (`POST /library/save`) scrapes clean page content with `cheerio` and prompts Gemini 2.0 Flash to propose a 2-3 sentence executive summary and 3-5 tags, marked `status: 'pending'`. The user reviews/edits metadata in `ConfirmReviewDialog` before finalizing (`PATCH /library/:id/confirm`), which generates text embeddings via `text-embedding-004` (768 dimensions) and upserts vectors to Pinecone Starter (`nexai-library`, namespace `library`) with in-memory cosine fallback.
+- **Reason**: Strictly complies with the Suggest → Review → Confirm lifecycle mandated in `AGENTS.md` (Section 4), preventing unreviewed data mutations and guaranteeing vector ground-truth.
+- **Impact**: Clean knowledge cards, full-text and tag filtering, vector indexing ready for Feature 06 RAG.
 
 ---
 

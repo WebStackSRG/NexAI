@@ -9,8 +9,8 @@
 | Field                      | Value                                 |
 | -------------------------- | ------------------------------------- |
 | **Current Phase**          | Phase 0 — Core MVP                    |
-| **Last Completed Feature** | Feature 04 — Core Streaming Chat      |
-| **Next Unit in Queue**     | Feature 05 — Personal Knowledge Library |
+| **Last Completed Feature** | Feature 05 — Personal Knowledge Library |
+| **Next Unit in Queue**     | Feature 06 — Chat with RAG            |
 | **Known Blockers**         | None                                  |
 | **Last Updated**           | 2026-09-11                            |
 
@@ -53,15 +53,15 @@
   - [x] Message history load
   - [x] Auto-title generation
 
-- [ ] **Feature 05** — Personal Knowledge Library
-  - [ ] `POST /library/save` (URL + note)
-  - [ ] Content extraction (URL → text)
-  - [ ] Gemini Flash: summary + tag suggestion
-  - [ ] Pinecone: embed + upsert
-  - [ ] Confirm dialog (show suggestions, editable)
-  - [ ] Library list view
-  - [ ] `PATCH /library/:id/confirm`
-  - [ ] `DELETE /library/:id`
+- [x] **Feature 05** — Personal Knowledge Library
+  - [x] `POST /library/save` (URL + note)
+  - [x] Content extraction (URL → text)
+  - [x] Gemini Flash: summary + tag suggestion
+  - [x] Pinecone: embed + upsert
+  - [x] Confirm dialog (show suggestions, editable)
+  - [x] Library list view
+  - [x] `PATCH /library/:id/confirm`
+  - [x] `DELETE /library/:id`
 
 - [ ] **Feature 06** — Chat with RAG
   - [ ] Query embedding on each message
@@ -147,9 +147,9 @@
 
 | Phase               | Total Features | Completed | In Progress |
 | ------------------- | -------------- | --------- | ----------- |
-| 0 — Core MVP        | 7              | 4         | 0           |
+| 0 — Core MVP        | 7              | 5         | 0           |
 | 1 — Differentiators | 4              | 0         | 0           |
 | 2 — Depth           | 5              | 0         | 0           |
 | 3 — Power-User      | 4              | 0         | 0           |
 | 4 — Extension       | 5              | 0         | 0           |
-| **TOTAL**           | **25**         | **4**     | **0**       |
+| **TOTAL**           | **25**         | **5**     | **0**       |

@@ -134,3 +134,88 @@ export const generateChatTitle = async (firstMessageText) => {
     return words || "New Chat";
   }
 };
+
+/**
+ * Summarize content and suggest 3-5 tags using Gemini 2.0 Flash
+ */
+export const summarizeAndTag = async (content, title = "") => {
+  const ai = getGenAIClient();
+
+  if (!ai) {
+    // Dev fallback
+    const preview = content.slice(0, 180).replace(/\s+/g, " ").trim();
+    return {
+      summary: `Automated summary: ${preview}${preview.length >= 180 ? "..." : ""}`,
+      tags: ["reference", "saved", "knowledge"],
+    };
+  }
+
+  try {
+    const prompt = `You are an expert knowledge curator. Analyze the following content and generate a concise 2-3 sentence executive summary, plus 3 to 5 relevant lower-case classification tags.
+Title: "${title}"
+Content:
+${content.slice(0, 10000)}
+
+Respond in valid JSON only with this exact format:
+{
+  "summary": "2-3 sentences here...",
+  "tags": ["tag1", "tag2", "tag3"]
+}`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    const parsed = JSON.parse(response.text.trim());
+    return {
+      summary: parsed.summary || content.slice(0, 200),
+      tags: Array.isArray(parsed.tags) ? parsed.tags : ["notes"],
+    };
+  } catch (err) {
+    console.warn("[GeminiService] summarizeAndTag warning:", err.message);
+    return {
+      summary: content.slice(0, 200) + "...",
+      tags: ["general", "library"],
+    };
+  }
+};
+
+/**
+ * Generate vector embedding using text-embedding-004 (768 dimensions)
+ */
+export const generateEmbedding = async (text) => {
+  const ai = getGenAIClient();
+
+  if (!ai) {
+    // Dev fallback: deterministic normalized 768-dim vector for testing
+    const vector = new Array(768).fill(0);
+    const clean = text.toLowerCase();
+    for (let i = 0; i < clean.length; i++) {
+      const charCode = clean.charCodeAt(i);
+      const idx = (charCode * 31 + i) % 768;
+      vector[idx] += 0.05;
+    }
+    // Normalize vector
+    const norm = Math.sqrt(vector.reduce((sum, v) => sum + v * v, 0)) || 1;
+    return vector.map((v) => v / norm);
+  }
+
+  try {
+    const response = await ai.models.embedContent({
+      model: "text-embedding-004",
+      contents: text.slice(0, 4000),
+    });
+
+    return response.embedding?.values || [];
+  } catch (err) {
+    console.warn("[GeminiService] embedContent warning:", err.message);
+    const fallbackVector = new Array(768).fill(0);
+    fallbackVector[0] = 1;
+    return fallbackVector;
+  }
+};
+
