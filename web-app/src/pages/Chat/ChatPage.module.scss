@@ -448,4 +448,30 @@
       cursor: not-allowed;
     }
   }
+
+  &__micBtn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-subtle);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+
+    &:hover {
+      background: var(--bg-overlay);
+      color: var(--text-primary);
+    }
+
+    &--active {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #ef4444;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+  }
 }

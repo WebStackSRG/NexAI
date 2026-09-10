@@ -200,7 +200,11 @@
   - [x] World-building and lore reference context injection
   - [x] Direct HTML chapter output injected into active Tiptap document sections
   - [x] E2E verification test passed (3/3 tests)
-- [ ] **Feature 20** — Voice I/O (Web Speech API)
+- [x] **Feature 20** — Voice I/O (Web Speech API)
+  - [x] Web Speech API helper (`speech.js`) with STT SpeechRecognition & TTS SpeechSynthesis
+  - [x] Chat input microphone toggle button with real-time speech dictation & pulsing indicator
+  - [x] Assistant response read-aloud button with clean markdown sanitization & speech toggle
+  - [x] Automatic cleanup on stream, send, and unmount
 
 ---
 
@@ -221,6 +225,6 @@
 | 0 — Core MVP        | 7              | 7         | 0           |
 | 1 — Differentiators | 4              | 4         | 0           |
 | 2 — Depth           | 5              | 5         | 0           |
-| 3 — Power-User      | 4              | 3         | 0           |
+| 3 — Power-User      | 4              | 4         | 0           |
 | 4 — Extension       | 5              | 0         | 0           |
-| **TOTAL**           | **25**         | **19**    | **0**       |
+| **TOTAL**           | **25**         | **20**    | **0**       |

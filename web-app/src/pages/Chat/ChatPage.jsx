@@ -12,11 +12,14 @@ import {
   MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
+  Mic,
+  MicOff,
 } from 'lucide-react';
 import styles from './ChatPage.module.scss';
 import useChatStore from '../../store/chatStore';
 import useAuthStore from '../../store/authStore';
 import ChatMessage from '../../components/chat/ChatMessage';
+import { createSpeechRecognizer, isSpeechRecognitionSupported } from '../../lib/speech';
 
 export default function ChatPage() {
   const location = useLocation();
@@ -43,9 +46,11 @@ export default function ChatPage() {
   const [mobileSessionsOpen, setMobileSessionsOpen] = useState(false);
   const [editingTitleId, setEditingTitleId] = useState(null);
   const [editTitleValue, setEditTitleValue] = useState('');
+  const [isListening, setIsListening] = useState(false);
 
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const recognizerRef = useRef(null);
 
   // Load chats and handle injected draft prompt from Prompt Vault
   useEffect(() => {
@@ -78,10 +83,48 @@ export default function ChatPage() {
 
   const handleSend = () => {
     if (!inputContent.trim() || isStreaming) return;
+    if (isListening && recognizerRef.current) {
+      recognizerRef.current.stop();
+      setIsListening(false);
+    }
     sendMessage(inputContent);
     setInputContent('');
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
+    }
+  };
+
+  const toggleSpeechRecognition = () => {
+    if (!isSpeechRecognitionSupported()) {
+      alert('Speech Recognition is not supported by your current browser.');
+      return;
+    }
+
+    if (isListening) {
+      if (recognizerRef.current) recognizerRef.current.stop();
+      setIsListening(false);
+    } else {
+      const recognizer = createSpeechRecognizer({
+        onResult: (transcript) => {
+          setInputContent((prev) => {
+            const trimmed = prev.trim();
+            return trimmed ? `${trimmed} ${transcript}` : transcript;
+          });
+        },
+        onError: (err) => {
+          console.warn('[SpeechRecognition] Error:', err);
+          setIsListening(false);
+        },
+        onEnd: () => {
+          setIsListening(false);
+        },
+      });
+
+      if (recognizer) {
+        recognizerRef.current = recognizer;
+        recognizer.start();
+        setIsListening(true);
+      }
     }
   };
 
@@ -387,6 +430,17 @@ export default function ChatPage() {
               </span>
 
               <div className={styles.chatMain__sendGroup}>
+                <button
+                  type="button"
+                  onClick={toggleSpeechRecognition}
+                  className={`${styles.chatMain__micBtn} ${
+                    isListening ? styles['chatMain__micBtn--active'] : ''
+                  }`}
+                  title={isListening ? 'Stop listening' : 'Dictate message (Web Speech API)'}
+                >
+                  {isListening ? <MicOff size={15} color="#ef4444" /> : <Mic size={15} />}
+                </button>
+
                 {isStreaming ? (
                   <button
                     type="button"

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Bot, User, Copy, Check, Sparkles, Clock, BookOpen, ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import { Bot, User, Copy, Check, Sparkles, Clock, BookOpen, ChevronDown, ChevronUp, FileText, Volume2, VolumeX } from 'lucide-react';
 import styles from './ChatMessage.module.scss';
+import { speakText, stopSpeech, isSpeechSynthesisSupported } from '../../lib/speech';
 
 function CodeBlock({ language, value }) {
   const [copied, setCopied] = useState(false);
@@ -61,6 +62,20 @@ export default function ChatMessage({
 }) {
   const isUser = role === 'user';
   const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  const toggleSpeech = () => {
+    if (isSpeaking) {
+      stopSpeech();
+      setIsSpeaking(false);
+    } else {
+      speakText(
+        content,
+        () => setIsSpeaking(true),
+        () => setIsSpeaking(false)
+      );
+    }
+  };
 
   const resolvedSources =
     sources && sources.length > 0
@@ -110,6 +125,19 @@ export default function ChatMessage({
               </span>
             )}
             {createdAt && <span>{formatTime(createdAt)}</span>}
+
+            {!isUser && isSpeechSynthesisSupported() && content && !isStreaming && (
+              <button
+                type="button"
+                onClick={toggleSpeech}
+                className={`${styles.message__speechBtn} ${
+                  isSpeaking ? styles['message__speechBtn--active'] : ''
+                }`}
+                title={isSpeaking ? 'Stop reading' : 'Read aloud (Web Speech API)'}
+              >
+                {isSpeaking ? <VolumeX size={12} color="#a78bfa" /> : <Volume2 size={12} />}
+              </button>
+            )}
           </div>
         </div>
 

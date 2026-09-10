@@ -98,6 +98,29 @@
     color: var(--text-accent);
   }
 
+  &__speechBtn {
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+
+    &:hover {
+      color: var(--text-primary);
+      background: var(--bg-overlay);
+    }
+
+    &--active {
+      color: #a78bfa;
+      background: rgba(124, 58, 237, 0.2);
+    }
+  }
+
   &__body {
     font-size: var(--text-sm);
     line-height: var(--leading-relaxed);
