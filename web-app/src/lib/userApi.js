@@ -15,3 +15,4 @@ export const updateSettings = async (settingsData) => {
   const res = await apiClient.patch("/users/settings", settingsData);
   return res.data.settings;
 };
+

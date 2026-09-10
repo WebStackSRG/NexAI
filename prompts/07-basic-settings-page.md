@@ -41,3 +41,4 @@ Implement the user settings subsystem completing Phase 0 (Core MVP). Allows auth
 ## Manual / CLI Verification Test Steps
 1. Run `node server/test-settings-e2e.js` to verify auth rejection, valid updates, and invalid payload rejection.
 2. Run `npm run build` in `web-app/` to ensure clean compilation.
+

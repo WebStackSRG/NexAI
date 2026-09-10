@@ -24,3 +24,4 @@ router.delete("/:id", chatController.deleteChat);
 router.post("/message", validate(sendMessageSchema), chatController.streamMessage);
 
 export default router;
+

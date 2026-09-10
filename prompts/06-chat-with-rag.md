@@ -68,3 +68,4 @@ Implement Retrieval-Augmented Generation (RAG) in conversational chat (Phase 0 F
 1. Run `node server/test-rag-e2e.js`.
 2. Run `npm run build` in `web-app/`.
 3. In browser: add a note to library, open chat, ask a question about that note, verify citation panel appears with high match score.
+

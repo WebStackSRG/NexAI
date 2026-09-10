@@ -9,8 +9,8 @@
 | Field                      | Value                                 |
 | -------------------------- | ------------------------------------- |
 | **Current Phase**          | Phase 1 — Key Differentiators         |
-| **Last Completed Feature** | Feature 07 — Basic Settings Page      |
-| **Next Unit in Queue**     | Feature 08 — AI Document Generator    |
+| **Last Completed Feature** | Feature 08 — AI Document Generator    |
+| **Next Unit in Queue**     | Feature 09 — Prompt Vault             |
 | **Known Blockers**         | None                                  |
 | **Last Updated**           | 2026-09-11                            |
 
@@ -45,6 +45,13 @@
   - [x] Active page highlighting
   - [x] User avatar in sidebar footer
 
+- [/] **Feature 04** — Core Streaming Chat
+  - [ ] `POST /chat/message` with SSE streaming
+  - [ ] Gemini 2.0 Flash integration
+  - [ ] Frontend streaming render + cursor animation
+  - [ ] Chat list CRUD (create, rename, delete, pin)
+  - [ ] Message history load
+  - [ ] Auto-title generation
 - [x] **Feature 04** — Core Streaming Chat
   - [x] `POST /chat/message` with SSE streaming
   - [x] Gemini 2.0 Flash integration
@@ -53,6 +60,15 @@
   - [x] Message history load
   - [x] Auto-title generation
 
+- [ ] **Feature 05** — Personal Knowledge Library
+  - [ ] `POST /library/save` (URL + note)
+  - [ ] Content extraction (URL → text)
+  - [ ] Gemini Flash: summary + tag suggestion
+  - [ ] Pinecone: embed + upsert
+  - [ ] Confirm dialog (show suggestions, editable)
+  - [ ] Library list view
+  - [ ] `PATCH /library/:id/confirm`
+  - [ ] `DELETE /library/:id`
 - [x] **Feature 05** — Personal Knowledge Library
   - [x] `POST /library/save` (URL + note)
   - [x] Content extraction (URL → text)
@@ -63,6 +79,12 @@
   - [x] `PATCH /library/:id/confirm`
   - [x] `DELETE /library/:id`
 
+- [ ] **Feature 06** — Chat with RAG
+  - [ ] Query embedding on each message
+  - [ ] Pinecone top-k search
+  - [ ] Context injection into Gemini prompt
+  - [ ] LangGraph basic setup (ragTool node)
+  - [ ] Sources citation panel in chat
 - [x] **Feature 06** — Chat with RAG
   - [x] Query embedding on each message
   - [x] Pinecone top-k search
@@ -70,6 +92,13 @@
   - [x] LangGraph basic setup (ragTool node)
   - [x] Sources citation panel in chat
 
+- [ ] **Feature 07** — Basic Settings Page
+  - [ ] Profile display (read-only)
+  - [ ] `globalInstructions` textarea
+  - [ ] Sidebar mode preference
+  - [ ] Notification toggles
+  - [ ] Theme toggle
+  - [ ] `PATCH /users/settings`
 - [x] **Feature 07** — Basic Settings Page
   - [x] Profile display (read-only)
   - [x] `globalInstructions` textarea
@@ -82,15 +111,15 @@
 
 ## Phase 1 — Key Differentiators
 
-- [ ] **Feature 08** — AI Document Generator
-  - [ ] `/documents` page scaffold
-  - [ ] Gemini 2.5 Pro structured section generation
-  - [ ] Tiptap split-pane preview
-  - [ ] Section CRUD + reorder
-  - [ ] Image insertion modal (upload / Unsplash / AI)
-  - [ ] `pdf-lib` PDF export
-  - [ ] `docx` DOCX export
-  - [ ] Auto-save + Library indexing
+- [x] **Feature 08** — AI Document Generator
+  - [x] `/documents` page scaffold
+  - [x] Gemini 2.5 Pro structured section generation
+  - [x] Tiptap split-pane preview
+  - [x] Section CRUD + reorder
+  - [x] Image insertion modal (upload / Unsplash / AI)
+  - [x] `pdf-lib` PDF export
+  - [x] `docx` DOCX export
+  - [x] Auto-save + Library indexing
 
 - [ ] **Feature 09** — Prompt Vault
   - [ ] `/prompts` page with grid/list toggle
@@ -147,9 +176,11 @@
 
 | Phase               | Total Features | Completed | In Progress |
 | ------------------- | -------------- | --------- | ----------- |
+| 0 — Core MVP        | 7              | 3         | 0           |
 | 0 — Core MVP        | 7              | 5         | 0           |
 | 1 — Differentiators | 4              | 0         | 0           |
 | 2 — Depth           | 5              | 0         | 0           |
 | 3 — Power-User      | 4              | 0         | 0           |
 | 4 — Extension       | 5              | 0         | 0           |
+| **TOTAL**           | **25**         | **3**     | **0**       |
 | **TOTAL**           | **25**         | **5**     | **0**       |

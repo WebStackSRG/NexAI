@@ -9,6 +9,7 @@ import authRoutes from "./routes/auth.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
 import libraryRoutes from "./routes/library.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import documentRoutes from "./routes/document.routes.js";
 import {
   errorHandler,
   notFoundHandler,
@@ -66,6 +67,9 @@ app.use("/library", libraryRoutes);
 
 // User and Settings routes
 app.use("/users", userRoutes);
+
+// Document Studio routes (generate, CRUD, index)
+app.use("/documents", documentRoutes);
 
 // Catch-all 404 handler
 app.use(notFoundHandler);

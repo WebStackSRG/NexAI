@@ -121,3 +121,4 @@ export const executeRagPipeline = async ({ userId, query }) => {
     return { sources: [], contextString: "" };
   }
 };
+

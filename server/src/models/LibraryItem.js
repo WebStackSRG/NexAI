@@ -76,3 +76,4 @@ libraryItemSchema.index({
 libraryItemSchema.index({ userId: 1, pinned: -1, updatedAt: -1 });
 
 export default mongoose.model("LibraryItem", libraryItemSchema);
+

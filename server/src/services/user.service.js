@@ -155,3 +155,4 @@ export const updateUserSettings = async (userId, updateData) => {
     updatedAt: updatedUser.updatedAt,
   };
 };
+

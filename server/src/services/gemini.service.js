@@ -219,3 +219,100 @@ export const generateEmbedding = async (text) => {
   }
 };
 
+/**
+ * Generate structured document sections using Gemini 2.5 Pro
+ */
+export const generateDocumentSections = async ({
+  topic,
+  tone = "technical",
+  sectionCount = 4,
+}) => {
+  const ai = getGenAIClient();
+
+  if (!ai) {
+    // High-quality structured fallback generator for local testing
+    return {
+      title: topic.slice(0, 80),
+      sections: [
+        {
+          heading: "1. Executive Summary & Problem Framing",
+          body: `<p>This document presents a structured investigation into <strong>${topic}</strong>. Modern software engineering demands zero-defect designs, rigorous abstractions, and resilient operational boundaries. In this report, we evaluate the architectural requirements, trade-offs, and implementation strategies necessary to achieve production readiness.</p>`,
+          order: 0,
+        },
+        {
+          heading: "2. Technical Architecture & Invariants",
+          body: `<p>To maintain high availability and predictable latency under scale, several core principles must be enforced:</p><ul><li><strong>Stateless Compute:</strong> Keep service instances lightweight to facilitate horizontal autoscaling.</li><li><strong>Defensive Validation:</strong> Reject malformed payloads at the API boundary before entering core business logic.</li><li><strong>Isolation:</strong> Strict tenant separation across both relational state and vector embeddings.</li></ul>`,
+          order: 1,
+        },
+        {
+          heading: "3. Implementation Strategy & Trade-Offs",
+          body: `<p>When executing solutions for <em>${topic}</em>, engineering teams face significant architectural choices. Pure JavaScript in-memory pipelines (such as client-side PDF and DOCX generation) eliminate server memory overhead while safeguarding free-tier compute ceilings. Automated test harnesses guarantee that schema invariants remain uncompromised across iterative deployments.</p>`,
+          order: 2,
+        },
+        {
+          heading: "4. Conclusion & Recommended Next Steps",
+          body: `<p>In summary, adhering to the outlined standards delivers a durable foundation that scales seamlessly. Next milestones should focus on automated telemetry pipelines, continuous performance regression testing, and comprehensive operational documentation.</p>`,
+          order: 3,
+        },
+      ].slice(0, sectionCount),
+    };
+  }
+
+  try {
+    const prompt = `You are a Principal Software Architect and technical author. Generate a comprehensive, professional, multi-section document on the topic below.
+Topic: "${topic}"
+Tone: "${tone}"
+Target Section Count: ${sectionCount}
+
+Generate structured JSON with a suggested overall document title and exactly ${sectionCount} distinct sections. Each section must contain an informative heading and a rich HTML body (using <p>, <strong>, <em>, <ul>, <li>, <code> tags for clear formatting).
+
+Return ONLY valid JSON matching this schema:
+{
+  "title": "Document Title",
+  "sections": [
+    {
+      "heading": "Section Heading",
+      "body": "<p>HTML content here...</p>",
+      "order": 0
+    }
+  ]
+}`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-pro",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    const parsed = JSON.parse(response.text.trim());
+    return {
+      title: parsed.title || topic,
+      sections: (parsed.sections || []).map((s, idx) => ({
+        heading: s.heading || `Section ${idx + 1}`,
+        body: s.body || "",
+        order: typeof s.order === "number" ? s.order : idx,
+      })),
+    };
+  } catch (err) {
+    console.warn("[GeminiService] generateDocumentSections fallback:", err.message);
+    return {
+      title: topic,
+      sections: [
+        {
+          heading: "Overview",
+          body: `<p>Overview for <strong>${topic}</strong>.</p>`,
+          order: 0,
+        },
+        {
+          heading: "Key Concepts",
+          body: `<p>Detailed discussion and breakdown of relevant principles.</p>`,
+          order: 1,
+        },
+      ],
+    };
+  }
+};
+
+

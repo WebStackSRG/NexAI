@@ -142,3 +142,4 @@ export const deleteVector = async (id, namespace = "library") => {
   mockVectorStore.delete(id);
   return true;
 };
+

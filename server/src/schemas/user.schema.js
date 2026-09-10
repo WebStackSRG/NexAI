@@ -40,3 +40,4 @@ export const updateUserSettingsSchema = z.object({
       .optional(),
   }),
 });
+
