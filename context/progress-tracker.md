@@ -156,7 +156,14 @@
   - [x] JSON Formatter & Validator with syntax error alerts and copy
   - [x] Regex Sandbox with live group capture inspection and flag toggles
   - [x] REST API Tester with method selection, custom headers, payload, and response viewer
-- [ ] **Feature 14** — Learning & Study Suite (Flashcards, YouTube Summarizer)
+- [x] **Feature 14** — Learning & Study Suite (Flashcards, YouTube Summarizer)
+  - [x] SM-2 spaced repetition calculation service (`sm2.service.js`)
+  - [x] Flashcards Mongoose model with review indexes and Zod validation
+  - [x] Gemini 2.0 Flash structured flashcard deck generator
+  - [x] YouTube video & lecture summarizer endpoint (`POST /learning/youtube-summary`)
+  - [x] Interactive 3D flip card review UI with SM-2 grading (Again/Hard/Good/Easy)
+  - [x] Pomodoro focus session timer (25m/5m/15m)
+  - [x] Automated E2E verification test suite (`node test-learning-e2e.js`)
 - [ ] **Feature 15** — Productivity / Focus (Reminders, Quiet Hours, Sessions)
 - [ ] **Feature 16** — Onboarding Flow
 
@@ -187,7 +194,7 @@
 | ------------------- | -------------- | --------- | ----------- |
 | 0 — Core MVP        | 7              | 7         | 0           |
 | 1 — Differentiators | 4              | 4         | 0           |
-| 2 — Depth           | 5              | 2         | 0           |
+| 2 — Depth           | 5              | 3         | 0           |
 | 3 — Power-User      | 4              | 0         | 0           |
 | 4 — Extension       | 5              | 0         | 0           |
-| **TOTAL**           | **25**         | **13**    | **0**       |
+| **TOTAL**           | **25**         | **14**    | **0**       |

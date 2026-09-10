@@ -13,6 +13,8 @@ import documentRoutes from "./routes/document.routes.js";
 import promptRoutes from "./routes/prompt.routes.js";
 import searchRoutes from "./routes/search.routes.js";
 import snippetRoutes from "./routes/snippet.routes.js";
+import flashcardRoutes from "./routes/flashcard.routes.js";
+import learningRoutes from "./routes/learning.routes.js";
 import {
   errorHandler,
   notFoundHandler,
@@ -82,6 +84,12 @@ app.use("/search", searchRoutes);
 
 // Developer Utilities (Snippets Vault)
 app.use("/snippets", snippetRoutes);
+
+// Flashcards & Spaced Repetition (SM-2)
+app.use("/flashcards", flashcardRoutes);
+
+// Learning & Study Suite (YouTube summarizer, etc.)
+app.use("/learning", learningRoutes);
 
 // Catch-all 404 handler
 app.use(notFoundHandler);
