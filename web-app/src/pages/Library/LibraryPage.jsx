@@ -1,27 +1,26 @@
-import React from 'react';
-import { Plus, BookOpen } from 'lucide-react';
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Plus,
   Search,
   BookOpen,
   Link2,
   FileText,
-  Pin,
   Trash2,
   ExternalLink,
   CheckCircle2,
   Clock,
   Sparkles,
   Loader2,
+  UploadCloud,
+  FileImage,
 } from 'lucide-react';
 import styles from './LibraryPage.module.scss';
 import useLibraryStore from '../../store/libraryStore';
 import SaveItemModal from '../../components/library/SaveItemModal';
 import ConfirmReviewDialog from '../../components/library/ConfirmReviewDialog';
+import FileUploadModal from '../../components/library/FileUploadModal';
 
 export default function LibraryPage() {
-  const { items } = useLibraryStore();
   const {
     items,
     isLoading,
@@ -36,6 +35,8 @@ export default function LibraryPage() {
     setFilterStatus,
     setSearchQuery,
   } = useLibraryStore();
+
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -65,33 +66,36 @@ export default function LibraryPage() {
       {/* ── Header ───────────────────────────────────────────── */}
       <div className={styles.library__header}>
         <div>
-          <h2 className={styles.library__title}>Personal Knowledge Library</h2>
-          <p className={styles.library__description}>
-            Store web links, notes, and research papers with AI auto-tagging and vector search.
           <h1 className={styles.library__title}>Personal Knowledge Library</h1>
           <p className={styles.library__subtitle}>
-            Curate links, articles, and research notes with automated AI summarization
+            Curate links, articles, notes, and multimodal files with automated AI summarization
             and vector embeddings.
           </p>
         </div>
-        <button className={styles.library__actionButton}>
-        <button
-          type="button"
-          onClick={openSaveModal}
-          className={styles.library__addBtn}
-        >
-          <Plus size={16} />
-          <span>Save Item</span>
-          <span>Add to Library</span>
-        </button>
+        <div className={styles.library__headerActions}>
+          <button
+            type="button"
+            onClick={() => setUploadModalOpen(true)}
+            className={styles.library__uploadBtn}
+          >
+            <UploadCloud size={16} />
+            <span>Upload File</span>
+          </button>
+          <button
+            type="button"
+            onClick={openSaveModal}
+            className={styles.library__addBtn}
+          >
+            <Plus size={16} />
+            <span>Add to Library</span>
+          </button>
+        </div>
       </div>
 
-      <div className={styles.library__emptyState}>
-        <BookOpen size={40} color="var(--text-tertiary)" />
-        <h3 className={styles.library__emptyTitle}>Your library is empty</h3>
-        <p className={styles.library__emptyText}>
-          Save articles, URLs, or notes to index them into your personal Pinecone vector store for RAG chat.
-        </p>
+      <FileUploadModal
+        isOpen={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+      />
       {/* ── Toolbar & Filters ────────────────────────────────── */}
       <div className={styles.library__toolbar}>
         <div className={styles.library__searchBox}>
@@ -146,6 +150,18 @@ export default function LibraryPage() {
           <button
             type="button"
             onClick={() => {
+              setFilterType('file');
+              setFilterStatus('all');
+            }}
+            className={`${styles.library__filterBtn} ${
+              filterType === 'file' ? styles['library__filterBtn--active'] : ''
+            }`}
+          >
+            Files
+          </button>
+          <button
+            type="button"
+            onClick={() => {
               setFilterType('all');
               setFilterStatus(filterStatus === 'pending' ? 'all' : 'pending');
             }}
@@ -177,17 +193,27 @@ export default function LibraryPage() {
           <p className={styles.library__emptyText}>
             {searchQuery
               ? 'Try adjusting your search terms or filter selection.'
-              : 'Save articles, docs, or quick notes. NexAI will generate executive summaries and index them for conversational RAG reasoning.'}
+              : 'Save articles, docs, files, or quick notes. NexAI will generate executive summaries and index them for conversational RAG reasoning.'}
           </p>
           {!searchQuery && (
-            <button
-              type="button"
-              onClick={openSaveModal}
-              className={styles.library__addBtn}
-            >
-              <Plus size={16} />
-              <span>Add Your First Item</span>
-            </button>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setUploadModalOpen(true)}
+                className={styles.library__uploadBtn}
+              >
+                <UploadCloud size={16} />
+                <span>Upload Document / Image</span>
+              </button>
+              <button
+                type="button"
+                onClick={openSaveModal}
+                className={styles.library__addBtn}
+              >
+                <Plus size={16} />
+                <span>Add Web Link / Note</span>
+              </button>
+            </div>
           )}
         </div>
       ) : (
@@ -205,7 +231,13 @@ export default function LibraryPage() {
               >
                 <div className={styles.library__cardHeader}>
                   <div className={styles.library__cardIcon}>
-                    {item.type === 'link' ? (
+                    {item.type === 'file' ? (
+                      item.metadata?.mimeType?.startsWith('image/') ? (
+                        <FileImage size={16} />
+                      ) : (
+                        <UploadCloud size={16} />
+                      )
+                    ) : item.type === 'link' ? (
                       <Link2 size={16} />
                     ) : (
                       <FileText size={16} />
@@ -216,7 +248,7 @@ export default function LibraryPage() {
                     <h3 className={styles.library__cardTitle} title={item.title}>
                       {item.title}
                     </h3>
-                    {item.url && (
+                    {item.url ? (
                       <a
                         href={item.url}
                         target="_blank"
@@ -226,6 +258,12 @@ export default function LibraryPage() {
                       >
                         {item.url.replace(/^https?:\/\//, '')}
                       </a>
+                    ) : (
+                      <span className={styles.library__cardUrl}>
+                        {item.type === 'file'
+                          ? `File (${item.metadata?.fileSize ? (item.metadata.fileSize / 1024).toFixed(1) + ' KB' : 'Uploaded'})`
+                          : 'Raw Note'}
+                      </span>
                     )}
                   </div>
 

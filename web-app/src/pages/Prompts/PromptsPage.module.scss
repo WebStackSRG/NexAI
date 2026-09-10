@@ -221,8 +221,6 @@
     text-overflow: ellipsis;
   }
 
-  &__cardContent {
-    font-size: var(--text-sm);
   &__pinnedBadge {
     display: inline-flex;
     align-items: center;
@@ -283,8 +281,6 @@
     line-height: 1.5;
   }
 
-  &__actionButton {
-    background-color: var(--color-accent);
   &__varsRow {
     display: flex;
     align-items: center;

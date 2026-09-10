@@ -146,7 +146,11 @@
 
 ## Phase 2 — Depth
 
-- [ ] **Feature 12** — File & Document Upload + Multimodal Analysis
+- [x] **Feature 12** — File & Document Upload + Multimodal Analysis
+  - [x] File upload UI (drag-and-drop) for PDF, image, text files
+  - [x] Gemini 2.5 Pro: analyze/OCR uploaded file
+  - [x] Extracted text chunked + embedded into Pinecone
+  - [x] Shows in Library as `type: 'file'`
 - [ ] **Feature 13** — Developer Utilities (Snippets, JSON, Regex, API Tester)
 - [ ] **Feature 14** — Learning & Study Suite (Flashcards, YouTube Summarizer)
 - [ ] **Feature 15** — Productivity / Focus (Reminders, Quiet Hours, Sessions)
@@ -177,11 +181,9 @@
 
 | Phase               | Total Features | Completed | In Progress |
 | ------------------- | -------------- | --------- | ----------- |
-| 0 — Core MVP        | 7              | 3         | 0           |
-| 0 — Core MVP        | 7              | 5         | 0           |
-| 1 — Differentiators | 4              | 0         | 0           |
-| 2 — Depth           | 5              | 0         | 0           |
+| 0 — Core MVP        | 7              | 7         | 0           |
+| 1 — Differentiators | 4              | 4         | 0           |
+| 2 — Depth           | 5              | 1         | 0           |
 | 3 — Power-User      | 4              | 0         | 0           |
 | 4 — Extension       | 5              | 0         | 0           |
-| **TOTAL**           | **25**         | **3**     | **0**       |
-| **TOTAL**           | **25**         | **5**     | **0**       |
+| **TOTAL**           | **25**         | **12**    | **0**       |

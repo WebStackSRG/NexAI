@@ -461,7 +461,6 @@
     cursor: pointer;
     transition: background-color var(--transition-fast), transform var(--transition-fast);
 
-    &:hover {
     &:hover:not(:disabled) {
       background-color: var(--color-accent-hover);
       transform: translateY(-1px);

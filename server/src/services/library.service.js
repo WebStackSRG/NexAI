@@ -5,7 +5,7 @@ import { summarizeAndTag, generateEmbedding } from "./gemini.service.js";
 import { upsertVector, deleteVector } from "./pinecone.service.js";
 
 // In-memory dev cache for library items when MongoDB is offline
-const devLibraryMap = new Map();
+export const devLibraryMap = new Map();
 
 /**
  * Stage 1: Save item (link or note) and generate AI summary + tags

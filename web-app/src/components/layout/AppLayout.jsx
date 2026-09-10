@@ -1,4 +1,3 @@
-import React, { useEffect } from 'react';
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import {
@@ -46,7 +45,6 @@ const allNavItems = [
     label: 'Document Studio',
     icon: FileText,
     section: 'SYNTHESIS',
-    modes: ['student', 'power-user'],
     modes: ['general', 'developer', 'student', 'power-user'],
   },
   {
@@ -54,7 +52,6 @@ const allNavItems = [
     label: 'Prompt Vault',
     icon: Sparkles,
     section: 'SYNTHESIS',
-    modes: ['power-user'],
     modes: ['general', 'developer', 'student', 'power-user'],
   },
   {
@@ -66,7 +63,6 @@ const allNavItems = [
   },
   {
     path: '/focus',
-    label: 'Study & Focus',
     label: 'Focus & Reminders',
     icon: GraduationCap,
     section: 'TOOLS',
@@ -74,10 +70,8 @@ const allNavItems = [
   },
   {
     path: '/analytics',
-    label: 'Analytics',
     label: 'Usage Analytics',
     icon: BarChart3,
-    section: 'POWER',
     section: 'INSIGHTS',
     modes: ['power-user'],
   },
@@ -85,8 +79,6 @@ const allNavItems = [
     path: '/security',
     label: 'Secrets Vault',
     icon: ShieldCheck,
-    section: 'POWER',
-    modes: ['power-user'],
     section: 'INSIGHTS',
     modes: ['developer', 'power-user'],
   },
@@ -95,7 +87,6 @@ const allNavItems = [
     path: '/settings',
     label: 'Settings',
     icon: Settings,
-    section: 'SYSTEM',
     section: 'PREFERENCES',
     modes: ['general', 'developer', 'student', 'power-user'],
   },
@@ -310,7 +301,6 @@ export default function AppLayout() {
             <button
               type="button"
               className={styles.layout__searchTrigger}
-              onClick={() => console.log('[AppLayout] Search triggered')}
               onClick={() => setCommandPaletteOpen(true)}
               title="Search everything (Ctrl+K)"
             >

@@ -47,8 +47,6 @@
     margin-top: 2px;
   }
 
-  &__card {
-    background-color: var(--bg-surface);
   &__headerActions {
     display: flex;
     align-items: center;
@@ -124,10 +122,6 @@
     flex-wrap: wrap;
   }
 
-  &__cardTitle {
-    font-size: var(--text-xl);
-    font-weight: var(--font-semibold);
-    color: var(--text-primary);
   &__genInputWrap {
     flex: 1;
     min-width: 280px;
@@ -145,7 +139,6 @@
     }
   }
 
-  &__cardText {
   &__genIcon {
     color: var(--color-accent);
     flex-shrink: 0;
@@ -166,9 +159,6 @@
     }
   }
 
-  &__actionButton {
-    background-color: var(--color-accent);
-    color: var(--text-inverse);
   &__genControls {
     display: flex;
     align-items: center;

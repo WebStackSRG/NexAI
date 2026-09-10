@@ -4,7 +4,6 @@ import apiClient from '../lib/apiClient';
 
 const useLibraryStore = create(
   devtools(
-    (set) => ({
     (set, get) => ({
       items: [],
       selectedItem: null,
@@ -15,8 +14,6 @@ const useLibraryStore = create(
       filterType: 'all',
       filterStatus: 'all',
       searchQuery: '',
-      isLoading: false,
-      error: null,
       saveModalOpen: false,
       reviewModalOpen: false,
       pendingReviewItem: null,

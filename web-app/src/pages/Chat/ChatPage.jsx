@@ -1,5 +1,3 @@
-import React, { useState } from 'react';
-import { Send, Sparkles } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
@@ -20,16 +18,7 @@ import useChatStore from '../../store/chatStore';
 import useAuthStore from '../../store/authStore';
 import ChatMessage from '../../components/chat/ChatMessage';
 
-const promptStarters = [
-  'Explain how Server-Sent Events (SSE) work in Node.js and React.',
-  'Design a zero-knowledge encryption vault with AES-GCM and PBKDF2.',
-  'Write a clean Mongoose schema for vectorized documents with Pinecone.',
-  'How do I build a responsive split-pane markdown document studio?',
-];
-
 export default function ChatPage() {
-  const [input, setInput] = useState('');
-  const { messages } = useChatStore();
   const location = useLocation();
   const {
     chats,
@@ -47,11 +36,6 @@ export default function ChatPage() {
     sendMessage,
     cancelStream,
   } = useChatStore();
-
-  const handleSend = (e) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-    setInput('');
   const { user } = useAuthStore();
 
   const [inputContent, setInputContent] = useState('');
@@ -136,11 +120,6 @@ export default function ChatPage() {
   const recentChats = filteredChats.filter((c) => !c.pinned);
 
   return (
-    <div className={styles.chat}>
-      <div className={styles.chat__hero}>
-        <div className={styles.chat__badge}>
-          <Sparkles size={14} />
-          <span>Gemini 2.0 Flash</span>
     <div className={styles.chatContainer}>
       {/* ── Left Sessions Sidebar ────────────────────────────── */}
       <aside
@@ -161,24 +140,7 @@ export default function ChatPage() {
             <span>New Chat</span>
           </button>
         </div>
-        <h2 className={styles.chat__title}>How can NexAI assist you today?</h2>
-        <p className={styles.chat__subtitle}>
-          Ask anything, search your personal library, or generate comprehensive structured documents.
-        </p>
-      </div>
 
-      <form className={styles.chat__inputStub} onSubmit={handleSend}>
-        <input
-          type="text"
-          className={styles.chat__input}
-          placeholder="Message NexAI or ask about your library..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-        />
-        <button type="submit" className={styles.chat__sendButton} aria-label="Send message">
-          <Send size={16} />
-        </button>
-      </form>
         <div className={styles.sessionsSidebar__search}>
           <Search size={14} color="var(--text-tertiary)" />
           <input

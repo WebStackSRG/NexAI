@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import React, { useState, useEffect } from 'react';
 import useAuthStore from '../../store/authStore';
 import useUiStore from '../../store/uiStore';
@@ -33,9 +32,6 @@ const PERSONA_MODES = [
 ];
 
 export default function SettingsPage() {
-  const [instructions, setInstructions] = useState(
-    'You are NexAI, a concise and high-precision AI assistant. Always prioritize direct answers, rigorous logic, and clean code.'
-  );
   const { user, setUser } = useAuthStore();
   const { sidebarMode, setSidebarMode, theme, setTheme } = useUiStore();
 
@@ -147,18 +143,14 @@ export default function SettingsPage() {
 
   return (
     <div className={styles.settings}>
-      <div>
       {/* Page Header */}
       <div className={styles.settings__header}>
         <h2 className={styles.settings__title}>Workspace Settings</h2>
         <p className={styles.settings__description}>
-          Configure global system behavior, AI instructions, and interface preferences.
           Configure your Google profile, Gemini system instructions, persona modes, and telemetry preferences.
         </p>
       </div>
 
-      <div className={styles.settings__section}>
-        <h3 className={styles.settings__sectionTitle}>Global System Instructions</h3>
       {/* Success / Error Banners */}
       {saveSuccess && (
         <div className={styles.settings__alertSuccess}>
@@ -181,7 +173,6 @@ export default function SettingsPage() {
           <span className={styles.settings__sectionBadge}>Google OAuth Verified</span>
         </div>
         <p className={styles.settings__description}>
-          These instructions are automatically prepended to every conversation across chat and document generation.
           Your primary identity is securely authenticated via Google OAuth 2.0. Profile fields are read-only to preserve security integrity.
         </p>
 

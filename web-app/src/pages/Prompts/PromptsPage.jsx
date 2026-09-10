@@ -1,5 +1,3 @@
-import React from 'react';
-import { Plus, Sparkles, Code, BookOpen } from 'lucide-react';
 import React, { useEffect } from 'react';
 import {
   Plus,
@@ -14,24 +12,14 @@ import {
   Tag,
   Clock,
   CheckCircle2,
+  Code,
+  BookOpen,
 } from 'lucide-react';
 import usePromptStore from '../../store/promptStore';
 import PromptModal from '../../components/prompts/PromptModal';
 import VariableFillModal from '../../components/prompts/VariableFillModal';
 import styles from './PromptsPage.module.scss';
 
-const samplePrompts = [
-  {
-    title: 'Code Refactoring Review',
-    icon: Code,
-    text: 'Analyze the following {{language}} code for architectural patterns, performance bottlenecks, and security invariants: {{code}}',
-  },
-  {
-    title: 'Socratic Concept Explainer',
-    icon: BookOpen,
-    text: 'Explain {{concept}} to a software engineer using progressive questions and concrete analogies.',
-  },
-];
 export default function PromptsPage() {
   const {
     prompts,
@@ -49,7 +37,6 @@ export default function PromptsPage() {
     removePrompt,
   } = usePromptStore();
 
-export default function PromptsPage() {
   useEffect(() => {
     loadPrompts();
   }, [searchQuery, selectedTag]);
@@ -72,11 +59,9 @@ export default function PromptsPage() {
         <div>
           <h2 className={styles.prompts__title}>Prompt Vault</h2>
           <p className={styles.prompts__description}>
-            Store, tag, and execute reusable system prompts with variable interpolation (e.g. &#123;&#123;variable&#125;&#125;).
             Curate, parameterize, and launch reusable AI prompts with variable interpolation (e.g. <code>&#123;&#123;variable&#125;&#125;</code>).
           </p>
         </div>
-        <button className={styles.prompts__actionButton}>
         <button
           type="button"
           onClick={() => openCreateModal()}
@@ -87,14 +72,6 @@ export default function PromptsPage() {
         </button>
       </div>
 
-      <div className={styles.prompts__grid}>
-        {samplePrompts.map((p, idx) => {
-          const Icon = p.icon;
-          return (
-            <div key={idx} className={styles.prompts__card}>
-              <div className={styles.prompts__cardHeader}>
-                <Icon size={18} color="var(--color-accent)" />
-                <h3 className={styles.prompts__cardTitle}>{p.title}</h3>
       {/* Search, Filter & Layout Controls */}
       <div className={styles.prompts__toolbar}>
         <div className={styles.prompts__searchBox}>
@@ -282,11 +259,6 @@ export default function PromptsPage() {
                   </button>
                 </div>
               </div>
-              <p className={styles.prompts__cardContent}>{p.text}</p>
-            </div>
-          );
-        })}
-      </div>
             );
           })}
         </div>

@@ -1,5 +1,3 @@
-import React from 'react';
-import { FileText, Wand2 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import {
   FileText,
@@ -22,10 +20,8 @@ import { exportToPdf, exportToDocx } from '../../lib/documentExport';
 import { indexDocumentToLibrary } from '../../lib/documentApi';
 import TiptapSectionEditor from './TiptapSectionEditor';
 import styles from './DocumentsPage.module.scss';
-import useDocumentStore from '../../store/documentStore';
 
 export default function DocumentsPage() {
-  const { documents } = useDocumentStore();
   const {
     documents,
     activeDocument,
@@ -167,14 +163,9 @@ export default function DocumentsPage() {
         <div>
           <h2 className={styles.documents__title}>AI Document Studio</h2>
           <p className={styles.documents__description}>
-            Generate structured multi-section reports with Gemini 2.5 Pro, Tiptap editing, and pure JS PDF/DOCX exports.
             Generate structured multi-section technical reports with Gemini 2.5 Pro, Tiptap WYSIWYG editing, and zero-RAM pure JS PDF/DOCX downloads.
           </p>
         </div>
-        <button className={styles.documents__actionButton}>
-          <Wand2 size={16} />
-          <span>New AI Document</span>
-        </button>
 
         <div className={styles.documents__headerActions}>
           {activeDocument && (
@@ -228,12 +219,6 @@ export default function DocumentsPage() {
         </div>
       </div>
 
-      <div className={styles.documents__card}>
-        <FileText size={48} color="var(--color-accent)" />
-        <h3 className={styles.documents__cardTitle}>Start a structured document</h3>
-        <p className={styles.documents__cardText}>
-          Describe what you want to write. NexAI will generate sections, research citations, and format clean PDF/DOCX downloads without heavy headless browsers.
-        </p>
       {/* Generation Bar / AI Prompt Bar */}
       <div className={styles.documents__generatorBar}>
         <form onSubmit={handleGenerate} className={styles.documents__genForm}>
