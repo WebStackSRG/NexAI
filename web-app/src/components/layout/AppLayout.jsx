@@ -22,6 +22,7 @@ import useUiStore from '../../store/uiStore';
 import useAuthStore from '../../store/authStore';
 import ModeSwitcher from './ModeSwitcher';
 import CommandPalette from '../search/CommandPalette';
+import OnboardingModal from '../onboarding/OnboardingModal';
 
 // Master navigation catalog with mode association
 const allNavItems = [
@@ -107,6 +108,13 @@ export default function AppLayout() {
 
   const { user, logout } = useAuthStore();
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+
+  useEffect(() => {
+    if (user && user.onboardingComplete === false) {
+      setOnboardingOpen(true);
+    }
+  }, [user]);
 
   // Close mobile drawer on route change
   // Close mobile sidebar on route change
@@ -321,6 +329,12 @@ export default function AppLayout() {
       <CommandPalette
         isOpen={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
+      />
+
+      {/* First-Run Onboarding Wizard Modal */}
+      <OnboardingModal
+        isOpen={onboardingOpen}
+        onClose={() => setOnboardingOpen(false)}
       />
     </div>
   );

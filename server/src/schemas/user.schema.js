@@ -6,6 +6,7 @@ export const updateUserSettingsSchema = z.object({
       .string()
       .max(2000, "Global instructions cannot exceed 2000 characters")
       .optional(),
+    onboardingComplete: z.boolean().optional(),
     preferences: z
       .object({
         sidebarMode: z

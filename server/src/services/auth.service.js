@@ -200,6 +200,7 @@ export const devLogin = async ({
         streamingEnabled: true,
       },
       globalInstructions: "",
+      onboardingComplete: false,
       notificationPrefs: {
         pushEnabled: false,
         emailEnabled: false,

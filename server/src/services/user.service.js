@@ -23,6 +23,7 @@ export const getUserSettings = async (userId) => {
       streamingEnabled: true,
     },
     globalInstructions: user.globalInstructions || "",
+    onboardingComplete: user.onboardingComplete ?? false,
     quietHours: user.quietHours || {
       enabled: false,
       startTime: "22:00",
@@ -44,12 +45,16 @@ export const getUserSettings = async (userId) => {
  * Update user settings and preferences
  */
 export const updateUserSettings = async (userId, updateData) => {
-  const { globalInstructions, preferences, quietHours, notificationPrefs } =
+  const { globalInstructions, preferences, quietHours, notificationPrefs, onboardingComplete } =
     updateData;
 
   const updateFields = {
     updatedAt: new Date(),
   };
+
+  if (onboardingComplete !== undefined) {
+    updateFields.onboardingComplete = Boolean(onboardingComplete);
+  }
 
   if (globalInstructions !== undefined) {
     updateFields.globalInstructions = globalInstructions;
@@ -118,6 +123,9 @@ export const updateUserSettings = async (userId, updateData) => {
       throw new Error("User not found");
     }
 
+    if (onboardingComplete !== undefined) {
+      existing.onboardingComplete = Boolean(onboardingComplete);
+    }
     if (globalInstructions !== undefined) {
       existing.globalInstructions = globalInstructions;
     }
@@ -150,6 +158,7 @@ export const updateUserSettings = async (userId, updateData) => {
     avatar: updatedUser.avatar,
     preferences: updatedUser.preferences,
     globalInstructions: updatedUser.globalInstructions,
+    onboardingComplete: updatedUser.onboardingComplete ?? false,
     quietHours: updatedUser.quietHours,
     notificationPrefs: updatedUser.notificationPrefs,
     updatedAt: updatedUser.updatedAt,

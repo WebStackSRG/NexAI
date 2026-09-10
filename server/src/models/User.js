@@ -19,6 +19,7 @@ const userSchema = new mongoose.Schema(
     },
 
     globalInstructions: { type: String, default: "" },
+    onboardingComplete: { type: Boolean, default: false },
 
     quietHours: {
       enabled: { type: Boolean, default: false },

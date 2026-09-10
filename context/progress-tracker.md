@@ -169,8 +169,14 @@
   - [x] Zod validation for reminders, sessions, and quiet-hours configuration
   - [x] REST routes mounted at `/focus` (`/focus/reminders`, `/focus/sessions`, `/focus/quiet-hours`)
   - [x] FocusStore Zustand atomic slice with multi-tab launcher and quiet-hours toggle
-  - [x] Automated E2E verification test suite (`node test-focus-e2e.js`)
-- [ ] **Feature 16** — Onboarding Flow
+- [x] **Feature 16** — Onboarding Flow
+  - [x] `onboardingComplete` flag added to `User` schema & `updateUserSettingsSchema` Zod validator
+  - [x] Backend user settings service & devLogin mock updated with `onboardingComplete`
+  - [x] 3-step First-Run Onboarding Wizard (`OnboardingModal.jsx` & SCSS)
+  - [x] Persona selection (General, Developer, Student, Power-User) updating sidebar instantly
+  - [x] Global AI instructions customization & Knowledge seed URL crawler hook
+  - [x] Persistent "Skip for now" dismissal option
+  - [x] Automated E2E verification test suite (`node test-onboarding-e2e.js`)
 
 ---
 
@@ -199,7 +205,7 @@
 | ------------------- | -------------- | --------- | ----------- |
 | 0 — Core MVP        | 7              | 7         | 0           |
 | 1 — Differentiators | 4              | 4         | 0           |
-| 2 — Depth           | 5              | 4         | 0           |
+| 2 — Depth           | 5              | 5         | 0           |
 | 3 — Power-User      | 4              | 0         | 0           |
 | 4 — Extension       | 5              | 0         | 0           |
-| **TOTAL**           | **25**         | **15**    | **0**       |
+| **TOTAL**           | **25**         | **16**    | **0**       |
