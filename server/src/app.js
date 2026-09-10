@@ -10,6 +10,7 @@ import chatRoutes from "./routes/chat.routes.js";
 import libraryRoutes from "./routes/library.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import documentRoutes from "./routes/document.routes.js";
+import promptRoutes from "./routes/prompt.routes.js";
 import {
   errorHandler,
   notFoundHandler,
@@ -70,6 +71,9 @@ app.use("/users", userRoutes);
 
 // Document Studio routes (generate, CRUD, index)
 app.use("/documents", documentRoutes);
+
+// Prompt Vault routes
+app.use("/prompts", promptRoutes);
 
 // Catch-all 404 handler
 app.use(notFoundHandler);

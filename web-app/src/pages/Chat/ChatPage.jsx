@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -25,13 +26,14 @@ const promptStarters = [
 ];
 
 export default function ChatPage() {
+  const location = useLocation();
   const {
     chats,
     activeChatId,
     messages,
     isStreaming,
     streamingText,
-    activeSources,
+    streamingSources,
     fetchChats,
     selectChat,
     createNewChat,
@@ -53,10 +55,16 @@ export default function ChatPage() {
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
-  // Load chats on initial mount
+  // Load chats and handle injected draft prompt from Prompt Vault
   useEffect(() => {
     fetchChats();
-  }, [fetchChats]);
+    if (location.state?.draftMessage) {
+      setInputContent(location.state.draftMessage);
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
+    }
+  }, [fetchChats, location.state]);
 
   // Auto-scroll to bottom as messages or streaming text updates
   useEffect(() => {

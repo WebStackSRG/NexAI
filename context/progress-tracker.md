@@ -9,8 +9,8 @@
 | Field                      | Value                                 |
 | -------------------------- | ------------------------------------- |
 | **Current Phase**          | Phase 1 — Key Differentiators         |
-| **Last Completed Feature** | Feature 08 — AI Document Generator    |
-| **Next Unit in Queue**     | Feature 09 — Prompt Vault             |
+| **Last Completed Feature** | Feature 09 — Prompt Vault             |
+| **Next Unit in Queue**     | Feature 10 — Unified Global Search    |
 | **Known Blockers**         | None                                  |
 | **Last Updated**           | 2026-09-11                            |
 
@@ -121,13 +121,14 @@
   - [x] `docx` DOCX export
   - [x] Auto-save + Library indexing
 
-- [ ] **Feature 09** — Prompt Vault
-  - [ ] `/prompts` page with grid/list toggle
-  - [ ] Create/edit prompt with `{{variable}}` support
-  - [ ] Variable extraction on save
-  - [ ] Variable fill form
-  - [ ] "Use in chat" injection
-  - [ ] Pin, tag, search
+- [x] **Feature 09** — Prompt Vault
+  - [x] `/prompts` page with grid/list toggle
+  - [x] Create/edit prompt with `{{variable}}` support
+  - [x] Variable extraction on save
+  - [x] Variable fill form
+  - [x] "Use in chat" injection
+  - [x] Pin, tag, search
+  - [x] `useCount` increment on each use
 
 - [ ] **Feature 10** — Unified Global Search
   - [ ] `GET /search?q=` endpoint
