@@ -9,10 +9,10 @@
 | Field                      | Value                                 |
 | -------------------------- | ------------------------------------- |
 | **Current Phase**          | Phase 0 — Core MVP                    |
-| **Last Completed Feature** | Feature 03 — Base App Shell & Sidebar |
-| **Next Unit in Queue**     | Feature 04 — Core Streaming Chat      |
+| **Last Completed Feature** | Feature 04 — Core Streaming Chat      |
+| **Next Unit in Queue**     | Feature 05 — Personal Knowledge Library |
 | **Known Blockers**         | None                                  |
-| **Last Updated**           | 2026-09-10                            |
+| **Last Updated**           | 2026-09-11                            |
 
 ---
 
@@ -45,13 +45,13 @@
   - [x] Active page highlighting
   - [x] User avatar in sidebar footer
 
-- [ ] **Feature 04** — Core Streaming Chat
-  - [ ] `POST /chat/message` with SSE streaming
-  - [ ] Gemini 2.0 Flash integration
-  - [ ] Frontend streaming render + cursor animation
-  - [ ] Chat list CRUD (create, rename, delete, pin)
-  - [ ] Message history load
-  - [ ] Auto-title generation
+- [x] **Feature 04** — Core Streaming Chat
+  - [x] `POST /chat/message` with SSE streaming
+  - [x] Gemini 2.0 Flash integration
+  - [x] Frontend streaming render + cursor animation
+  - [x] Chat list CRUD (create, rename, delete, pin)
+  - [x] Message history load
+  - [x] Auto-title generation
 
 - [ ] **Feature 05** — Personal Knowledge Library
   - [ ] `POST /library/save` (URL + note)
@@ -147,9 +147,9 @@
 
 | Phase               | Total Features | Completed | In Progress |
 | ------------------- | -------------- | --------- | ----------- |
-| 0 — Core MVP        | 7              | 3         | 0           |
+| 0 — Core MVP        | 7              | 4         | 0           |
 | 1 — Differentiators | 4              | 0         | 0           |
 | 2 — Depth           | 5              | 0         | 0           |
 | 3 — Power-User      | 4              | 0         | 0           |
 | 4 — Extension       | 5              | 0         | 0           |
-| **TOTAL**           | **25**         | **3**     | **0**       |
+| **TOTAL**           | **25**         | **4**     | **0**       |

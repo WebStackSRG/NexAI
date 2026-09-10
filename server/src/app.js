@@ -6,6 +6,7 @@ import { config } from "./config/env.js";
 import { connectDB } from "./config/db.js";
 import healthRoutes from "./routes/health.routes.js";
 import authRoutes from "./routes/auth.routes.js";
+import chatRoutes from "./routes/chat.routes.js";
 import {
   errorHandler,
   notFoundHandler,
@@ -54,6 +55,9 @@ app.use("/", healthRoutes);
 
 // Auth routes
 app.use("/auth", authRoutes);
+
+// Chat routes (streaming & session CRUD)
+app.use("/chat", chatRoutes);
 
 // Catch-all 404 handler
 app.use(notFoundHandler);

@@ -8,9 +8,9 @@
 
 | Field               | Value                                                                  |
 | ------------------- | ---------------------------------------------------------------------- |
-| **Session Start**   | 2026-09-10                                                             |
+| **Session Start**   | 2026-09-11                                                             |
 | **Phase**           | Phase 0 — Core MVP                                                     |
-| **Status**          | Feature 03 completed — ready to begin Feature 04 (Core Streaming Chat) |
+| **Status**          | Feature 04 completed — ready to begin Feature 05 (Knowledge Library)   |
 | **Unfinished Work** | None                                                                   |
 
 ---
@@ -73,6 +73,13 @@
 - **Decision**: Implement responsive sidebar supporting three distinct viewport behaviors: full 240px desktop sidebar with collapse toggle, 56px icon-only rail for tablet (768px-1023px), and touch-dismissible off-canvas drawer with backdrop blur for mobile (<768px). Sidebar navigation dynamically adapts to active persona mode (`general`, `developer`, `student`, `power-user`) stored in `uiStore` with `localStorage` fallback.
 - **Reason**: Meets all criteria in `context/ui-rules.md` (Section 2) while preparing UX for developer utilities, study tools, document studio, and analytics across all device factors.
 - **Impact**: Seamless UX on desktop, tablet, and mobile; clean route resolution for all modes.
+
+### Decision 009 — Server-Sent Events (SSE) Streaming & Disconnect-Tolerant Gemini Fallback
+
+- **Date**: 2026-09-11
+- **Decision**: Built Server-Sent Events endpoint `POST /chat/message` yielding real-time chunks from `@google/genai` (`gemini-2.0-flash`). Implemented resilient simulated generator fallback when `GEMINI_API_KEY` is not present, in-memory dev store fallback for Chat and Message schemas when MongoDB is offline, and automatic asynchronous title summarization after initial exchange.
+- **Reason**: Enables seamless zero-friction local testing, e2e test automation, and robust production streaming complying with `context/code-standards.md` Section 2.4 and free-tier 20-message context cap.
+- **Impact**: Real-time token streaming with pulsing cursor, syntax-highlighted code blocks with clipboard copy, full session CRUD (create, rename, pin, delete).
 
 ---
 
