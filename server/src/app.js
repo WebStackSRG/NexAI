@@ -12,6 +12,7 @@ import userRoutes from "./routes/user.routes.js";
 import documentRoutes from "./routes/document.routes.js";
 import promptRoutes from "./routes/prompt.routes.js";
 import searchRoutes from "./routes/search.routes.js";
+import snippetRoutes from "./routes/snippet.routes.js";
 import {
   errorHandler,
   notFoundHandler,
@@ -78,6 +79,9 @@ app.use("/prompts", promptRoutes);
 
 // Unified Global Search
 app.use("/search", searchRoutes);
+
+// Developer Utilities (Snippets Vault)
+app.use("/snippets", snippetRoutes);
 
 // Catch-all 404 handler
 app.use(notFoundHandler);

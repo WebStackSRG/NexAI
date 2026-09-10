@@ -151,7 +151,11 @@
   - [x] Gemini 2.5 Pro: analyze/OCR uploaded file
   - [x] Extracted text chunked + embedded into Pinecone
   - [x] Shows in Library as `type: 'file'`
-- [ ] **Feature 13** — Developer Utilities (Snippets, JSON, Regex, API Tester)
+- [x] **Feature 13** — Developer Utilities (Snippets, JSON, Regex, API Tester)
+  - [x] Code Snippet Vault with CRUD, language filters, and search
+  - [x] JSON Formatter & Validator with syntax error alerts and copy
+  - [x] Regex Sandbox with live group capture inspection and flag toggles
+  - [x] REST API Tester with method selection, custom headers, payload, and response viewer
 - [ ] **Feature 14** — Learning & Study Suite (Flashcards, YouTube Summarizer)
 - [ ] **Feature 15** — Productivity / Focus (Reminders, Quiet Hours, Sessions)
 - [ ] **Feature 16** — Onboarding Flow
@@ -183,7 +187,7 @@
 | ------------------- | -------------- | --------- | ----------- |
 | 0 — Core MVP        | 7              | 7         | 0           |
 | 1 — Differentiators | 4              | 4         | 0           |
-| 2 — Depth           | 5              | 1         | 0           |
+| 2 — Depth           | 5              | 2         | 0           |
 | 3 — Power-User      | 4              | 0         | 0           |
 | 4 — Extension       | 5              | 0         | 0           |
-| **TOTAL**           | **25**         | **12**    | **0**       |
+| **TOTAL**           | **25**         | **13**    | **0**       |
