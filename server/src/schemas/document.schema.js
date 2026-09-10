@@ -57,3 +57,21 @@ export const documentIdParamSchema = z.object({
   }),
 });
 
+
+export const creativeContinueSchema = z.object({
+  body: z.object({
+    title: z.string().trim().optional().default("Untitled Story"),
+    genre: z.string().trim().optional().default("sci-fi"),
+    tone: z.string().trim().optional().default("dark"),
+    style: z.string().trim().optional().default("descriptive"),
+    chapterNumber: z.number().int().min(1).default(1),
+    characters: z.array(z.object({
+      name: z.string().min(1),
+      role: z.string().optional(),
+      description: z.string().optional(),
+    })).optional().default([]),
+    worldNotes: z.string().optional().default(""),
+    previousContext: z.string().optional().default(""),
+    instruction: z.string().optional().default("Advance the plot and escalate tension"),
+  }),
+});

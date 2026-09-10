@@ -3,7 +3,7 @@ import { config } from "../config/env.js";
 
 let aiClient = null;
 
-const getGenAIClient = () => {
+export const getGenAIClient = () => {
   if (aiClient) return aiClient;
   const apiKey = config.ai.geminiApiKey || process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey === "your-gemini-api-key") {

@@ -1,3 +1,4 @@
+import { continueChapter } from "../services/creativeWriting.service.js";
 import * as documentService from "../services/document.service.js";
 import { generateDocumentSections } from "../services/gemini.service.js";
 
@@ -121,3 +122,15 @@ export const indexToLibrary = async (req, res, next) => {
   }
 };
 
+
+/**
+ * POST /documents/creative-continue — Generate next narrative chapter
+ */
+export const creativeContinue = async (req, res, next) => {
+  try {
+    const result = await continueChapter(req.body);
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+};

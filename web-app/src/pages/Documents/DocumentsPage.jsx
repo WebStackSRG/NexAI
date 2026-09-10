@@ -19,6 +19,8 @@ import useDocumentStore from '../../store/documentStore';
 import { exportToPdf, exportToDocx } from '../../lib/documentExport';
 import { indexDocumentToLibrary } from '../../lib/documentApi';
 import TiptapSectionEditor from './TiptapSectionEditor';
+import CreativeWritingPanel from './CreativeWritingPanel';
+import { Feather } from 'lucide-react';
 import styles from './DocumentsPage.module.scss';
 
 export default function DocumentsPage() {
@@ -45,6 +47,7 @@ export default function DocumentsPage() {
   const [topicPrompt, setTopicPrompt] = useState('');
   const [selectedTone, setSelectedTone] = useState('technical');
   const [sectionCount, setSectionCount] = useState(4);
+  const [studioMode, setStudioMode] = useState('standard');
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
 
   // Status notification banners
@@ -161,7 +164,29 @@ export default function DocumentsPage() {
       {/* Header with Title & Action Controls */}
       <div className={styles.documents__header}>
         <div>
-          <h2 className={styles.documents__title}>AI Document Studio</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <h2 className={styles.documents__title}>AI Document Studio</h2>
+            <button
+              type="button"
+              onClick={() => setStudioMode(m => m === 'standard' ? 'creative' : 'standard')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: studioMode === 'creative' ? 'rgba(124, 58, 237, 0.2)' : 'var(--bg-surface)',
+                color: studioMode === 'creative' ? '#a78bfa' : 'var(--text-secondary)',
+                border: '1px solid var(--border-subtle)',
+                padding: '4px 10px',
+                borderRadius: '9999px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                fontWeight: 600,
+              }}
+            >
+              <Feather size={13} />
+              {studioMode === 'creative' ? 'Creative Suite Active' : 'Switch to Creative Suite'}
+            </button>
+          </div>
           <p className={styles.documents__description}>
             Generate structured multi-section technical reports with Gemini 2.5 Pro, Tiptap WYSIWYG editing, and zero-RAM pure JS PDF/DOCX downloads.
           </p>
@@ -218,6 +243,22 @@ export default function DocumentsPage() {
           )}
         </div>
       </div>
+
+      {/* Creative Writing Studio Suite Panel */}
+      {studioMode === 'creative' && activeDocument && (
+        <CreativeWritingPanel
+          documentTitle={activeDocument.title}
+          currentSectionCount={sections.length}
+          onAppendChapter={({ heading, body }) => {
+            addSection();
+            const newIdx = sections.length;
+            updateSection(newIdx, 'heading', heading);
+            updateSection(newIdx, 'body', body);
+            setActiveSectionIndex(newIdx);
+            showToast(`Added ${heading}!`);
+          }}
+        />
+      )}
 
       {/* Generation Bar / AI Prompt Bar */}
       <div className={styles.documents__generatorBar}>

@@ -194,7 +194,12 @@
   - [x] Master password unlock session with ephemeral memory retention
   - [x] Masked credentials list with on-demand decrypt & 30s clipboard auto-clear
   - [x] Automated E2E verification test passed (5/5 tests)
-- [ ] **Feature 19** — Creative Writing Suite
+- [x] **Feature 19** — Creative Writing Suite
+  - [x] Multi-chapter continuation engine with tone, genre, and style controls
+  - [x] Character cast & role roster with live pill tag management
+  - [x] World-building and lore reference context injection
+  - [x] Direct HTML chapter output injected into active Tiptap document sections
+  - [x] E2E verification test passed (3/3 tests)
 - [ ] **Feature 20** — Voice I/O (Web Speech API)
 
 ---
@@ -216,6 +221,6 @@
 | 0 — Core MVP        | 7              | 7         | 0           |
 | 1 — Differentiators | 4              | 4         | 0           |
 | 2 — Depth           | 5              | 5         | 0           |
-| 3 — Power-User      | 4              | 2         | 0           |
+| 3 — Power-User      | 4              | 3         | 0           |
 | 4 — Extension       | 5              | 0         | 0           |
-| **TOTAL**           | **25**         | **18**    | **0**       |
+| **TOTAL**           | **25**         | **19**    | **0**       |

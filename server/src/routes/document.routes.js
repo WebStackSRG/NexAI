@@ -6,6 +6,7 @@ import {
   createDocumentSchema,
   updateDocumentSchema,
   documentIdParamSchema,
+  creativeContinueSchema,
 } from "../schemas/document.schema.js";
 import * as documentController from "../controllers/document.controller.js";
 
@@ -13,6 +14,13 @@ const router = Router();
 
 // Protect all document routes
 router.use(authMiddleware);
+
+// Creative Writing Assistant Continuation
+router.post(
+  "/creative-continue",
+  validate(creativeContinueSchema),
+  documentController.creativeContinue,
+);
 
 // AI Section Generation via Gemini 2.5 Pro
 router.post(
