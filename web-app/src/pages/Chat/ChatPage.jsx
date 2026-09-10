@@ -31,6 +31,7 @@ export default function ChatPage() {
     messages,
     isStreaming,
     streamingText,
+    activeSources,
     fetchChats,
     selectChat,
     createNewChat,
@@ -342,6 +343,7 @@ export default function ChatPage() {
                   key={msg._id || msg.id}
                   role={msg.role}
                   content={msg.content}
+                  sources={msg.sources || msg.toolCalls?.[0]?.output?.sources || []}
                   model={msg.model}
                   latencyMs={msg.latencyMs}
                   createdAt={msg.createdAt}
@@ -355,6 +357,7 @@ export default function ChatPage() {
                   key="active-stream"
                   role="assistant"
                   content={streamingText}
+                  sources={activeSources}
                   isStreaming={true}
                   model="gemini-2.0-flash"
                 />

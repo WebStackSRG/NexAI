@@ -9,8 +9,8 @@
 | Field                      | Value                                 |
 | -------------------------- | ------------------------------------- |
 | **Current Phase**          | Phase 0 — Core MVP                    |
-| **Last Completed Feature** | Feature 05 — Personal Knowledge Library |
-| **Next Unit in Queue**     | Feature 06 — Chat with RAG            |
+| **Last Completed Feature** | Feature 06 — Chat with RAG            |
+| **Next Unit in Queue**     | Feature 07 — Basic Settings Page      |
 | **Known Blockers**         | None                                  |
 | **Last Updated**           | 2026-09-11                            |
 
@@ -63,12 +63,12 @@
   - [x] `PATCH /library/:id/confirm`
   - [x] `DELETE /library/:id`
 
-- [ ] **Feature 06** — Chat with RAG
-  - [ ] Query embedding on each message
-  - [ ] Pinecone top-k search
-  - [ ] Context injection into Gemini prompt
-  - [ ] LangGraph basic setup (ragTool node)
-  - [ ] Sources citation panel in chat
+- [x] **Feature 06** — Chat with RAG
+  - [x] Query embedding on each message
+  - [x] Pinecone top-k search
+  - [x] Context injection into Gemini prompt
+  - [x] LangGraph basic setup (ragTool node)
+  - [x] Sources citation panel in chat
 
 - [ ] **Feature 07** — Basic Settings Page
   - [ ] Profile display (read-only)

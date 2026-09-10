@@ -23,5 +23,9 @@
     "rag"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@langchain/core": "^1.2.10",
+    "@langchain/langgraph": "^1.4.14"
+  }
 }

@@ -1,5 +1,6 @@
 import * as chatService from "../services/chat.service.js";
 import { streamChatResponse } from "../services/gemini.service.js";
+import { executeRagPipeline } from "../agents/rag.agent.js";
 
 /**
  * GET /chat — List all active chats for authenticated user
@@ -99,7 +100,9 @@ export const streamMessage = async (req, res) => {
   });
 
   const sendEvent = (data) => {
-    res.write(`data: ${JSON.stringify(data)}\n\n`);
+    if (!res.writableEnded) {
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    }
   };
 
   try {
@@ -135,11 +138,29 @@ export const streamMessage = async (req, res) => {
       userMessage: userMsg,
     });
 
+    // Execute LangGraph RAG pipeline to ground response with user library
+    const { sources, contextString } = await executeRagPipeline({
+      userId: req.user._id,
+      query: content,
+    });
+
+    // If sources retrieved, stream sources event to client
+    if (sources && sources.length > 0) {
+      sendEvent({
+        type: "sources",
+        sources,
+      });
+    }
+
     // Fetch previous messages for context (capped at last 20 messages)
     const history = (await chatService.getChatMessages(chatId, req.user._id)) || [];
     const contextMessages = history.slice(-20);
 
-    const systemInstruction = req.user.globalInstructions || "";
+    const baseSystemInstruction = req.user.globalInstructions || "";
+    const systemInstruction = contextString
+      ? `${baseSystemInstruction}${contextString}`
+      : baseSystemInstruction;
+
     let accumulatedText = "";
 
     // Stream chunks from Gemini service
@@ -161,7 +182,18 @@ export const streamMessage = async (req, res) => {
 
     const latencyMs = Date.now() - startTime;
 
-    // Persist complete assistant message
+    // Persist complete assistant message with toolCalls / sources telemetry
+    const toolCalls =
+      sources && sources.length > 0
+        ? [
+            {
+              name: "rag_knowledge_retrieval",
+              input: { query: content },
+              output: { sources },
+            },
+          ]
+        : [];
+
     const assistantMsg = await chatService.saveAssistantMessage(
       chatId,
       req.user._id,
@@ -169,21 +201,20 @@ export const streamMessage = async (req, res) => {
       {
         model: "gemini-2.0-flash",
         latencyMs,
+        toolCalls,
         parentId: userMsg._id || userMsg.id,
       },
     );
 
-    // Trigger auto-titling asynchronously if needed
+    // Trigger auto-titling if needed
     if (chat.title === "New Chat") {
-      chatService.autoTitleChat(chatId, req.user._id, content).then(async () => {
+      try {
+        await chatService.autoTitleChat(chatId, req.user._id, content);
         const freshChat = await chatService.getChatById(chatId, req.user._id);
-        if (freshChat && freshChat.title !== "New Chat") {
-          sendEvent({
-            type: "chat_updated",
-            chat: freshChat,
-          });
-        }
-      });
+        if (freshChat) chat = freshChat;
+      } catch (err) {
+        console.warn("[ChatController] Auto-title non-fatal error:", err.message);
+      }
     }
 
     // Send final completion event

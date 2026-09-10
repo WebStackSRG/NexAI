@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Bot, User, Copy, Check, Sparkles, Clock } from 'lucide-react';
+import { Bot, User, Copy, Check, Sparkles, Clock, BookOpen, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import styles from './ChatMessage.module.scss';
 
 function CodeBlock({ language, value }) {
@@ -50,6 +50,8 @@ function CodeBlock({ language, value }) {
 export default function ChatMessage({
   role = 'assistant',
   content = '',
+  sources = [],
+  toolCalls = [],
   isStreaming = false,
   model = 'gemini-2.0-flash',
   latencyMs,
@@ -58,6 +60,12 @@ export default function ChatMessage({
   userAvatar,
 }) {
   const isUser = role === 'user';
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+
+  const resolvedSources =
+    sources && sources.length > 0
+      ? sources
+      : toolCalls?.find((t) => t.name === 'rag_knowledge_retrieval')?.output?.sources || [];
 
   const formatTime = (dateStr) => {
     if (!dateStr) return '';
@@ -139,6 +147,46 @@ export default function ChatMessage({
             </>
           )}
         </div>
+
+        {!isUser && resolvedSources.length > 0 && (
+          <div className={styles.message__sourcesPanel}>
+            <button
+              type="button"
+              onClick={() => setSourcesOpen(!sourcesOpen)}
+              className={styles.message__sourcesToggle}
+            >
+              <BookOpen size={13} color="var(--color-accent)" />
+              <span>Grounded Sources</span>
+              <span className={styles.message__sourcesCount}>
+                {resolvedSources.length} citations
+              </span>
+              {sourcesOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            </button>
+
+            {sourcesOpen && (
+              <div className={styles.message__sourcesList}>
+                {resolvedSources.map((source, idx) => (
+                  <div key={source.id || idx} className={styles.message__sourceCard}>
+                    <div className={styles.message__sourceHeader}>
+                      <span className={styles.message__sourceTitle}>
+                        <FileText size={12} color="var(--text-tertiary)" />
+                        {source.title}
+                      </span>
+                      <span className={styles.message__sourceScore}>
+                        {source.score}% match
+                      </span>
+                    </div>
+                    {source.snippet && (
+                      <p className={styles.message__sourceSnippet}>
+                        {source.snippet}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

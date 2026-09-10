@@ -12,6 +12,7 @@ const useChatStore = create(
       messages: [],
       isStreaming: false,
       streamingText: '',
+      activeSources: [],
       isLoadingChats: false,
       isLoadingMessages: false,
       error: null,
@@ -254,6 +255,8 @@ const useChatStore = create(
                         };
                       });
                     }
+                  } else if (event.type === 'sources') {
+                    set({ activeSources: event.sources || [] });
                   } else if (event.type === 'chunk') {
                     accumulatedText += event.chunk;
                     set({ streamingText: accumulatedText });
@@ -269,6 +272,7 @@ const useChatStore = create(
                       }));
                     }
                   } else if (event.type === 'done') {
+                    const currentSources = get().activeSources;
                     const finalMsg = event.message || {
                       _id: `msg-${Date.now()}`,
                       role: 'assistant',
@@ -276,10 +280,15 @@ const useChatStore = create(
                       createdAt: new Date().toISOString(),
                     };
 
+                    if (currentSources && currentSources.length > 0) {
+                      finalMsg.sources = currentSources;
+                    }
+
                     set((s) => ({
                       messages: [...s.messages, finalMsg],
                       isStreaming: false,
                       streamingText: '',
+                      activeSources: [],
                       abortController: null,
                     }));
                   } else if (event.error) {
