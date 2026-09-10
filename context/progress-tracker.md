@@ -188,7 +188,12 @@
   - [x] SVG interactive 14-day activity trajectory chart
   - [x] Zustand analytics store with auto-refresh
   - [x] E2E verification test suite passed (3/3 tests)
-- [ ] **Feature 18** — Secrets Vault (Web Crypto)
+- [x] **Feature 18** — Secrets Vault (Web Crypto)
+  - [x] Client-side PBKDF2 (310,000 iterations) + AES-GCM 256-bit encryption (Web Crypto API)
+  - [x] Zero-knowledge backend API with encrypted ciphertext, IV, and salt storage
+  - [x] Master password unlock session with ephemeral memory retention
+  - [x] Masked credentials list with on-demand decrypt & 30s clipboard auto-clear
+  - [x] Automated E2E verification test passed (5/5 tests)
 - [ ] **Feature 19** — Creative Writing Suite
 - [ ] **Feature 20** — Voice I/O (Web Speech API)
 
@@ -211,6 +216,6 @@
 | 0 — Core MVP        | 7              | 7         | 0           |
 | 1 — Differentiators | 4              | 4         | 0           |
 | 2 — Depth           | 5              | 5         | 0           |
-| 3 — Power-User      | 4              | 1         | 0           |
+| 3 — Power-User      | 4              | 2         | 0           |
 | 4 — Extension       | 5              | 0         | 0           |
-| **TOTAL**           | **25**         | **17**    | **0**       |
+| **TOTAL**           | **25**         | **18**    | **0**       |

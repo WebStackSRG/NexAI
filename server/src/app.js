@@ -17,6 +17,7 @@ import flashcardRoutes from "./routes/flashcard.routes.js";
 import learningRoutes from "./routes/learning.routes.js";
 import focusRoutes from "./routes/reminder.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
+import secretRoutes from "./routes/secret.routes.js";
 import {
   errorHandler,
   notFoundHandler,
@@ -98,6 +99,9 @@ app.use("/focus", focusRoutes);
 
 // System & Usage Analytics
 app.use("/analytics", analyticsRoutes);
+
+// Secrets & Privacy Vault (Zero-Knowledge Web Crypto)
+app.use("/secrets", secretRoutes);
 
 // Catch-all 404 handler
 app.use(notFoundHandler);
