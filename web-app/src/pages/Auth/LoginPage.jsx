@@ -41,6 +41,10 @@ export default function LoginPage() {
       });
 
       if (data?.user) {
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
         setUser(data.user);
         navigate(from, { replace: true });
       }

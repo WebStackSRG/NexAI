@@ -208,13 +208,27 @@
 
 ---
 
-## Phase 4 — Extension Bridge (Optional)
+## Phase 4 — Extension Bridge (Completed)
 
-- [ ] **Feature 21** — Chrome Extension Scaffold (Manifest V3)
-- [ ] **Feature 22** — Extension JWT Authentication Sharing
-- [ ] **Feature 23** — Quick-Access Popup
-- [ ] **Feature 24** — Page Intelligence ("Ask AI about this page")
-- [ ] **Feature 25** — Tab Session Manager
+- [x] **Feature 21** — Chrome Extension Scaffold (Manifest V3)
+  - [x] Manifest V3 with `storage`, `tabs`, `contextMenus`, and `commands`
+  - [x] Global hotkey listener (`Ctrl+Shift+Y` / `Command+Shift+Y`)
+  - [x] Programmatically generated 16, 48, 128px PNG icons
+- [x] **Feature 22** — Extension JWT Authentication Sharing
+  - [x] Web app auth token synced to `chrome.storage.local` on sign-in
+  - [x] Extension background & popup forward JWT Bearer token to backend
+- [x] **Feature 23** — Quick-Access Popup
+  - [x] Floating popup window with dark UI theme matching web app
+  - [x] Streaming chat directly to `/chat/message` endpoint with Gemini 2.0 Flash
+  - [x] One-click "Open Web App" bridge
+- [x] **Feature 24** — Page Intelligence ("Ask AI about this page")
+  - [x] Context script injected on active tabs extracting title, URL, selection, and main content
+  - [x] Right-click context menus: "Ask NexAI about selection" and "Summarize this page"
+  - [x] Active page context pill displayed in popup with clear trigger
+- [x] **Feature 25** — Tab Session Manager
+  - [x] Background tab capture querying all open tabs in current window
+  - [x] One-click snapshot posting to NexAI `/focus/sessions` API
+  - [x] Success badge confirmation indicator
 
 ---
 
@@ -227,4 +241,4 @@
 | 2 — Depth           | 5              | 5         | 0           |
 | 3 — Power-User      | 4              | 4         | 0           |
 | 4 — Extension       | 5              | 0         | 0           |
-| **TOTAL**           | **25**         | **20**    | **0**       |
+| **TOTAL**           | **25**         | **25**    | **0**       |
