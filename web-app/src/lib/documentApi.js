@@ -63,3 +63,4 @@ export const indexDocumentToLibrary = async (id) => {
   const res = await apiClient.post(`/documents/${id}/index-library`);
   return res.data;
 };
+

@@ -48,3 +48,4 @@ Implement the AI Document Generator and Document Studio completing Feature 08 of
 ## Manual / CLI Verification Test Steps
 1. Run `node server/test-document-e2e.js` to verify auth, document CRUD, AI section generation, and library indexing.
 2. Run `npm run build` in `web-app/` to verify pure JS Tiptap, pdf-lib, and docx bundle integrity.
+

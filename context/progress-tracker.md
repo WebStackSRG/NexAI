@@ -6,13 +6,13 @@
 
 ## Session Metadata
 
-| Field                      | Value                                 |
-| -------------------------- | ------------------------------------- |
-| **Current Phase**          | Phase 1 — Key Differentiators         |
-| **Last Completed Feature** | Feature 09 — Prompt Vault             |
-| **Next Unit in Queue**     | Feature 10 — Unified Global Search    |
-| **Known Blockers**         | None                                  |
-| **Last Updated**           | 2026-09-11                            |
+| Field                      | Value                                                       |
+| -------------------------- | ----------------------------------------------------------- |
+| **Current Phase**          | Phase 2 — Depth                                             |
+| **Last Completed Feature** | Feature 11 — Command Palette (`Ctrl/Cmd + K`)               |
+| **Next Unit in Queue**     | Feature 12 — File & Document Upload + Multimodal Analysis   |
+| **Known Blockers**         | None                                                        |
+| **Last Updated**           | 2026-09-11                                                  |
 
 ---
 
@@ -130,17 +130,17 @@
   - [x] Pin, tag, search
   - [x] `useCount` increment on each use
 
-- [ ] **Feature 10** — Unified Global Search
-  - [ ] `GET /search?q=` endpoint
-  - [ ] Pinecone semantic search (multi-namespace)
-  - [ ] MongoDB `$text` search
-  - [ ] Frontend merged results view
+- [x] **Feature 10** — Unified Global Search
+  - [x] `GET /search?q=` endpoint
+  - [x] Pinecone semantic search (multi-namespace)
+  - [x] MongoDB `$text` search
+  - [x] Frontend merged results view
 
-- [ ] **Feature 11** — Command Palette (`Ctrl/Cmd + K`)
-  - [ ] Global shortcut listener
-  - [ ] Fuzzy search over pages + items
-  - [ ] Keyboard navigation
-  - [ ] Recent items default state
+- [x] **Feature 11** — Command Palette (`Ctrl/Cmd + K`)
+  - [x] Global shortcut listener
+  - [x] Fuzzy search over pages + items
+  - [x] Keyboard navigation
+  - [x] Recent items default state
 
 ---
 

@@ -56,3 +56,4 @@ export const documentIdParamSchema = z.object({
     id: z.string().min(1, "Document ID is required"),
   }),
 });
+

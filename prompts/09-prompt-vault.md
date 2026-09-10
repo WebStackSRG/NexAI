@@ -44,3 +44,4 @@ Implement the Prompt Vault subsystem allowing users to create, organize, pin, an
 ## Manual / CLI Verification Test Steps
 1. Run `node server/test-prompt-e2e.js` to verify CRUD, variable extraction, use count increment, and unauthorized rejection.
 2. Run `npm run build` in `web-app/` to verify build integrity.
+

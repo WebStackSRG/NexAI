@@ -47,3 +47,4 @@ export const usePromptWithVariables = async (id, variables = {}) => {
   const res = await apiClient.post(`/prompts/${id}/use`, { variables });
   return res.data;
 };
+

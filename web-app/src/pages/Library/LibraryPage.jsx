@@ -1,3 +1,5 @@
+import React from 'react';
+import { Plus, BookOpen } from 'lucide-react';
 import React, { useEffect } from 'react';
 import {
   Plus,
@@ -19,6 +21,7 @@ import SaveItemModal from '../../components/library/SaveItemModal';
 import ConfirmReviewDialog from '../../components/library/ConfirmReviewDialog';
 
 export default function LibraryPage() {
+  const { items } = useLibraryStore();
   const {
     items,
     isLoading,
@@ -62,22 +65,33 @@ export default function LibraryPage() {
       {/* ── Header ───────────────────────────────────────────── */}
       <div className={styles.library__header}>
         <div>
+          <h2 className={styles.library__title}>Personal Knowledge Library</h2>
+          <p className={styles.library__description}>
+            Store web links, notes, and research papers with AI auto-tagging and vector search.
           <h1 className={styles.library__title}>Personal Knowledge Library</h1>
           <p className={styles.library__subtitle}>
             Curate links, articles, and research notes with automated AI summarization
             and vector embeddings.
           </p>
         </div>
+        <button className={styles.library__actionButton}>
         <button
           type="button"
           onClick={openSaveModal}
           className={styles.library__addBtn}
         >
           <Plus size={16} />
+          <span>Save Item</span>
           <span>Add to Library</span>
         </button>
       </div>
 
+      <div className={styles.library__emptyState}>
+        <BookOpen size={40} color="var(--text-tertiary)" />
+        <h3 className={styles.library__emptyTitle}>Your library is empty</h3>
+        <p className={styles.library__emptyText}>
+          Save articles, URLs, or notes to index them into your personal Pinecone vector store for RAG chat.
+        </p>
       {/* ── Toolbar & Filters ────────────────────────────────── */}
       <div className={styles.library__toolbar}>
         <div className={styles.library__searchBox}>

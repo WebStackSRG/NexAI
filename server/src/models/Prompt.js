@@ -30,3 +30,4 @@ const promptSchema = new mongoose.Schema(
 promptSchema.index({ title: "text", template: "text", tags: "text" });
 
 export default mongoose.models.Prompt || mongoose.model("Prompt", promptSchema);
+

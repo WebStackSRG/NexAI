@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import {
   MessageSquare,
@@ -21,6 +22,7 @@ import styles from './AppLayout.module.scss';
 import useUiStore from '../../store/uiStore';
 import useAuthStore from '../../store/authStore';
 import ModeSwitcher from './ModeSwitcher';
+import CommandPalette from '../search/CommandPalette';
 
 // Master navigation catalog with mode association
 const allNavItems = [
@@ -45,6 +47,7 @@ const allNavItems = [
     icon: FileText,
     section: 'SYNTHESIS',
     modes: ['student', 'power-user'],
+    modes: ['general', 'developer', 'student', 'power-user'],
   },
   {
     path: '/prompts',
@@ -52,6 +55,7 @@ const allNavItems = [
     icon: Sparkles,
     section: 'SYNTHESIS',
     modes: ['power-user'],
+    modes: ['general', 'developer', 'student', 'power-user'],
   },
   {
     path: '/devtools',
@@ -63,6 +67,7 @@ const allNavItems = [
   {
     path: '/focus',
     label: 'Study & Focus',
+    label: 'Focus & Reminders',
     icon: GraduationCap,
     section: 'TOOLS',
     modes: ['student', 'power-user'],
@@ -70,8 +75,10 @@ const allNavItems = [
   {
     path: '/analytics',
     label: 'Analytics',
+    label: 'Usage Analytics',
     icon: BarChart3,
     section: 'POWER',
+    section: 'INSIGHTS',
     modes: ['power-user'],
   },
   {
@@ -80,6 +87,8 @@ const allNavItems = [
     icon: ShieldCheck,
     section: 'POWER',
     modes: ['power-user'],
+    section: 'INSIGHTS',
+    modes: ['developer', 'power-user'],
   },
   // System items
   {
@@ -87,6 +96,7 @@ const allNavItems = [
     label: 'Settings',
     icon: Settings,
     section: 'SYSTEM',
+    section: 'PREFERENCES',
     modes: ['general', 'developer', 'student', 'power-user'],
   },
 ];
@@ -105,18 +115,22 @@ export default function AppLayout() {
   } = useUiStore();
 
   const { user, logout } = useAuthStore();
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   // Close mobile drawer on route change
+  // Close mobile sidebar on route change
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname, setSidebarOpen]);
 
   // Global Ctrl+K / Cmd+K shortcut listener
+  // Global keyboard shortcut listener for Command Palette (Ctrl+K / Cmd+K)
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         console.log('[AppLayout] Command palette shortcut triggered');
+        setCommandPaletteOpen((prev) => !prev);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -297,6 +311,7 @@ export default function AppLayout() {
               type="button"
               className={styles.layout__searchTrigger}
               onClick={() => console.log('[AppLayout] Search triggered')}
+              onClick={() => setCommandPaletteOpen(true)}
               title="Search everything (Ctrl+K)"
             >
               <Search size={14} />
@@ -311,6 +326,12 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Global Command Palette Modal */}
+      <CommandPalette
+        isOpen={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+      />
     </div>
   );
 }

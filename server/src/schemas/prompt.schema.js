@@ -39,3 +39,4 @@ export const usePromptSchema = z.object({
     variables: z.record(z.string(), z.string()).optional(),
   }),
 });
+

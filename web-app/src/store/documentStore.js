@@ -1,9 +1,12 @@
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import * as documentApi from "../lib/documentApi";
 
 const useDocumentStore = create(
   devtools(
+    (set) => ({
     (set, get) => ({
       documents: [],
       activeDocument: null,
@@ -15,6 +18,10 @@ const useDocumentStore = create(
       hasUnsavedChanges: false,
 
       setDocuments: (documents) => set({ documents }),
+      setActiveDocument: (activeDocument) => set({ activeDocument }),
+      setSections: (sections) => set({ sections }),
+      setGenerating: (isGenerating) => set({ isGenerating }),
+      setError: (error) => set({ error, isGenerating: false }),
       setActiveDocument: (doc) =>
         set({
           activeDocument: doc,
@@ -169,6 +176,8 @@ const useDocumentStore = create(
         }
       },
     }),
+    { name: 'document-store' }
+  )
     { name: "document-store" },
   ),
 );

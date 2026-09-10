@@ -261,3 +261,4 @@ export const indexDocumentIntoLibrary = async (documentId, userId) => {
   doc.libraryItemId = `lib-item-${doc._id || doc.id}`;
   return { libraryItemId: doc.libraryItemId, vectorId };
 };
+

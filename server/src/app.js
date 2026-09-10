@@ -11,6 +11,7 @@ import libraryRoutes from "./routes/library.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import documentRoutes from "./routes/document.routes.js";
 import promptRoutes from "./routes/prompt.routes.js";
+import searchRoutes from "./routes/search.routes.js";
 import {
   errorHandler,
   notFoundHandler,
@@ -74,6 +75,9 @@ app.use("/documents", documentRoutes);
 
 // Prompt Vault routes
 app.use("/prompts", promptRoutes);
+
+// Unified Global Search
+app.use("/search", searchRoutes);
 
 // Catch-all 404 handler
 app.use(notFoundHandler);

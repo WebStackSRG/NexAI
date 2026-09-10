@@ -229,3 +229,4 @@ const triggerDownload = (blob, filename) => {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 };
+

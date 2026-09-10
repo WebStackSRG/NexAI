@@ -146,3 +146,4 @@ export default function TiptapSectionEditor({ content, onChange, placeholder = '
     </div>
   );
 }
+

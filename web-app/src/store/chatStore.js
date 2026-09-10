@@ -6,6 +6,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const useChatStore = create(
   devtools(
+    (set) => ({
     (set, get) => ({
       chats: [],
       activeChatId: null,
@@ -18,6 +19,13 @@ const useChatStore = create(
       error: null,
       abortController: null,
 
+      setChats: (chats) => set({ chats }),
+      setActiveChatId: (activeChatId) => set({ activeChatId }),
+      setMessages: (messages) => set({ messages }),
+      addMessage: (message) => set((s) => ({ messages: [...s.messages, message] })),
+      setStreaming: (isStreaming) => set({ isStreaming }),
+      setError: (error) => set({ error }),
+      clearError: () => set({ error: null }),
       // Load all chats for user
       fetchChats: async () => {
         set({ isLoadingChats: true, error: null });

@@ -35,3 +35,4 @@ router.delete(
 router.post("/:id/use", validate(usePromptSchema), promptController.usePrompt);
 
 export default router;
+
