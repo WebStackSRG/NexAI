@@ -163,8 +163,13 @@
   - [x] YouTube video & lecture summarizer endpoint (`POST /learning/youtube-summary`)
   - [x] Interactive 3D flip card review UI with SM-2 grading (Again/Hard/Good/Easy)
   - [x] Pomodoro focus session timer (25m/5m/15m)
-  - [x] Automated E2E verification test suite (`node test-learning-e2e.js`)
-- [ ] **Feature 15** — Productivity / Focus (Reminders, Quiet Hours, Sessions)
+- [x] **Feature 15** — Productivity / Focus (Reminders, Quiet Hours, Sessions)
+  - [x] Reminders Mongoose model with due date and completion indexes
+  - [x] Workspace link session bundles Mongoose model (`WorkspaceSession.js`)
+  - [x] Zod validation for reminders, sessions, and quiet-hours configuration
+  - [x] REST routes mounted at `/focus` (`/focus/reminders`, `/focus/sessions`, `/focus/quiet-hours`)
+  - [x] FocusStore Zustand atomic slice with multi-tab launcher and quiet-hours toggle
+  - [x] Automated E2E verification test suite (`node test-focus-e2e.js`)
 - [ ] **Feature 16** — Onboarding Flow
 
 ---
@@ -194,7 +199,7 @@
 | ------------------- | -------------- | --------- | ----------- |
 | 0 — Core MVP        | 7              | 7         | 0           |
 | 1 — Differentiators | 4              | 4         | 0           |
-| 2 — Depth           | 5              | 3         | 0           |
+| 2 — Depth           | 5              | 4         | 0           |
 | 3 — Power-User      | 4              | 0         | 0           |
 | 4 — Extension       | 5              | 0         | 0           |
-| **TOTAL**           | **25**         | **14**    | **0**       |
+| **TOTAL**           | **25**         | **15**    | **0**       |

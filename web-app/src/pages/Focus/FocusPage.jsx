@@ -14,8 +14,12 @@ import {
   BookOpen,
   ExternalLink,
   ChevronRight,
+  Bell,
+  Briefcase,
+  Calendar,
 } from 'lucide-react';
 import useLearningStore from '../../store/learningStore';
+import useFocusStore from '../../store/focusStore';
 import styles from './FocusPage.module.scss';
 
 export default function FocusPage() {
@@ -60,8 +64,40 @@ export default function FocusPage() {
   const [genTopic, setGenTopic] = useState('');
   const [genCount, setGenCount] = useState(5);
 
+  const {
+    reminders,
+    sessions,
+    quietHours,
+    fetchReminders,
+    createReminder,
+    toggleReminderComplete,
+    deleteReminder,
+    fetchSessions,
+    createSession,
+    deleteSession,
+    updateQuietHours,
+  } = useFocusStore();
+
+  const [reminderModalOpen, setReminderModalOpen] = useState(false);
+  const [sessionModalOpen, setSessionModalOpen] = useState(false);
+  const [quietHoursModalOpen, setQuietHoursModalOpen] = useState(false);
+
+  const [remTitle, setRemTitle] = useState('');
+  const [remDate, setRemDate] = useState('');
+  const [remItemType, setRemItemType] = useState('custom');
+
+  const [sessName, setSessName] = useState('');
+  const [sessDesc, setSessDesc] = useState('');
+  const [sessLinks, setSessLinks] = useState([{ title: '', url: '' }]);
+
+  const [qhEnabled, setQhEnabled] = useState(quietHours.enabled);
+  const [qhStart, setQhStart] = useState(quietHours.start || '22:00');
+  const [qhEnd, setQhEnd] = useState(quietHours.end || '08:00');
+
   useEffect(() => {
     fetchFlashcards();
+    fetchReminders();
+    fetchSessions();
   }, [selectedTopic]);
 
   // Pomodoro timer tick interval
@@ -146,6 +182,12 @@ export default function FocusPage() {
               onClick={() => setActiveTab('pomodoro')}
             >
               <Clock size={16} /> Focus Timer
+            </button>
+            <button
+              className={activeTab === 'reminders' ? `${styles.tabBtn} ${styles.tabActive}` : styles.tabBtn}
+              onClick={() => setActiveTab('reminders')}
+            >
+              <Bell size={16} /> Reminders & Sessions
             </button>
           </div>
         </div>
@@ -415,6 +457,337 @@ export default function FocusPage() {
                 <RotateCcw size={18} /> Reset
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: REMINDERS & WORKSPACE SESSIONS */}
+      {activeTab === 'reminders' && (
+        <div className={styles.remindersSection}>
+          <div className={styles.remindersGrid}>
+            {/* Reminders Column */}
+            <div className={styles.columnBox}>
+              <div className={styles.columnHeader}>
+                <div>
+                  <h3>Scheduled Reminders</h3>
+                  <p>Study tasks and review alerts with quiet-hours suppression.</p>
+                </div>
+                <div className={styles.colActions}>
+                  <button
+                    className={styles.actionBtnSecondary}
+                    onClick={() => setQuietHoursModalOpen(true)}
+                    title="Configure Quiet Hours"
+                  >
+                    Quiet Hours
+                  </button>
+                  <button
+                    className={styles.actionBtnPrimary}
+                    onClick={() => setReminderModalOpen(true)}
+                  >
+                    <Plus size={14} /> Add Reminder
+                  </button>
+                </div>
+              </div>
+
+              <div className={styles.reminderList}>
+                {reminders.length === 0 ? (
+                  <div className={styles.emptyCard}>No active reminders scheduled.</div>
+                ) : (
+                  reminders.map((rem) => (
+                    <div key={rem._id || rem.id} className={styles.reminderItem}>
+                      <input
+                        type="checkbox"
+                        checked={rem.isCompleted}
+                        onChange={(e) =>
+                          toggleReminderComplete(rem._id || rem.id, e.target.checked)
+                        }
+                      />
+                      <div className={styles.remContent}>
+                        <h4 className={rem.isCompleted ? styles.completedText : ''}>
+                          {rem.title}
+                        </h4>
+                        <span className={styles.remMeta}>
+                          <Calendar size={12} /> {new Date(rem.remindAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <button
+                        className={styles.delBtn}
+                        onClick={() => deleteReminder(rem._id || rem.id)}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Workspace Sessions Column */}
+            <div className={styles.columnBox}>
+              <div className={styles.columnHeader}>
+                <div>
+                  <h3>Workspace Sessions</h3>
+                  <p>One-click multi-tab link launchers for targeted study sessions.</p>
+                </div>
+                <button
+                  className={styles.actionBtnPrimary}
+                  onClick={() => setSessionModalOpen(true)}
+                >
+                  <Plus size={14} /> New Session
+                </button>
+              </div>
+
+              <div className={styles.sessionList}>
+                {sessions.length === 0 ? (
+                  <div className={styles.emptyCard}>No workspace link bundles saved.</div>
+                ) : (
+                  sessions.map((sess) => (
+                    <div key={sess._id || sess.id} className={styles.sessionItem}>
+                      <div className={styles.sessInfo}>
+                        <h4>{sess.name}</h4>
+                        {sess.description && <p>{sess.description}</p>}
+                        <div className={styles.sessBadges}>
+                          <span>{sess.links?.length || 0} links</span>
+                        </div>
+                      </div>
+                      <div className={styles.sessActions}>
+                        <button
+                          className={styles.openBundleBtn}
+                          onClick={() => {
+                            sess.links?.forEach((link) => window.open(link.url, '_blank'));
+                          }}
+                        >
+                          <ExternalLink size={14} /> Launch All
+                        </button>
+                        <button
+                          className={styles.delBtn}
+                          onClick={() => deleteSession(sess._id || sess.id)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE REMINDER MODAL */}
+      {reminderModalOpen && (
+        <div className={styles.modalOverlay} onClick={() => setReminderModalOpen(false)}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>Set Study Reminder</h3>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!remTitle.trim() || !remDate) return;
+                const ok = await createReminder({
+                  title: remTitle.trim(),
+                  remindAt: remDate,
+                  itemType: remItemType,
+                });
+                if (ok) {
+                  setRemTitle('');
+                  setRemDate('');
+                  setReminderModalOpen(false);
+                }
+              }}
+              className={styles.modalForm}
+            >
+              <div className={styles.formGroup}>
+                <label>Reminder Title</label>
+                <input
+                  type="text"
+                  value={remTitle}
+                  onChange={(e) => setRemTitle(e.target.value)}
+                  placeholder="e.g. Review Distributed Caching Flashcards"
+                  required
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Remind At</label>
+                <input
+                  type="datetime-local"
+                  value={remDate}
+                  onChange={(e) => setRemDate(e.target.value)}
+                  required
+                />
+              </div>
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.actionBtnSecondary}
+                  onClick={() => setReminderModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className={styles.actionBtnPrimary}>
+                  Save Reminder
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE WORKSPACE SESSION MODAL */}
+      {sessionModalOpen && (
+        <div className={styles.modalOverlay} onClick={() => setSessionModalOpen(false)}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>Save Workspace Session</h3>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!sessName.trim()) return;
+                const validLinks = sessLinks.filter((l) => l.title.trim() && l.url.trim());
+                if (validLinks.length === 0) return;
+                const ok = await createSession({
+                  name: sessName.trim(),
+                  description: sessDesc.trim(),
+                  links: validLinks,
+                });
+                if (ok) {
+                  setSessName('');
+                  setSessDesc('');
+                  setSessLinks([{ title: '', url: '' }]);
+                  setSessionModalOpen(false);
+                }
+              }}
+              className={styles.modalForm}
+            >
+              <div className={styles.formGroup}>
+                <label>Session Name</label>
+                <input
+                  type="text"
+                  value={sessName}
+                  onChange={(e) => setSessName(e.target.value)}
+                  placeholder="e.g. Daily Research Desk"
+                  required
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Description</label>
+                <input
+                  type="text"
+                  value={sessDesc}
+                  onChange={(e) => setSessDesc(e.target.value)}
+                  placeholder="Optional note about this workspace bundle"
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Workspace Links</label>
+                {sessLinks.map((link, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                    <input
+                      type="text"
+                      placeholder="Title"
+                      value={link.title}
+                      onChange={(e) => {
+                        const updated = [...sessLinks];
+                        updated[idx].title = e.target.value;
+                        setSessLinks(updated);
+                      }}
+                      required
+                    />
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      value={link.url}
+                      onChange={(e) => {
+                        const updated = [...sessLinks];
+                        updated[idx].url = e.target.value;
+                        setSessLinks(updated);
+                      }}
+                      required
+                    />
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className={styles.actionBtnSecondary}
+                  onClick={() => setSessLinks([...sessLinks, { title: '', url: '' }])}
+                >
+                  + Add Another Link
+                </button>
+              </div>
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.actionBtnSecondary}
+                  onClick={() => setSessionModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className={styles.actionBtnPrimary}>
+                  Save Session
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* QUIET HOURS MODAL */}
+      {quietHoursModalOpen && (
+        <div className={styles.modalOverlay} onClick={() => setQuietHoursModalOpen(false)}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>Notification Quiet Hours</h3>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                await updateQuietHours({
+                  enabled: qhEnabled,
+                  start: qhStart,
+                  end: qhEnd,
+                });
+                setQuietHoursModalOpen(false);
+              }}
+              className={styles.modalForm}
+            >
+              <div className={styles.formGroup}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={qhEnabled}
+                    onChange={(e) => setQhEnabled(e.target.checked)}
+                  />
+                  Enable Quiet Hours Suppression
+                </label>
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div className={styles.formGroup} style={{ flex: 1 }}>
+                  <label>Start Time (HH:mm)</label>
+                  <input
+                    type="time"
+                    value={qhStart}
+                    onChange={(e) => setQhStart(e.target.value)}
+                  />
+                </div>
+                <div className={styles.formGroup} style={{ flex: 1 }}>
+                  <label>End Time (HH:mm)</label>
+                  <input
+                    type="time"
+                    value={qhEnd}
+                    onChange={(e) => setQhEnd(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.actionBtnSecondary}
+                  onClick={() => setQuietHoursModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className={styles.actionBtnPrimary}>
+                  Save Quiet Hours
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
