@@ -182,7 +182,12 @@
 
 ## Phase 3 — Power-User Layer
 
-- [ ] **Feature 17** — App Usage Analytics Dashboard
+- [x] **Feature 17** — App Usage Analytics Dashboard
+  - [x] Aggregated metrics endpoint (chats, messages, docs, snippets, cards, reminders, focus score)
+  - [x] Free-Tier Safety Index & latency observability
+  - [x] SVG interactive 14-day activity trajectory chart
+  - [x] Zustand analytics store with auto-refresh
+  - [x] E2E verification test suite passed (3/3 tests)
 - [ ] **Feature 18** — Secrets Vault (Web Crypto)
 - [ ] **Feature 19** — Creative Writing Suite
 - [ ] **Feature 20** — Voice I/O (Web Speech API)
@@ -206,6 +211,6 @@
 | 0 — Core MVP        | 7              | 7         | 0           |
 | 1 — Differentiators | 4              | 4         | 0           |
 | 2 — Depth           | 5              | 5         | 0           |
-| 3 — Power-User      | 4              | 0         | 0           |
+| 3 — Power-User      | 4              | 1         | 0           |
 | 4 — Extension       | 5              | 0         | 0           |
-| **TOTAL**           | **25**         | **16**    | **0**       |
+| **TOTAL**           | **25**         | **17**    | **0**       |

@@ -16,6 +16,7 @@ import snippetRoutes from "./routes/snippet.routes.js";
 import flashcardRoutes from "./routes/flashcard.routes.js";
 import learningRoutes from "./routes/learning.routes.js";
 import focusRoutes from "./routes/reminder.routes.js";
+import analyticsRoutes from "./routes/analytics.routes.js";
 import {
   errorHandler,
   notFoundHandler,
@@ -94,6 +95,9 @@ app.use("/learning", learningRoutes);
 
 // Productivity & Focus (Reminders, Quiet Hours, Workspace Sessions)
 app.use("/focus", focusRoutes);
+
+// System & Usage Analytics
+app.use("/analytics", analyticsRoutes);
 
 // Catch-all 404 handler
 app.use(notFoundHandler);
