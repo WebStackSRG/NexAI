@@ -8,9 +8,9 @@
 
 | Field                      | Value                                 |
 | -------------------------- | ------------------------------------- |
-| **Current Phase**          | Phase 0 — Core MVP                    |
-| **Last Completed Feature** | Feature 06 — Chat with RAG            |
-| **Next Unit in Queue**     | Feature 07 — Basic Settings Page      |
+| **Current Phase**          | Phase 1 — Key Differentiators         |
+| **Last Completed Feature** | Feature 07 — Basic Settings Page      |
+| **Next Unit in Queue**     | Feature 08 — AI Document Generator    |
 | **Known Blockers**         | None                                  |
 | **Last Updated**           | 2026-09-11                            |
 
@@ -70,13 +70,13 @@
   - [x] LangGraph basic setup (ragTool node)
   - [x] Sources citation panel in chat
 
-- [ ] **Feature 07** — Basic Settings Page
-  - [ ] Profile display (read-only)
-  - [ ] `globalInstructions` textarea
-  - [ ] Sidebar mode preference
-  - [ ] Notification toggles
-  - [ ] Theme toggle
-  - [ ] `PATCH /users/settings`
+- [x] **Feature 07** — Basic Settings Page
+  - [x] Profile display (read-only)
+  - [x] `globalInstructions` textarea
+  - [x] Sidebar mode preference
+  - [x] Notification toggles
+  - [x] Theme toggle
+  - [x] `PATCH /users/settings`
 
 ---
 

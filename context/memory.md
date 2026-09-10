@@ -9,8 +9,8 @@
 | Field               | Value                                                                  |
 | ------------------- | ---------------------------------------------------------------------- |
 | **Session Start**   | 2026-09-11                                                             |
-| **Phase**           | Phase 0 — Core MVP                                                     |
-| **Status**          | Feature 05 completed — ready to begin Feature 06 (Chat with RAG)       |
+| **Phase**           | Phase 1 — Key Differentiators                                          |
+| **Status**          | Phase 0 (Features 01–07) COMPLETE — ready to begin Feature 08 Document Studio |
 | **Unfinished Work** | None                                                                   |
 
 ---
