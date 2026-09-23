@@ -1,0 +1,40 @@
+@use '@/styles/abstracts' as *;
+
+.skeleton {
+  display: block;
+  background-color: var(--color-bg-hover);
+  background-image: linear-gradient(
+    90deg,
+    var(--color-bg-hover) 0%,
+    var(--color-bg-elevated) 50%,
+    var(--color-bg-hover) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite ease-in-out;
+  border-radius: var(--radius-md);
+
+  &.radius-sm {
+    border-radius: var(--radius-sm);
+  }
+
+  &.radius-md {
+    border-radius: var(--radius-md);
+  }
+
+  &.radius-lg {
+    border-radius: var(--radius-lg);
+  }
+
+  &.radius-full {
+    border-radius: var(--radius-full);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
