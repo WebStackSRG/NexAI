@@ -1,0 +1,38 @@
+@use '@/styles/abstracts' as *;
+
+.layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.desktopSidebar {
+  display: none;
+
+  @include up(md) {
+    display: block;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+}
+
+.mainWrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 100vh;
+}
+
+.content {
+  flex: 1 1 auto;
+  padding: var(--space-4);
+  max-width: var(--content-max);
+  width: 100%;
+  margin: 0 auto;
+
+  @include up(md) {
+    padding: var(--space-6);
+  }
+}

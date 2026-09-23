@@ -1,10 +1,15 @@
+import { RouterProvider } from 'react-router-dom';
+import { router } from './router';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { ToastViewport } from './components/ui/Toast';
+import { CommandPalette } from './features/command-palette';
+
 export default function App() {
   return (
-    <div style={{ padding: 'var(--space-6)' }}>
-      <h1>NexAI</h1>
-      <p style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-2)' }}>
-        AI-Powered Personal &amp; Developer Workspace
-      </p>
-    </div>
+    <ErrorBoundary>
+      <RouterProvider router={router} />
+      <ToastViewport />
+      <CommandPalette />
+    </ErrorBoundary>
   );
 }
