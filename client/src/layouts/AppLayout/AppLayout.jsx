@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { Drawer } from '@/components/ui/Drawer';
 import { Spinner } from '@/components/ui/Spinner';
+import { CommandPalette } from '@/features/command-palette';
 import { useUiStore } from '@/store/uiStore';
 import styles from './AppLayout.module.scss';
 
@@ -42,6 +43,8 @@ export function AppLayout() {
           </Suspense>
         </main>
       </div>
+
+      <CommandPalette />
     </div>
   );
 }

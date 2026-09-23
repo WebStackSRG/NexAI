@@ -32,12 +32,22 @@ Check backend server status and database connectivity.
 
 - **Auth:** Public
 - **Method:** `GET`
-- **Response `200 OK`**:
+- **Response `200 OK` (when database is connected)**:
 ```json
 {
   "data": {
     "status": "ok",
-    "db": "connected", // or "disconnected"
+    "db": "connected",
+    "uptime": 12.34
+  }
+}
+```
+- **Response `503 Service Unavailable` (when database is disconnected)**:
+```json
+{
+  "data": {
+    "status": "degraded",
+    "db": "disconnected",
     "uptime": 12.34
   }
 }
