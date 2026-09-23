@@ -1,31 +1,23 @@
 {
-  "name": "nexai",
-  "version": "0.1.0",
-  "description": "NexAI - Personal AI Workspace (PWA)",
+  "name": "nexai-monorepo",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "workspaces": [
-    "server",
-    "web-app"
+    "client",
+    "server"
   ],
   "scripts": {
-    "dev:client": "npm --workspace=web-app run dev",
-    "dev:server": "npm --workspace=server run dev",
-    "build:client": "npm --workspace=web-app run build",
-    "start:server": "npm --workspace=server run start",
-    "install:all": "npm install"
+    "dev": "concurrently -n \"server,client\" -c \"blue,green\" \"npm run dev --workspace=server\" \"npm run dev --workspace=client\"",
+    "lint": "npm run lint --workspace=server && npm run lint --workspace=client",
+    "format": "prettier --write \"**/*.{js,jsx,scss,json,md}\"",
+    "test": "npm run test --workspace=server && npm run test --workspace=client"
   },
-  "keywords": [
-    "ai",
-    "gemini",
-    "pwa",
-    "langgraph",
-    "rag"
-  ],
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "@langchain/core": "^1.2.10",
-    "@langchain/langgraph": "^1.4.14"
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "prettier": "^3.5.3"
   }
 }
