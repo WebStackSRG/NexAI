@@ -1,15 +1,6 @@
 import { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import {
-  Plus,
-  MessageSquare,
-  MoreVertical,
-  Edit2,
-  Trash2,
-  Check,
-  X,
-  Search,
-} from 'lucide-react';
+import { Plus, MessageSquare, MoreVertical, Edit2, Trash2, Check, X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { IconButton } from '@/components/ui/IconButton';
 import { Dropdown } from '@/components/ui/Dropdown';
@@ -35,14 +26,8 @@ function formatChatDate(timestamp) {
 }
 
 export function ChatSidebar({ onSelectChat, className }) {
-  const {
-    chats,
-    activeChatId,
-    isLoadingChats,
-    createChat,
-    updateChatTitle,
-    deleteChat,
-  } = useChatStore();
+  const { chats, activeChatId, isLoadingChats, createChat, updateChatTitle, deleteChat } =
+    useChatStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [editingChatId, setEditingChatId] = useState(null);

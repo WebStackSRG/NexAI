@@ -61,7 +61,14 @@ NexAI is a personal knowledge and developer productivity workspace designed with
   - Live CreditBadge updates in Topbar & Sidebar on stream completion
   - 402 Insufficient Credits handling with "Recharge to continue" banner and input locking
   - Generation abort (Stop button), typing indicator, smart auto-scrolling, and model picker (Flash/Pro)
-- [ ] **Step 5: Library & Semantic RAG** (`feature/library`)
+- [x] **Step 5: Library & Semantic RAG** (`feature/library`)
+  - Web link scraping (`cheerio`) and note categorization
+  - AI-suggested titles, summaries, and tags with Gemini Flash
+  - Suggest &rarr; Review &rarr; Confirm flow with live credit synchronization
+  - Provider-agnostic Vector Database service (`vectorDb.service.js`) with Pinecone and local fallback
+  - Dense embeddings via Gemini embedding models (`text-embedding-004`)
+  - Semantic vector search merged with MongoDB text-ranking fallback
+  - Library UI with tag filtering, search bar, skeleton loading, empty states, edit and delete dialogs
 - [ ] **Step 6: Prompt Vault** (`feature/prompt-vault`)
 - [ ] **Step 7: Document Generation** (`feature/doc-gen`)
 - [ ] **Step 8: Unified Search** (`feature/search`)

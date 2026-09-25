@@ -52,13 +52,7 @@ function formatTime(timestamp) {
 
 export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
   const user = useAuthStore((state) => state.user);
-  const {
-    messages,
-    isLoadingMessages,
-    isStreaming,
-    stopGeneration,
-    resendPrompt,
-  } = useChatStore();
+  const { messages, isLoadingMessages, isStreaming, stopGeneration, resendPrompt } = useChatStore();
 
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
@@ -185,10 +179,7 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
               return (
                 <div
                   key={messageId}
-                  className={cn(
-                    styles.messageRow,
-                    isUser ? styles.userRow : styles.assistantRow,
-                  )}
+                  className={cn(styles.messageRow, isUser ? styles.userRow : styles.assistantRow)}
                 >
                   <div className={styles.avatarWrapper}>
                     {isUser ? (
@@ -202,12 +193,8 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
 
                   <div className={styles.messageContentWrapper}>
                     <div className={styles.metaHeader}>
-                      <span className={styles.senderName}>
-                        {isUser ? 'You' : 'NexAI'}
-                      </span>
-                      {timeString && (
-                        <span className={styles.timestamp}>{timeString}</span>
-                      )}
+                      <span className={styles.senderName}>{isUser ? 'You' : 'NexAI'}</span>
+                      {timeString && <span className={styles.timestamp}>{timeString}</span>}
                       {message.tokensUsed ? (
                         <Badge tone="neutral" className={styles.tokenBadge}>
                           ⚡ {message.tokensUsed} tokens
@@ -269,7 +256,11 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                               title="Copy prompt"
                               aria-label="Copy prompt"
                             >
-                              {isCopied ? <Check size={13} className={styles.copiedIcon} /> : <Copy size={13} />}
+                              {isCopied ? (
+                                <Check size={13} className={styles.copiedIcon} />
+                              ) : (
+                                <Copy size={13} />
+                              )}
                               <span>{isCopied ? 'Copied' : 'Copy'}</span>
                             </button>
                             <button
@@ -303,7 +294,11 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                               title="Copy response"
                               aria-label="Copy response"
                             >
-                              {isCopied ? <Check size={13} className={styles.copiedIcon} /> : <Copy size={13} />}
+                              {isCopied ? (
+                                <Check size={13} className={styles.copiedIcon} />
+                              ) : (
+                                <Copy size={13} />
+                              )}
                               <span>{isCopied ? 'Copied' : 'Copy'}</span>
                             </button>
                             <button

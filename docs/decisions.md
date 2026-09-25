@@ -89,3 +89,14 @@ This log tracks architectural and design decisions made for the NexAI project, p
   2. **Reactive Credit State Sync:** On receiving the `done` SSE packet containing `{ creditsRemaining, tokensUsed }`, `chatStore` directly calls `useAuthStore.getState().updateCredits(...)`, instantly updating the `CreditBadge` in the topbar and responsive drawers without any page reload or background polling.
   3. **Error Recovery & Transient Demand Handling:** Integrated friendly error sanitization for Google 503 high-demand states with auto-retry and in-bubble action triggers (Regenerate / Resend prompt).
   4. **Composer State & 402 Gatekeeping:** The composer supports Enter to send and Shift+Enter for newlines. When `insufficientCredits` (HTTP 402) occurs, the input locks with a prominent "Recharge to continue" banner directing users to `/wallet`.
+
+## ADR-012: Personal Library, Semantic Vector Search, and Suggest-Review-Confirm Flow
+
+- **Date:** 2026-09-25
+- **Status:** Accepted
+- **Context:** Storing unstructured articles and notes with simple keyword search leads to poor retrieval when users recall concepts rather than exact words. Furthermore, automatically saving AI summaries without user review risks populating the personal knowledge base with inaccurate or hallucinated metadata.
+- **Decision:**
+  1. **Suggest &rarr; Review &rarr; Confirm Pattern:** Implemented a two-step flow (`SaveItemModal` containing `SaveItemForm` and `SuggestionReview`). AI suggestions are generated via `POST /api/library/suggest` (metered through `creditCheck` and atomic token deduction), presented to the user for editing (title, summary, tags), and committed to MongoDB only when explicitly confirmed.
+  2. **Link Content Extraction:** Implemented `linkExtractor.service.js` with `cheerio` to extract clean title, meta description, and article body text while stripping out scripts, styles, navigations, and advertisements.
+  3. **Provider-Agnostic Vector Database Abstraction:** Implemented `vectorDb.service.js` exposing `upsert`, `query`, and `remove`. Supports Pinecone as the production index while providing a resilient in-memory cosine-similarity fallback for local development and test isolation without third-party credentials.
+  4. **Semantic Vector Search with Hybrid Text Fallback:** `GET /api/library/search?q=` generates query embeddings via Gemini embedding models (`text-embedding-004`), queries the vector database filtered strictly by `userId`, and merges/ranks results with MongoDB `$text` search to ensure comprehensive coverage.

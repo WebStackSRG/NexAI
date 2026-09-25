@@ -452,3 +452,245 @@ Because standard `EventSource` cannot send `POST` request bodies or `Authorizati
 - **Stream Parser:** `parseSseStream(readableStream, { onToken, onDone, onError })` safely decodes UTF-8 Uint8Array chunks, buffers network fragment boundaries, and dispatches SSE events.
 - **Client Method:** `streamChatMessage({ chatId, content, model, signal, onToken, onDone, onError })` connects to `/api/chats/:id/messages`, handles 402 HTTP status with `insufficientCredits` activation, and executes the parser.
 - **Credit Sync:** On receiving the `done` event, `chatStore` atomically dispatches `useAuthStore.getState().updateCredits(creditsRemaining)`, updating the Topbar and Sidebar `CreditBadge` without a page refresh.
+
+---
+
+## Personal Library (Step 5: Library & Semantic Search)
+
+### POST `/api/library/suggest`
+
+Analyzes article content or user notes and generates an AI-suggested title, summary, and tags with Gemini. Does **NOT** save the item to the database (Suggest &rarr; Review &rarr; Confirm pattern).
+
+- **Auth:** Bearer Token (Credit Check required: `creditsRemaining > 0`)
+- **Rate-limit:** 30 requests / minute per IP
+- **Method:** `POST`
+- **Request Body (for link):**
+
+```json
+{
+  "type": "link",
+  "url": "https://example.com/guide-to-react"
+}
+```
+
+- **Request Body (for note):**
+
+```json
+{
+  "type": "note",
+  "content": "Docker multi-stage builds help create smaller container images by separating build dependencies from runtime..."
+}
+```
+
+- **Response `200 OK`**:
+
+```json
+{
+  "data": {
+    "type": "link",
+    "url": "https://example.com/guide-to-react",
+    "title": "A Modern Guide to React Architecture",
+    "summary": "Explores component composition, custom hooks, and server-side rendering patterns in modern web applications.",
+    "tags": ["react", "architecture", "frontend", "javascript"],
+    "content": "Extracted text content...",
+    "tokensUsed": 160,
+    "creditsDeducted": 2,
+    "creditsRemaining": 98
+  }
+}
+```
+
+- **Response `402 Payment Required` (when credit balance is 0):**
+
+```json
+{
+  "error": {
+    "code": "INSUFFICIENT_CREDITS",
+    "message": "Recharge to continue",
+    "details": null
+  }
+}
+```
+
+---
+
+### POST `/api/library`
+
+Saves a confirmed library item into MongoDB and generates dense vector embeddings stored in the vector database for semantic search.
+
+- **Auth:** Bearer Token
+- **Method:** `POST`
+- **Request Body:**
+
+```json
+{
+  "type": "link",
+  "url": "https://example.com/guide-to-react",
+  "title": "A Modern Guide to React Architecture",
+  "summary": "Explores component composition and state management.",
+  "tags": ["react", "architecture", "frontend"],
+  "content": "Article body text..."
+}
+```
+
+- **Response `201 Created`**:
+
+```json
+{
+  "data": {
+    "_id": "673fa001...",
+    "userId": "673f1234...",
+    "type": "link",
+    "url": "https://example.com/guide-to-react",
+    "title": "A Modern Guide to React Architecture",
+    "summary": "Explores component composition and state management.",
+    "tags": ["react", "architecture", "frontend"],
+    "content": "Article body text...",
+    "vectorId": "673fa001...",
+    "createdAt": "2026-09-25T13:00:00.000Z",
+    "updatedAt": "2026-09-25T13:00:00.000Z"
+  }
+}
+```
+
+---
+
+### GET `/api/library`
+
+Retrieves paginated library items owned by the authenticated user, optionally filtered by tag. Includes all unique user tags in metadata.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Query Parameters:**
+  - `tag` (optional string): Filter items matching this tag
+  - `page` (optional integer, default `1`)
+  - `limit` (optional integer, default `20`, max `100`)
+
+- **Response `200 OK`**:
+
+```json
+{
+  "data": [
+    {
+      "_id": "673fa001...",
+      "userId": "673f1234...",
+      "type": "link",
+      "url": "https://example.com/guide-to-react",
+      "title": "A Modern Guide to React Architecture",
+      "summary": "Explores component composition and state management.",
+      "tags": ["react", "architecture", "frontend"],
+      "createdAt": "2026-09-25T13:00:00.000Z"
+    }
+  ],
+  "meta": {
+    "total": 1,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 1,
+    "tags": ["architecture", "frontend", "react"]
+  }
+}
+```
+
+---
+
+### GET `/api/library/search`
+
+Executes semantic search over the authenticated user's library items by conceptual meaning using vector embeddings with MongoDB text-ranking fallback.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Query Parameters:**
+  - `q` (required string): Natural language query or concept
+
+- **Response `200 OK`**:
+
+```json
+{
+  "data": [
+    {
+      "_id": "673fa001...",
+      "title": "A Modern Guide to React Architecture",
+      "summary": "Explores component composition and state management.",
+      "tags": ["react", "architecture", "frontend"],
+      "type": "link",
+      "url": "https://example.com/guide-to-react",
+      "createdAt": "2026-09-25T13:00:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### GET `/api/library/:id`
+
+Retrieves a single library item by ID owned by the authenticated user.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Response `200 OK`**:
+
+```json
+{
+  "data": {
+    "_id": "673fa001...",
+    "userId": "673f1234...",
+    "type": "link",
+    "title": "A Modern Guide to React Architecture",
+    "summary": "Explores component composition...",
+    "tags": ["react", "architecture"],
+    "createdAt": "2026-09-25T13:00:00.000Z"
+  }
+}
+```
+
+---
+
+### PATCH `/api/library/:id`
+
+Updates title, summary, tags, or content for an existing library item. Automatically regenerates and updates the vector embedding if text attributes changed.
+
+- **Auth:** Bearer Token
+- **Method:** `PATCH`
+- **Request Body:**
+
+```json
+{
+  "title": "Updated Title",
+  "summary": "Updated summary text",
+  "tags": ["react", "frontend", "web-dev"]
+}
+```
+
+- **Response `200 OK`**:
+
+```json
+{
+  "data": {
+    "_id": "673fa001...",
+    "title": "Updated Title",
+    "summary": "Updated summary text",
+    "tags": ["react", "frontend", "web-dev"],
+    "updatedAt": "2026-09-25T13:05:00.000Z"
+  }
+}
+```
+
+---
+
+### DELETE `/api/library/:id`
+
+Deletes a library item from MongoDB and purges its vector embedding from the vector index.
+
+- **Auth:** Bearer Token
+- **Method:** `DELETE`
+- **Response `200 OK`**:
+
+```json
+{
+  "data": {
+    "message": "Library item deleted successfully"
+  }
+}
+```

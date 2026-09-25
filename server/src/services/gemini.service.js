@@ -197,3 +197,48 @@ export async function generateContent({
     }
   }
 }
+
+/**
+ * Generates vector embeddings for a given text or content string.
+ *
+ * @param {Object} options
+ * @param {string} options.contents - Text to embed
+ * @param {string} [options.model='embed'] - Model type
+ * @returns {Promise<Array<number>>} Vector embedding values
+ */
+export async function embedContent({ contents, model = 'embed' }) {
+  const client = getGeminiClient();
+  const modelName = getModelName(model);
+
+  let attempt = 0;
+  const maxRetries = 1;
+
+  while (true) {
+    try {
+      const response = await client.models.embedContent({
+        model: modelName,
+        contents,
+      });
+
+      const embeddingValues = response.embedding?.values || [];
+      return embeddingValues;
+    } catch (error) {
+      attempt++;
+      const isTransient =
+        error.message?.includes('503') ||
+        error.message?.includes('UNAVAILABLE') ||
+        error.message?.includes('high demand');
+
+      if (isTransient && attempt <= maxRetries) {
+        logger.warn(
+          { attempt, maxRetries },
+          'Transient Gemini 503 high demand spike during embedding, retrying after 1s...',
+        );
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        continue;
+      }
+      logger.error({ error: error.message }, 'Gemini embedding error');
+      throw parseGeminiError(error);
+    }
+  }
+}

@@ -38,6 +38,9 @@ export function getModelName(type = 'flash') {
   if (type === 'pro') {
     return env.GEMINI_PRO_MODEL || 'gemini-3.1-pro-preview';
   }
+  if (type === 'embed') {
+    return env.GEMINI_EMBED_MODEL || 'text-embedding-004';
+  }
   return env.GEMINI_FLASH_MODEL || 'gemini-3.8-flash';
 }
 
