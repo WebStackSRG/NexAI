@@ -26,7 +26,7 @@ NexAI is a personal knowledge and developer productivity workspace designed with
    ```
 
 2. **Configure environment:**
-   - Copy `server/.env.example` to `server/.env` and configure `MONGODB_URI`.
+   - Copy `server/.env.example` to `server/.env` and configure `MONGODB_URI`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, and `GEMINI_API_KEY`.
    - Copy `client/.env.example` to `client/.env`.
 
 3. **Run development servers:**
