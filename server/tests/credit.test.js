@@ -14,10 +14,10 @@ describe('Credit Service Unit & Integration Tests', () => {
   });
 
   afterAll(async () => {
-    if (testUser) {
-      await User.deleteMany({ email: /@credittest\.nexai\.test$/ });
-      await UsageLog.deleteMany({ userId: testUser._id });
-    }
+    const testUsers = await User.find({ email: /@credittest\.nexai\.test$/ }).select('_id');
+    const userIds = testUsers.map((u) => u._id);
+    await UsageLog.deleteMany({ userId: { $in: userIds } });
+    await User.deleteMany({ _id: { $in: userIds } });
     await disconnectDB();
   });
 

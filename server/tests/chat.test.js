@@ -19,17 +19,27 @@ describe('Chat API Integration Tests', () => {
     await connectDB();
   });
 
+  const cleanupUserRecords = async (userIds) => {
+    if (!userIds || userIds.length === 0) return;
+    const chats = await Chat.find({ userId: { $in: userIds } }).select('_id');
+    const chatIds = chats.map((c) => c._id);
+    await Message.deleteMany({ chatId: { $in: chatIds } });
+    await Chat.deleteMany({ _id: { $in: chatIds } });
+    await UsageLog.deleteMany({ userId: { $in: userIds } });
+    await User.deleteMany({ _id: { $in: userIds } });
+  };
+
   afterAll(async () => {
-    await User.deleteMany({ email: /@chattest\.nexai\.test$/ });
-    await Chat.deleteMany({});
-    await Message.deleteMany({});
-    await UsageLog.deleteMany({});
+    const testUsers = await User.find({ email: /@chattest\.nexai\.test$/ }).select('_id');
+    await cleanupUserRecords(testUsers.map((u) => u._id));
     await disconnectDB();
   });
 
   beforeEach(async () => {
-    await Chat.deleteMany({});
-    await Message.deleteMany({});
+    if (userA || userB) {
+      const ids = [userA?._id, userB?._id].filter(Boolean);
+      await cleanupUserRecords(ids);
+    }
 
     userA = await User.create({
       email: `user_a_${Date.now()}_${Math.random()}@chattest.nexai.test`,

@@ -4,15 +4,43 @@ import { logger } from '../utils/logger.js';
 
 let isConnected = false;
 
-export async function connectDB() {
+/**
+ * Returns the appropriate MongoDB connection URI based on the environment.
+ * In test mode (NODE_ENV=test), it uses MONGODB_URI_TEST or automatically isolates
+ * database access to 'nexai_test', protecting development and production data.
+ */
+export function getDatabaseUri() {
+  if (process.env.NODE_ENV === 'test') {
+    if (env.MONGODB_URI_TEST) {
+      return env.MONGODB_URI_TEST;
+    }
+    const uri = env.MONGODB_URI;
+    try {
+      const isSrv = uri.startsWith('mongodb+srv://');
+      const proto = isSrv ? 'mongodb+srv://' : 'mongodb://';
+      const parsed = new URL(uri.replace(proto, 'http://'));
+      const pathname = parsed.pathname;
+      if (pathname && pathname !== '/' && pathname.length > 1) {
+        return uri.replace(pathname, '/nexai_test');
+      }
+      return uri.includes('?') ? uri.replace('?', '/nexai_test?') : `${uri}/nexai_test`;
+    } catch {
+      return uri.includes('?') ? uri.replace('?', '_test?') : `${uri}_test`;
+    }
+  }
+  return env.MONGODB_URI;
+}
+
+export async function connectDB(customUri) {
   if (isConnected) return;
 
+  const targetUri = customUri || getDatabaseUri();
   try {
-    const conn = await mongoose.connect(env.MONGODB_URI, {
+    const conn = await mongoose.connect(targetUri, {
       serverSelectionTimeoutMS: 5000,
     });
     isConnected = true;
-    logger.info(`MongoDB connected: ${conn.connection.host}`);
+    logger.info(`MongoDB connected to database: ${conn.connection.name} (${conn.connection.host})`);
   } catch (error) {
     isConnected = false;
     logger.error(
