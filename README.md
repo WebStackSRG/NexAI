@@ -1,66 +1,47 @@
-# NexAI — Personal AI Workspace
+# NexAI
 
-NexAI is a full-stack, personal AI workspace built as an installable Progressive Web App (PWA) with Gemini 2.0 Flash, Gemini 2.5 Pro, LangGraph orchestration, MongoDB Atlas, and Pinecone vector search.
+> AI-Powered Personal & Developer Workspace with Utility-Metered Billing.
 
----
+NexAI is a personal knowledge and developer productivity workspace designed with real, token-based credit metering, personal library management with semantic RAG retrieval, structured document drafting, variable-driven prompt templating, and an administrative usage dashboard.
 
-## 🚀 Architecture Overview
+## Tech Stack
 
-- **Frontend (`web-app/`)**: React + Vite + SCSS Modules (Design Token System) + Zustand atomic stores + Workbox PWA. Hosted on Vercel.
-- **Backend (`server/`)**: Node.js + Express (Controller-Service-Repository pattern) + LangGraph agentic workflows. Hosted on Render.
-- **AI Core**: Gemini 2.0 Flash (fast workhorse) + Gemini 2.5 Pro (complex documents/reasoning) via `@google/generative-ai`.
-- **Database & Storage**: MongoDB Atlas M0 + Pinecone Starter Vector Search.
+- **Client:** React, Vite, SCSS Modules, Zustand, React Router, Lucide Icons, Axios.
+- **Server:** Node.js, Express, Mongoose (MongoDB), Zod, Pino logging, Helmet, CORS.
+- **AI / Retrieval:** Google Gemini API, Pinecone Vector Database.
+- **Billing:** Razorpay (Test Mode).
 
----
+## Prerequisites
 
-## 🛠️ Project Structure
+- Node.js >= 20.0.0 (check with `node -v` or use `nvm use`)
+- npm >= 10.0.0
+- MongoDB instance (local or MongoDB Atlas connection string)
 
-```
-nexai/
-├── web-app/             # Vite + React PWA client
-│   ├── public/          # manifest.json, icons, static assets
-│   └── src/
-│       ├── components/  # Layout, common UI components
-│       ├── lib/         # API client and utility helpers
-│       ├── pages/       # Chat, Library, Documents, Prompts, Settings
-│       ├── store/       # Zustand atomic store slices
-│       └── styles/      # SCSS tokens & global styles
-├── server/              # Express API server
-│   └── src/
-│       ├── config/      # Environment & database configuration
-│       ├── controllers/ # Request handlers
-│       ├── middleware/  # Auth, validation, error handlers
-│       ├── routes/      # API routes
-│       └── services/    # Business logic & AI integrations
-├── context/             # Architecture, tokens, standards, and progress
-├── prompts/             # Two-step vibe engineering specs
-├── render.yaml          # Render deployment blueprint
-└── vercel.json          # Vercel SPA routing
-```
+## Quick Start
 
----
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-## ⚡ Quick Start
+2. **Configure environment:**
+   - Copy `server/.env.example` to `server/.env` and configure `MONGODB_URI`.
+   - Copy `client/.env.example` to `client/.env`.
 
-### 1. Install Dependencies
-```bash
-npm install
-```
+3. **Run development servers:**
+   ```bash
+   npm run dev
+   ```
+   - Client: http://localhost:5173
+   - Server: http://localhost:5000 (Health check: http://localhost:5000/api/health)
 
-### 2. Environment Configuration
-Copy `.env.example` in `server/` to `server/.env` and supply the required keys:
-```bash
-cp server/.env.example server/.env
-```
+4. **Lint and format:**
+   ```bash
+   npm run lint
+   npm run format
+   ```
 
-### 3. Run Locally
-```bash
-# Run both client and server:
-npm run dev:server    # Runs Express API on http://localhost:5000
-npm run dev:client    # Runs Vite PWA on http://localhost:5173
-```
-
----
-
-## 📄 License
-MIT
+5. **Run test suite:**
+   ```bash
+   npm run test
+   ```

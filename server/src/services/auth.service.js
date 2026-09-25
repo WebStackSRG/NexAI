@@ -1,216 +1,194 @@
-import jwt from "jsonwebtoken";
-import { OAuth2Client } from "google-auth-library";
-import User from "../models/User.js";
-import { config } from "../config/env.js";
-import { getDbStatus } from "../config/db.js";
+import bcrypt from 'bcryptjs';
+import { OAuth2Client } from 'google-auth-library';
+import { User } from '../models/User.js';
+import { ApiError } from '../utils/ApiError.js';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/token.js';
+import { env } from '../config/env.js';
 
-const getOAuthClient = () => {
-  if (!config.google.clientId || !config.google.clientSecret) {
-    return null;
-  }
-  return new OAuth2Client(
-    config.google.clientId,
-    config.google.clientSecret,
-    config.google.callbackUrl,
-  );
-};
-
-// In-memory fallback cache for development when MongoDB is not active
-const devUsersMap = new Map();
+const googleClient = env.GOOGLE_CLIENT_ID ? new OAuth2Client(env.GOOGLE_CLIENT_ID) : null;
 
 /**
- * Generate Google OAuth consent URL
+ * Register a new user with email and password
+ * @param {object} params
+ * @param {string} params.email
+ * @param {string} params.password
  */
-export const getGoogleAuthUrl = () => {
-  const oauth2Client = getOAuthClient();
-  if (!oauth2Client) {
-    throw new Error(
-      "Google OAuth is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.",
-    );
+export async function register({ email, password }) {
+  const normalizedEmail = email.toLowerCase().trim();
+  const existingUser = await User.findOne({ email: normalizedEmail });
+
+  if (existingUser) {
+    throw new ApiError(409, 'USER_ALREADY_EXISTS', 'A user with this email address already exists');
   }
 
-  return oauth2Client.generateAuthUrl({
-    access_type: "offline",
-    scope: [
-      "https://www.googleapis.com/auth/userinfo.profile",
-      "https://www.googleapis.com/auth/userinfo.email",
-      "openid",
-    ],
-    prompt: "consent",
+  const saltRounds = 12;
+  const passwordHash = await bcrypt.hash(password, saltRounds);
+
+  const starterCredits = env.STARTER_CREDITS !== undefined ? Number(env.STARTER_CREDITS) : 100;
+
+  const user = await User.create({
+    email: normalizedEmail,
+    passwordHash,
+    role: 'user',
+    wallet: {
+      creditsRemaining: starterCredits,
+      tier: 'free',
+      totalTokensConsumed: 0,
+    },
+    settings: {
+      theme: 'dark',
+      defaultModel: 'flash',
+      webSearchDefaultOn: false,
+    },
   });
-};
+
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
+
+  return {
+    user: user.toJSON(),
+    accessToken,
+    refreshToken,
+  };
+}
 
 /**
- * Exchange authorization code from Google, fetch user info, and upsert User
+ * Authenticate user with email and password
+ * @param {object} params
+ * @param {string} params.email
+ * @param {string} params.password
  */
-export const handleGoogleCallback = async (code) => {
-  const oauth2Client = getOAuthClient();
-  if (!oauth2Client) {
-    throw new Error("Google OAuth is not configured.");
+export async function login({ email, password }) {
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await User.findOne({ email: normalizedEmail }).select('+passwordHash');
+
+  if (!user || !user.passwordHash) {
+    throw new ApiError(401, 'INVALID_CREDENTIALS', 'Invalid email or password');
   }
 
-  const { tokens } = await oauth2Client.getToken(code);
-  oauth2Client.setCredentials(tokens);
+  const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+  if (!isPasswordValid) {
+    throw new ApiError(401, 'INVALID_CREDENTIALS', 'Invalid email or password');
+  }
 
-  const ticket = await oauth2Client.verifyIdToken({
-    idToken: tokens.id_token,
-    audience: config.google.clientId,
-  });
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
+
+  return {
+    user: user.toJSON(),
+    accessToken,
+    refreshToken,
+  };
+}
+
+/**
+ * Authenticate or register a user via Google OAuth ID token
+ * @param {object} params
+ * @param {string} params.credential
+ */
+export async function googleLogin({ credential }) {
+  if (!googleClient || !env.GOOGLE_CLIENT_ID) {
+    throw new ApiError(500, 'GOOGLE_AUTH_UNCONFIGURED', 'Google OAuth is not configured on the server');
+  }
+
+  let ticket;
+  try {
+    ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: env.GOOGLE_CLIENT_ID,
+    });
+  } catch (error) {
+    throw new ApiError(401, 'INVALID_GOOGLE_TOKEN', `Google token verification failed: ${error.message}`);
+  }
 
   const payload = ticket.getPayload();
   if (!payload || !payload.email) {
-    throw new Error("Failed to retrieve valid user info from Google OAuth.");
+    throw new ApiError(401, 'INVALID_GOOGLE_TOKEN', 'Invalid Google token payload');
   }
 
-  const { sub: googleId, email, name, picture: avatar } = payload;
+  const normalizedEmail = payload.email.toLowerCase().trim();
+  const googleId = payload.sub;
 
-  let user;
-  if (getDbStatus().isConnected) {
-    try {
-      user = await User.findOneAndUpdate(
-        { googleId },
-        {
-          $set: {
-            email,
-            name: name || email.split("@")[0],
-            avatar: avatar || "",
-            updatedAt: new Date(),
-          },
-        },
-        { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
-      );
-    } catch (err) {
-      console.error(
-        "[AuthService] Database error during Google user upsert:",
-        err.message,
-      );
+  let user = await User.findOne({
+    $or: [{ googleId }, { email: normalizedEmail }],
+  });
+
+  if (user) {
+    if (!user.googleId) {
+      user.googleId = googleId;
+      await user.save();
     }
-  }
-
-  if (!user) {
-    // Fallback if DB is disconnected or errored
-    user = {
-      _id: `dev-sub-${googleId}`,
+  } else {
+    const starterCredits = env.STARTER_CREDITS !== undefined ? Number(env.STARTER_CREDITS) : 100;
+    user = await User.create({
+      email: normalizedEmail,
       googleId,
-      email,
-      name: name || email.split("@")[0],
-      avatar: avatar || "",
-      preferences: {
-        sidebarMode: "general",
-        theme: "dark",
-        language: "en",
-        streamingEnabled: true,
+      role: 'user',
+      wallet: {
+        creditsRemaining: starterCredits,
+        tier: 'free',
+        totalTokensConsumed: 0,
       },
-    };
+      settings: {
+        theme: 'dark',
+        defaultModel: 'flash',
+        webSearchDefaultOn: false,
+      },
+    });
   }
 
-  const token = generateToken(user);
-  return { user, token };
-};
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
+
+  return {
+    user: user.toJSON(),
+    accessToken,
+    refreshToken,
+  };
+}
 
 /**
- * Issue signed HS256 JWT
+ * Refresh access token using a valid refresh token
+ * @param {string} token
  */
-export const generateToken = (user) => {
-  const userId = user._id ? user._id.toString() : user.id;
-  return jwt.sign(
-    {
-      userId,
-      email: user.email,
-    },
-    config.jwtSecret,
-    { expiresIn: config.jwtExpiresIn },
-  );
-};
+export async function refresh(token) {
+  if (!token) {
+    throw new ApiError(401, 'UNAUTHORIZED', 'Refresh token required');
+  }
 
-/**
- * Verify signed JWT
- */
-export const verifyToken = (token) => {
-  return jwt.verify(token, config.jwtSecret);
-};
-
-/**
- * Fetch user by ID
- */
-export const getUserById = async (userId) => {
-  if (getDbStatus().isConnected) {
-    try {
-      const user = await User.findById(userId).lean();
-      if (user) return user;
-    } catch (err) {
-      // Fall through to dev cache
+  let decoded;
+  try {
+    decoded = verifyRefreshToken(token);
+  } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      throw new ApiError(401, 'TOKEN_EXPIRED', 'Refresh token has expired');
     }
+    throw new ApiError(401, 'INVALID_REFRESH_TOKEN', 'Invalid refresh token');
   }
 
-  if (devUsersMap.has(userId)) {
-    return devUsersMap.get(userId);
-  }
-
-  return null;
-};
-
-/**
- * Development-only login helper for testing without live Google credentials
- */
-export const devLogin = async ({
-  email = "dev@nexai.app",
-  name = "NexAI Developer",
-  avatar = "",
-}) => {
-  const googleId = `dev-${Buffer.from(email).toString("hex")}`;
-
-  let user;
-  if (getDbStatus().isConnected) {
-    try {
-      user = await User.findOneAndUpdate(
-        { email },
-        {
-          $set: {
-            googleId,
-            email,
-            name,
-            avatar,
-            updatedAt: new Date(),
-          },
-        },
-        { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
-      ).lean();
-    } catch (err) {
-      console.warn(
-        "[AuthService] MongoDB write failed for dev login:",
-        err.message,
-      );
-    }
-  }
-
+  const user = await User.findById(decoded.userId);
   if (!user) {
-    const mockId = `dev-user-${Date.now()}`;
-    user = {
-      _id: mockId,
-      id: mockId,
-      googleId,
-      email,
-      name,
-      avatar,
-      preferences: {
-        sidebarMode: "general",
-        theme: "dark",
-        language: "en",
-        streamingEnabled: true,
-      },
-      globalInstructions: "",
-      notificationPrefs: {
-        pushEnabled: false,
-        emailEnabled: false,
-        brokenLinks: true,
-        weeklyDigest: true,
-        reminders: true,
-      },
-    };
-    devUsersMap.set(mockId, user);
+    throw new ApiError(401, 'USER_NOT_FOUND', 'User belonging to this token no longer exists');
   }
 
-  const token = generateToken(user);
-  return { user, token };
-};
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
+
+  return {
+    user: user.toJSON(),
+    accessToken,
+    refreshToken,
+  };
+}
+
+/**
+ * Retrieve user profile by ID
+ * @param {string} userId
+ */
+export async function getMe(userId) {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(404, 'USER_NOT_FOUND', 'User not found');
+  }
+  return user.toJSON();
+}

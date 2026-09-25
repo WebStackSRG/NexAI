@@ -1,88 +1,79 @@
+import * as authService from '../services/auth.service.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import {
-  getGoogleAuthUrl,
-  handleGoogleCallback,
-  devLogin as devLoginService,
-} from "../services/auth.service.js";
-import { config } from "../config/env.js";
+  REFRESH_COOKIE_NAME,
+  getRefreshCookieOptions,
+} from '../utils/token.js';
 
-export const googleRedirect = (req, res) => {
-  try {
-    const url = getGoogleAuthUrl();
-    res.redirect(url);
-  } catch (err) {
-    console.warn("[AuthController] Google redirect failed:", err.message);
-    res.redirect(
-      `${config.frontendUrl}/login?error=${encodeURIComponent(err.message)}`,
-    );
-  }
-};
+export const register = asyncHandler(async (req, res) => {
+  const { user, accessToken, refreshToken } = await authService.register(req.body);
 
-export const googleCallback = async (req, res) => {
-  const { code, error } = req.query;
+  res.cookie(REFRESH_COOKIE_NAME, refreshToken, getRefreshCookieOptions());
 
-  if (error) {
-    return res.redirect(
-      `${config.frontendUrl}/login?error=${encodeURIComponent(error)}`,
-    );
-  }
-
-  if (!code) {
-    return res.redirect(`${config.frontendUrl}/login?error=missing_auth_code`);
-  }
-
-  try {
-    const { user, token } = await handleGoogleCallback(code);
-
-    res.cookie(config.cookie.name, token, config.cookie.options);
-    return res.redirect(`${config.frontendUrl}/?auth=success`);
-  } catch (err) {
-    console.error("[AuthController] Google callback error:", err.message);
-    return res.redirect(
-      `${config.frontendUrl}/login?error=${encodeURIComponent(err.message)}`,
-    );
-  }
-};
-
-export const getCurrentUser = (req, res) => {
-  // req.user was populated by authMiddleware
-  res.json({
-    user: req.user,
-  });
-};
-
-export const logout = (req, res) => {
-  res.clearCookie(config.cookie.name, {
-    ...config.cookie.options,
-    maxAge: 0,
-  });
-
-  res.json({
-    message: "Logged out successfully",
-  });
-};
-
-export const devLogin = async (req, res) => {
-  if (config.nodeEnv === "production") {
-    return res.status(403).json({
-      error: "Development login is disabled in production",
-    });
-  }
-
-  try {
-    const { email, name, avatar } = req.body || {};
-    const { user, token } = await devLoginService({ email, name, avatar });
-
-    res.cookie(config.cookie.name, token, config.cookie.options);
-
-    res.json({
+  res.status(201).json({
+    data: {
       user,
-      token,
-      message: "Dev authentication successful",
-    });
-  } catch (err) {
-    console.error("[AuthController] Dev login error:", err.message);
-    res.status(500).json({
-      error: "Dev authentication failed: " + err.message,
-    });
-  }
-};
+      accessToken,
+    },
+  });
+});
+
+export const login = asyncHandler(async (req, res) => {
+  const { user, accessToken, refreshToken } = await authService.login(req.body);
+
+  res.cookie(REFRESH_COOKIE_NAME, refreshToken, getRefreshCookieOptions());
+
+  res.status(200).json({
+    data: {
+      user,
+      accessToken,
+    },
+  });
+});
+
+export const googleLogin = asyncHandler(async (req, res) => {
+  const { user, accessToken, refreshToken } = await authService.googleLogin(req.body);
+
+  res.cookie(REFRESH_COOKIE_NAME, refreshToken, getRefreshCookieOptions());
+
+  res.status(200).json({
+    data: {
+      user,
+      accessToken,
+    },
+  });
+});
+
+export const refresh = asyncHandler(async (req, res) => {
+  const token = req.cookies?.[REFRESH_COOKIE_NAME];
+  const { user, accessToken, refreshToken } = await authService.refresh(token);
+
+  res.cookie(REFRESH_COOKIE_NAME, refreshToken, getRefreshCookieOptions());
+
+  res.status(200).json({
+    data: {
+      user,
+      accessToken,
+    },
+  });
+});
+
+export const logout = asyncHandler(async (req, res) => {
+  const cookieOptions = getRefreshCookieOptions();
+  delete cookieOptions.maxAge;
+  res.clearCookie(REFRESH_COOKIE_NAME, cookieOptions);
+
+  res.status(200).json({
+    data: {
+      message: 'Logged out successfully',
+    },
+  });
+});
+
+export const getMe = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    data: {
+      user: req.user.toJSON ? req.user.toJSON() : req.user,
+    },
+  });
+});

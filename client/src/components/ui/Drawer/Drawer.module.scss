@@ -1,0 +1,106 @@
+@use '@/styles/abstracts' as *;
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background-color: rgb(0 0 0 / 0.6);
+  backdrop-filter: blur(2px);
+  animation: fadeIn var(--duration-fast) var(--ease-standard);
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 320px;
+  background-color: var(--color-bg-surface);
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  z-index: var(--z-modal);
+  transition: transform var(--duration-base) var(--ease-standard);
+
+  &.side-left {
+    left: 0;
+    border-right: 1px solid var(--color-border);
+    animation: slideInLeft var(--duration-base) var(--ease-standard);
+  }
+
+  &.side-right {
+    right: 0;
+    border-left: 1px solid var(--color-border);
+    animation: slideInRight var(--duration-base) var(--ease-standard);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+    color: var(--color-text-primary);
+  }
+}
+
+.body {
+  flex: 1 1 auto;
+  padding: var(--space-4) var(--space-5);
+  overflow-y: auto;
+  @include custom-scrollbar;
+}
+
+.footer {
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-bg-elevated);
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

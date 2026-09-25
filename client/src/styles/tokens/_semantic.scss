@@ -1,0 +1,10 @@
+// Semantic tokens contract
+// These variables are populated dynamically by themes (_dark.scss and _light.scss)
+// Components consume ONLY semantic variables.
+//
+// Backgrounds: --color-bg-app, --color-bg-surface, --color-bg-elevated, --color-bg-hover
+// Borders: --color-border
+// Text: --color-text-primary, --color-text-secondary, --color-text-muted
+// Accent: --color-accent, --color-accent-hover, --color-accent-contrast, --color-focus-ring
+// Status: --color-success, --color-warning, --color-danger, --color-info
+// Shadows: --shadow-sm, --shadow-md, --shadow-lg

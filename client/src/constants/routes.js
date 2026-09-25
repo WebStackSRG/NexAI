@@ -1,0 +1,16 @@
+export const ROUTES = {
+  HOME: '/',
+  LOGIN: '/login',
+  REGISTER: '/register',
+  CHAT: '/chat',
+  CHAT_ID: '/chat/:chatId',
+  LIBRARY: '/library',
+  DOCUMENTS: '/documents',
+  DOCUMENT_ID: '/documents/:id',
+  PROMPTS: '/prompts',
+  SEARCH: '/search',
+  WALLET: '/wallet',
+  SETTINGS: '/settings',
+  ADMIN: '/admin',
+  DESIGN_SYSTEM: '/design-system',
+};
