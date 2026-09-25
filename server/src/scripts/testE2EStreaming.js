@@ -92,7 +92,9 @@ async function runE2E() {
 
   try {
     const userInDb = await User.findById(userId);
-    console.log(`   Database Credits Remaining: ${userInDb.wallet.creditsRemaining} (Started: 100)`);
+    console.log(
+      `   Database Credits Remaining: ${userInDb.wallet.creditsRemaining} (Started: 100)`,
+    );
     console.log(`   Total Tokens Consumed: ${userInDb.wallet.totalTokensConsumed}`);
 
     const chatInDb = await Chat.findById(chatId);

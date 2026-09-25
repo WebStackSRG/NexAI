@@ -48,3 +48,23 @@ NexAI is a personal knowledge and developer productivity workspace designed with
    ```bash
    npm run test
    ```
+
+## Development Progress
+
+- [x] **Step 1: Scaffold & Design System** (`feature/scaffold`)
+- [x] **Step 2: Authentication & Persistence** (`feature/auth`)
+- [x] **Step 3: Backend Chat with SSE & Metering** (`feature/backend-chat`)
+- [x] **Step 4: Chat UI & Real-Time Streaming** (`feature/chat-ui`)
+  - Full-height responsive Chat workspace with collapsible conversation sidebar
+  - Streaming fetch + ReadableStream SSE consumption with token/done/error parsing
+  - Markdown rendering with Prism syntax highlighting and one-click code copying
+  - Live CreditBadge updates in Topbar & Sidebar on stream completion
+  - 402 Insufficient Credits handling with "Recharge to continue" banner and input locking
+  - Generation abort (Stop button), typing indicator, smart auto-scrolling, and model picker (Flash/Pro)
+- [ ] **Step 5: Library & Semantic RAG** (`feature/library`)
+- [ ] **Step 6: Prompt Vault** (`feature/prompt-vault`)
+- [ ] **Step 7: Document Generation** (`feature/doc-gen`)
+- [ ] **Step 8: Unified Search** (`feature/search`)
+- [ ] **Step 9: Wallet & Billing** (`feature/wallet-billing`)
+- [ ] **Step 10: Admin Dashboard** (`feature/admin-dashboard`)
+- [ ] **Step 11: Hardening & Deployment**

@@ -444,3 +444,11 @@ Send a prompt message into a chat and receive the AI response streamed in real t
   }
 }
 ```
+
+### Frontend Streaming Client (`lib/sse.js`)
+
+Because standard `EventSource` cannot send `POST` request bodies or `Authorization: Bearer <token>` headers, the frontend consumes this endpoint using `fetch` with `ReadableStream` (`client/src/lib/sse.js`).
+
+- **Stream Parser:** `parseSseStream(readableStream, { onToken, onDone, onError })` safely decodes UTF-8 Uint8Array chunks, buffers network fragment boundaries, and dispatches SSE events.
+- **Client Method:** `streamChatMessage({ chatId, content, model, signal, onToken, onDone, onError })` connects to `/api/chats/:id/messages`, handles 402 HTTP status with `insufficientCredits` activation, and executes the parser.
+- **Credit Sync:** On receiving the `done` event, `chatStore` atomically dispatches `useAuthStore.getState().updateCredits(creditsRemaining)`, updating the Topbar and Sidebar `CreditBadge` without a page refresh.

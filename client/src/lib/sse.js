@@ -1,0 +1,181 @@
+import { useAuthStore } from '@/store/authStore';
+
+/**
+ * Parses an SSE text chunk or stream into structured events.
+ *
+ * @param {ReadableStream<Uint8Array>} readableStream
+ * @param {Object} handlers
+ * @param {(text: string) => void} [handlers.onToken]
+ * @param {(doneData: { messageId?: string, tokensUsed?: number, creditsDeducted?: number, creditsRemaining?: number, chatTitle?: string }) => void} [handlers.onDone]
+ * @param {(errorData: { code?: string, message?: string }) => void} [handlers.onError]
+ * @returns {Promise<void>}
+ */
+export async function parseSseStream(readableStream, { onToken, onDone, onError } = {}) {
+  const reader = readableStream.getReader();
+  const decoder = new TextDecoder('utf-8');
+
+  let buffer = '';
+  let currentEvent = 'message';
+  let currentData = '';
+
+  const dispatchEvent = () => {
+    if (!currentData && currentEvent === 'message') {
+      return;
+    }
+
+    let parsed = null;
+    try {
+      parsed = JSON.parse(currentData);
+    } catch {
+      parsed = currentData;
+    }
+
+    if (currentEvent === 'token') {
+      const text =
+        typeof parsed === 'object' && parsed !== null && 'text' in parsed ? parsed.text : parsed;
+      onToken?.(text);
+    } else if (currentEvent === 'done') {
+      onDone?.(typeof parsed === 'object' && parsed !== null ? parsed : { raw: parsed });
+    } else if (currentEvent === 'error') {
+      onError?.(typeof parsed === 'object' && parsed !== null ? parsed : { message: parsed });
+    }
+
+    currentEvent = 'message';
+    currentData = '';
+  };
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Split buffer by newlines (handling \r\n, \r, and \n)
+      const lines = buffer.split(/\r\n|\r|\n/);
+      // The last element is either empty (if ended with newline) or incomplete line
+      buffer = lines.pop() ?? '';
+
+      for (const rawLine of lines) {
+        const line = rawLine.trimStart();
+
+        if (line === '') {
+          // Empty line indicates the end of an event
+          dispatchEvent();
+        } else if (line.startsWith(':')) {
+          // SSE comment; ignore
+          continue;
+        } else if (line.startsWith('event:')) {
+          currentEvent = line.slice(6).trim();
+        } else if (line.startsWith('data:')) {
+          const dataContent = line.slice(5).trim();
+          currentData = currentData ? `${currentData}\n${dataContent}` : dataContent;
+        }
+      }
+    }
+
+    // Flush any remaining line and event
+    if (buffer.trim()) {
+      const line = buffer.trimStart();
+      if (line.startsWith('event:')) {
+        currentEvent = line.slice(6).trim();
+      } else if (line.startsWith('data:')) {
+        const dataContent = line.slice(5).trim();
+        currentData = currentData ? `${currentData}\n${dataContent}` : dataContent;
+      }
+    }
+    dispatchEvent();
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+/**
+ * Initiates an authenticated SSE stream for sending a message in a chat.
+ *
+ * @param {Object} params
+ * @param {string} params.chatId
+ * @param {string} params.content
+ * @param {string} [params.model]
+ * @param {AbortSignal} [params.signal]
+ * @param {(text: string) => void} [params.onToken]
+ * @param {(doneData: any) => void} [params.onDone]
+ * @param {(errorData: any) => void} [params.onError]
+ * @returns {Promise<void>}
+ */
+export async function streamChatMessage({
+  chatId,
+  content,
+  model,
+  signal,
+  onToken,
+  onDone,
+  onError,
+}) {
+  const token = useAuthStore.getState().accessToken;
+  const baseUrl = import.meta.env.VITE_API_URL || '/api';
+  const url = `${baseUrl}/chats/${chatId}/messages`;
+
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ content, model }),
+    signal,
+    credentials: 'include',
+  });
+
+  if (response.status === 402) {
+    let errorJson = null;
+    try {
+      errorJson = await response.json();
+    } catch {
+      // Ignore json parse error
+    }
+    const err = {
+      status: 402,
+      code: errorJson?.error?.code || 'INSUFFICIENT_CREDITS',
+      message: errorJson?.error?.message || 'Recharge to continue',
+      details: errorJson?.error?.details || null,
+    };
+    onError?.(err);
+    throw err;
+  }
+
+  if (!response.ok) {
+    let errorJson = null;
+    try {
+      errorJson = await response.json();
+    } catch {
+      // Ignore json parse error
+    }
+    const err = {
+      status: response.status,
+      code: errorJson?.error?.code || 'STREAM_ERROR',
+      message: errorJson?.error?.message || response.statusText || 'Failed to stream message',
+      details: errorJson?.error?.details || null,
+    };
+    onError?.(err);
+    throw err;
+  }
+
+  if (!response.body) {
+    const err = {
+      status: 500,
+      code: 'EMPTY_RESPONSE_BODY',
+      message: 'Server returned an empty response body',
+    };
+    onError?.(err);
+    throw err;
+  }
+
+  await parseSseStream(response.body, { onToken, onDone, onError });
+}

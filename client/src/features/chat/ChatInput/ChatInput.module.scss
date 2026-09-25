@@ -1,0 +1,163 @@
+@use '@/styles/abstracts' as *;
+
+.inputContainer {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4) var(--space-6);
+  background-color: var(--color-bg-app);
+  max-width: var(--content-max);
+  margin: 0 auto;
+  width: 100%;
+
+  @include up(lg) {
+    padding: var(--space-4) var(--space-12);
+  }
+}
+
+.insufficientBanner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background-color: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+
+  @include up(sm) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.bannerInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+}
+
+.bannerIcon {
+  color: var(--color-warning);
+  flex-shrink: 0;
+}
+
+.composerForm {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-bg-surface);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-2) var(--space-3);
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+
+  &:focus-within {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px var(--color-focus-ring);
+  }
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-1) var(--space-2) var(--space-2);
+}
+
+.modelSelector {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background-color: var(--color-bg-elevated);
+  padding: 2px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.modelPill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-standard);
+
+  &:hover:not(:disabled) {
+    color: var(--color-text-primary);
+  }
+
+  &.activeModel {
+    background-color: var(--color-bg-surface);
+    color: var(--color-accent);
+    box-shadow: var(--shadow-sm);
+    font-weight: var(--weight-semibold);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.inputRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  padding: 0 var(--space-1);
+}
+
+.textarea {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+  padding: var(--space-2) 0;
+  resize: none;
+  outline: none;
+  min-height: 24px;
+  max-height: 180px;
+
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.submitWrapper {
+  display: flex;
+  align-items: center;
+  padding-bottom: var(--space-1);
+}
+
+.sendButton {
+  border-radius: var(--radius-full);
+}
+
+.stopButton {
+  border-radius: var(--radius-full);
+  color: var(--color-danger);
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--color-danger) 15%, transparent);
+  }
+}

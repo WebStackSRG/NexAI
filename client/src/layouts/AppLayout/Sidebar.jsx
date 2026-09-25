@@ -96,7 +96,13 @@ export function Sidebar({ onItemClick }) {
       </nav>
 
       <div className={styles.footer}>
-        <CreditBadge credits={credits} />
+        <CreditBadge
+          credits={credits}
+          onClick={() => {
+            onItemClick?.();
+            navigate(ROUTES.WALLET);
+          }}
+        />
         <Dropdown
           trigger={
             <div
