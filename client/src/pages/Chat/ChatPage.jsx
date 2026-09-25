@@ -84,7 +84,10 @@ export default function ChatPage() {
         </header>
 
         <div className={styles.threadArea}>
-          <MessageThread onSelectSuggestion={(prompt) => setPrefillPrompt(prompt)} />
+          <MessageThread
+            onSelectSuggestion={(prompt) => setPrefillPrompt(prompt)}
+            onEditPrompt={(prompt) => setPrefillPrompt(prompt)}
+          />
         </div>
 
         <div className={styles.inputArea}>

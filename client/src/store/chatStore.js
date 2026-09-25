@@ -287,13 +287,11 @@ export const useChatStore = create((set, get) => ({
           set((state) => {
             const msgs = [...state.messages];
             const lastMsg = msgs[msgs.length - 1];
-            if (lastMsg && lastMsg.role === 'assistant' && !lastMsg.content) {
-              // If failed before any tokens, remove empty placeholder
-              msgs.pop();
-            } else if (lastMsg && lastMsg.role === 'assistant') {
+            if (lastMsg && lastMsg.role === 'assistant') {
               msgs[msgs.length - 1] = {
                 ...lastMsg,
                 isStreaming: false,
+                error: cleanMessage,
               };
             }
 
@@ -360,6 +358,21 @@ export const useChatStore = create((set, get) => ({
         };
       });
     }
+  },
+
+  /**
+   * Resend a prompt, cleaning up an errored assistant message if one is currently at the end
+   * @param {string} content
+   */
+  resendPrompt: async (content) => {
+    set((state) => {
+      const msgs = [...state.messages];
+      if (msgs.length > 0 && msgs[msgs.length - 1].error) {
+        msgs.pop();
+      }
+      return { messages: msgs };
+    });
+    await get().sendMessage(content);
   },
 
   /**

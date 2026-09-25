@@ -78,3 +78,14 @@ This log tracks architectural and design decisions made for the NexAI project, p
   2. **Atomic Token Metering:** Credits are computed as `Math.ceil(tokensUsed / 100) * CREDITS_PER_100_TOKENS` from real Gemini `usageMetadata`. User credits are decremented atomically using MongoDB `$max: [0, { $subtract: ['$wallet.creditsRemaining', creditsDeducted] }]` and `$add` on `totalTokensConsumed`, guaranteeing `creditsRemaining >= 0`. Every call creates an immutable `UsageLog` entry.
   3. **Zero Balance Gatekeeping:** The `creditCheck` middleware halts execution prior to invocation if `wallet.creditsRemaining <= 0` with HTTP 402 `INSUFFICIENT_CREDITS`.
   4. **Gemini SDK:** Adopted the official `@google/genai` SDK with model identifiers dynamic via environment variables (`GEMINI_FLASH_MODEL`, `GEMINI_PRO_MODEL`), defaulting to `gemini-3.8-flash` and `gemini-3.1-pro-preview`.
+
+## ADR-011: Reactive Streaming Chat UI, Live Credit Synchronization, and Composer State Machine
+
+- **Date:** 2026-09-25
+- **Status:** Accepted
+- **Context:** Delivering a responsive, production-ready AI chat experience requires incremental token rendering, syntax-highlighted code with copy ergonomics, live wallet credit synchronization without page reloads, and responsive handling of low-credit/402 states.
+- **Decision:**
+  1. **Fetch & ReadableStream SSE Reader:** Implemented `lib/sse.js` using `fetch` with `ReadableStream` decoder to handle incoming `token`, `done`, and `error` event chunks.
+  2. **Reactive Credit State Sync:** On receiving the `done` SSE packet containing `{ creditsRemaining, tokensUsed }`, `chatStore` directly calls `useAuthStore.getState().updateCredits(...)`, instantly updating the `CreditBadge` in the topbar and responsive drawers without any page reload or background polling.
+  3. **Error Recovery & Transient Demand Handling:** Integrated friendly error sanitization for Google 503 high-demand states with auto-retry and in-bubble action triggers (Regenerate / Resend prompt).
+  4. **Composer State & 402 Gatekeeping:** The composer supports Enter to send and Shift+Enter for newlines. When `insufficientCredits` (HTTP 402) occurs, the input locks with a prominent "Recharge to continue" banner directing users to `/wallet`.

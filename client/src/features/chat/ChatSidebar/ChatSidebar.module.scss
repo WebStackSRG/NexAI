@@ -13,6 +13,62 @@
 .header {
   padding: var(--space-4);
   border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.newChatButton {
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-accent) 25%, transparent);
+}
+
+.searchWrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  background-color: var(--color-bg-app);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--duration-fast) var(--ease-standard);
+
+  &:focus-within {
+    border-color: var(--color-accent);
+  }
+}
+
+.searchIcon {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--text-xs);
+  outline: none;
+
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
+}
+
+.clearSearch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+
+  &:hover {
+    color: var(--color-text-primary);
+  }
 }
 
 .chatList {
@@ -21,7 +77,7 @@
   padding: var(--space-2);
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: 2px;
 }
 
 .skeletonList {
@@ -31,7 +87,8 @@
   padding: var(--space-2);
 }
 
-.emptyState {
+.emptyState,
+.noMatch {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -54,6 +111,11 @@
 
   .emptySubtitle {
     margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  p {
     font-size: var(--text-xs);
     color: var(--color-text-muted);
   }
@@ -85,6 +147,8 @@
     background-color: var(--color-bg-elevated);
     color: var(--color-accent);
     font-weight: var(--weight-medium);
+    border-left: 3px solid var(--color-accent);
+    padding-left: calc(var(--space-3) - 3px);
 
     .itemIcon {
       color: var(--color-accent);
@@ -101,11 +165,24 @@
   color: var(--color-text-muted);
 }
 
-.chatTitle {
+.titleCol {
+  display: flex;
+  flex-direction: column;
   flex: 1;
+  min-width: 0;
+}
+
+.chatTitle {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: var(--text-sm);
+}
+
+.chatDate {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  margin-top: 1px;
 }
 
 .itemActions {

@@ -1,6 +1,15 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { Plus, MessageSquare, MoreVertical, Edit2, Trash2, Check, X } from 'lucide-react';
+import {
+  Plus,
+  MessageSquare,
+  MoreVertical,
+  Edit2,
+  Trash2,
+  Check,
+  X,
+  Search,
+} from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { IconButton } from '@/components/ui/IconButton';
 import { Dropdown } from '@/components/ui/Dropdown';
@@ -10,14 +19,42 @@ import { useChatStore } from '@/store/chatStore';
 import { cn } from '@/lib/utils/cn';
 import styles from './ChatSidebar.module.scss';
 
-export function ChatSidebar({ onSelectChat, className }) {
-  const { chats, activeChatId, isLoadingChats, createChat, updateChatTitle, deleteChat } =
-    useChatStore();
+function formatChatDate(timestamp) {
+  if (!timestamp) return '';
+  try {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  } catch {
+    return '';
+  }
+}
 
+export function ChatSidebar({ onSelectChat, className }) {
+  const {
+    chats,
+    activeChatId,
+    isLoadingChats,
+    createChat,
+    updateChatTitle,
+    deleteChat,
+  } = useChatStore();
+
+  const [searchQuery, setSearchQuery] = useState('');
   const [editingChatId, setEditingChatId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
   const [deletingChatId, setDeletingChatId] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const filteredChats = useMemo(() => {
+    if (!searchQuery.trim()) return chats;
+    const query = searchQuery.toLowerCase();
+    return chats.filter((c) => c.title?.toLowerCase().includes(query));
+  }, [chats, searchQuery]);
 
   const handleStartRename = (chat, e) => {
     e?.stopPropagation();
@@ -61,9 +98,39 @@ export function ChatSidebar({ onSelectChat, className }) {
   return (
     <aside className={cn(styles.sidebar, className)} aria-label="Chat conversations">
       <div className={styles.header}>
-        <Button variant="primary" leftIcon={<Plus size={16} />} fullWidth onClick={handleNewChat}>
+        <Button
+          variant="primary"
+          leftIcon={<Plus size={16} />}
+          fullWidth
+          onClick={handleNewChat}
+          className={styles.newChatButton}
+        >
           New Chat
         </Button>
+
+        {chats.length > 3 && (
+          <div className={styles.searchWrapper}>
+            <Search size={14} className={styles.searchIcon} />
+            <input
+              type="text"
+              placeholder="Filter chats..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={styles.searchInput}
+              aria-label="Filter conversations by title"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className={styles.clearSearch}
+                aria-label="Clear search"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className={styles.chatList}>
@@ -79,10 +146,15 @@ export function ChatSidebar({ onSelectChat, className }) {
             <p className={styles.emptyTitle}>No conversations yet</p>
             <p className={styles.emptySubtitle}>Start a chat to get started</p>
           </div>
+        ) : filteredChats.length === 0 ? (
+          <div className={styles.noMatch}>
+            <p>No chats matching &quot;{searchQuery}&quot;</p>
+          </div>
         ) : (
-          chats.map((chat) => {
+          filteredChats.map((chat) => {
             const isActive = chat._id === activeChatId;
             const isEditing = chat._id === editingChatId;
+            const chatDate = formatChatDate(chat.updatedAt || chat.createdAt);
 
             return (
               <div
@@ -101,7 +173,7 @@ export function ChatSidebar({ onSelectChat, className }) {
                   }
                 }}
               >
-                <MessageSquare size={16} className={styles.itemIcon} />
+                <MessageSquare size={15} className={styles.itemIcon} />
 
                 {isEditing ? (
                   <div className={styles.editRow} onClick={(e) => e.stopPropagation()}>
@@ -135,9 +207,12 @@ export function ChatSidebar({ onSelectChat, className }) {
                   </div>
                 ) : (
                   <>
-                    <span className={styles.chatTitle} title={chat.title}>
-                      {chat.title}
-                    </span>
+                    <div className={styles.titleCol}>
+                      <span className={styles.chatTitle} title={chat.title}>
+                        {chat.title}
+                      </span>
+                      {chatDate && <span className={styles.chatDate}>{chatDate}</span>}
+                    </div>
 
                     <div className={styles.itemActions} onClick={(e) => e.stopPropagation()}>
                       <Dropdown
