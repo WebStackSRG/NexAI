@@ -18,9 +18,7 @@ export const loginSchema = z.object({
     .email('Invalid email address')
     .toLowerCase()
     .trim(),
-  password: z
-    .string({ required_error: 'Password is required' })
-    .min(1, 'Password is required'),
+  password: z.string({ required_error: 'Password is required' }).min(1, 'Password is required'),
 });
 
 export const googleAuthSchema = z.object({

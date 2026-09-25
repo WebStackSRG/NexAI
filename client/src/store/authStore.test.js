@@ -34,7 +34,9 @@ describe('authStore Zustand Store', () => {
       data: { user: mockUser, accessToken: mockToken },
     });
 
-    const res = await useAuthStore.getState().login({ email: 'test@nexai.local', password: 'password123' });
+    const res = await useAuthStore
+      .getState()
+      .login({ email: 'test@nexai.local', password: 'password123' });
 
     expect(res.success).toBe(true);
     expect(useAuthStore.getState().isAuthenticated).toBe(true);
@@ -45,7 +47,9 @@ describe('authStore Zustand Store', () => {
   it('handles login failure properly', async () => {
     authApi.login.mockRejectedValueOnce(new Error('Invalid email or password'));
 
-    const res = await useAuthStore.getState().login({ email: 'wrong@nexai.local', password: 'wrong' });
+    const res = await useAuthStore
+      .getState()
+      .login({ email: 'wrong@nexai.local', password: 'wrong' });
 
     expect(res.success).toBe(false);
     expect(useAuthStore.getState().isAuthenticated).toBe(false);

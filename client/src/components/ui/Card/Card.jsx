@@ -1,10 +1,22 @@
 import { cn } from '@/lib/utils/cn';
 import styles from './Card.module.scss';
 
-export function Card({ children, padding = 'md', interactive = false, className, onClick, ...props }) {
+export function Card({
+  children,
+  padding = 'md',
+  interactive = false,
+  className,
+  onClick,
+  ...props
+}) {
   return (
     <div
-      className={cn(styles.card, styles[`p-${padding}`], interactive && styles.interactive, className)}
+      className={cn(
+        styles.card,
+        styles[`p-${padding}`],
+        interactive && styles.interactive,
+        className,
+      )}
       onClick={onClick}
       role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}

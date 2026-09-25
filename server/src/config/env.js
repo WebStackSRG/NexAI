@@ -14,17 +14,20 @@ const envSchema = z.object({
   JWT_ACCESS_SECRET: z.string().min(1, 'JWT_ACCESS_SECRET is required'),
   JWT_REFRESH_SECRET: z.string().min(1, 'JWT_REFRESH_SECRET is required'),
   GOOGLE_CLIENT_ID: z.string().optional(),
+  // Step 3: AI & Credits
   GEMINI_API_KEY: z.string().optional(),
-  GEMINI_FLASH_MODEL: z.string().optional(),
-  GEMINI_PRO_MODEL: z.string().optional(),
-  GEMINI_EMBED_MODEL: z.string().optional(),
+  GEMINI_FLASH_MODEL: z.string().default('gemini-3.8-flash'),
+  GEMINI_PRO_MODEL: z.string().default('gemini-3.1-pro-preview'),
+  GEMINI_EMBED_MODEL: z.string().default('gemini-embedding-001'),
+  CREDITS_PER_100_TOKENS: z.coerce.number().default(1),
+
+  // Subsequent steps
   PINECONE_API_KEY: z.string().optional(),
   PINECONE_INDEX: z.string().optional(),
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
-  CREDITS_PER_100_TOKENS: z.coerce.number().optional().default(1),
-  STARTER_CREDITS: z.coerce.number().optional().default(100),
+  STARTER_CREDITS: z.coerce.number().default(100),
   ADMIN_EMAIL: z.string().email().optional(),
   ADMIN_PASSWORD: z.string().optional(),
 });

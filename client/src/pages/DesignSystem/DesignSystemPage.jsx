@@ -111,7 +111,11 @@ export default function DesignSystemPage() {
             ]}
           />
           <div style={{ gridColumn: '1 / -1' }}>
-            <Textarea label="Auto-resizable Textarea" autoResize placeholder="Expandable input..." />
+            <Textarea
+              label="Auto-resizable Textarea"
+              autoResize
+              placeholder="Expandable input..."
+            />
           </div>
         </Card.Body>
       </Card>
@@ -139,7 +143,9 @@ export default function DesignSystemPage() {
               </Button>
             }
           >
-            <p style={{ color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
+            <p
+              style={{ color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}
+            >
               Accessible modal dialog with backdrop blur, focus trap, and Escape key dismissal.
             </p>
           </Modal>
@@ -150,7 +156,9 @@ export default function DesignSystemPage() {
             title="Slide Drawer"
             side="right"
           >
-            <p style={{ color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
+            <p
+              style={{ color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}
+            >
               Slide-in drawer for auxiliary panels and responsive navigation.
             </p>
           </Drawer>

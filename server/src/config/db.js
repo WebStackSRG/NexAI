@@ -15,7 +15,10 @@ export async function connectDB() {
     logger.info(`MongoDB connected: ${conn.connection.host}`);
   } catch (error) {
     isConnected = false;
-    logger.error({ err: error.message }, 'MongoDB connection failed (server running in degraded mode)');
+    logger.error(
+      { err: error.message },
+      'MongoDB connection failed (server running in degraded mode)',
+    );
   }
 }
 

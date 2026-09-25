@@ -1,9 +1,7 @@
 import { create } from 'zustand';
 
 const initialTheme =
-  typeof window !== 'undefined'
-    ? localStorage.getItem('nexai_theme') || 'dark'
-    : 'dark';
+  typeof window !== 'undefined' ? localStorage.getItem('nexai_theme') || 'dark' : 'dark';
 
 export const useUiStore = create((set, get) => ({
   theme: initialTheme,
@@ -50,6 +48,5 @@ export const toast = {
     useUiStore.getState().addToast({ message, tone: 'success', duration }),
   error: (message, duration) =>
     useUiStore.getState().addToast({ message, tone: 'error', duration }),
-  info: (message, duration) =>
-    useUiStore.getState().addToast({ message, tone: 'info', duration }),
+  info: (message, duration) => useUiStore.getState().addToast({ message, tone: 'info', duration }),
 };

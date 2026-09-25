@@ -99,7 +99,12 @@ export function Sidebar({ onItemClick }) {
         <CreditBadge credits={credits} />
         <Dropdown
           trigger={
-            <div className={styles.userCard} role="button" tabIndex={0} style={{ cursor: 'pointer', width: '100%' }}>
+            <div
+              className={styles.userCard}
+              role="button"
+              tabIndex={0}
+              style={{ cursor: 'pointer', width: '100%' }}
+            >
               <Avatar name={user?.email || 'User'} size="sm" />
               <div className={styles.userInfo}>
                 <span className={styles.name}>{userDisplayName}</span>

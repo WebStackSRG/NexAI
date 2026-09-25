@@ -29,7 +29,7 @@ describe('AdminRoute Guard', () => {
             }
           />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(screen.getByText('Login Page')).toBeInTheDocument();
@@ -55,7 +55,7 @@ describe('AdminRoute Guard', () => {
             }
           />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(screen.getByTestId('admin-forbidden-403')).toBeInTheDocument();
@@ -82,7 +82,7 @@ describe('AdminRoute Guard', () => {
             }
           />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(screen.getByText('Admin Secret Content')).toBeInTheDocument();

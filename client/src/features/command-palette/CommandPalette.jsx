@@ -119,7 +119,9 @@ export function CommandPalette() {
       setSelectedIndex((prev) => (prev + 1) % (filteredCommands.length || 1));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev - 1 + filteredCommands.length) % (filteredCommands.length || 1));
+      setSelectedIndex(
+        (prev) => (prev - 1 + filteredCommands.length) % (filteredCommands.length || 1),
+      );
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (filteredCommands[selectedIndex]) {

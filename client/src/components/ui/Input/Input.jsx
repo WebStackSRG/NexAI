@@ -19,11 +19,7 @@ export const Input = forwardRef(function Input(
         </label>
       )}
       <div
-        className={cn(
-          styles.inputContainer,
-          error && styles.hasError,
-          disabled && styles.disabled,
-        )}
+        className={cn(styles.inputContainer, error && styles.hasError, disabled && styles.disabled)}
       >
         {leftIcon && <span className={styles.leftIcon}>{leftIcon}</span>}
         <input

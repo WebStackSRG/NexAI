@@ -30,7 +30,7 @@ export const generateAccessToken = (user) => {
       role: user.role,
     },
     env.JWT_ACCESS_SECRET,
-    { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
+    { expiresIn: ACCESS_TOKEN_EXPIRES_IN },
   );
 };
 
@@ -45,7 +45,7 @@ export const generateRefreshToken = (user) => {
       userId: user._id.toString(),
     },
     env.JWT_REFRESH_SECRET,
-    { expiresIn: REFRESH_TOKEN_EXPIRES_IN }
+    { expiresIn: REFRESH_TOKEN_EXPIRES_IN },
   );
 };
 

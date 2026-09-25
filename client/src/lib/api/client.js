@@ -32,7 +32,7 @@ apiClient.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // Response interceptor: unwraps data and handles 401 token refresh
@@ -65,7 +65,7 @@ apiClient.interceptors.response.use(
         const refreshResponse = await axios.post(
           `${apiClient.defaults.baseURL}/auth/refresh`,
           {},
-          { withCredentials: true }
+          { withCredentials: true },
         );
         const { user, accessToken } = refreshResponse.data.data;
         useAuthStore.getState().setAuth({ user, accessToken });
@@ -92,5 +92,5 @@ apiClient.interceptors.response.use(
       details: error.response?.data?.error?.details || null,
     };
     return Promise.reject(errorResponse);
-  }
+  },
 );

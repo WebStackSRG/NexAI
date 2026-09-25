@@ -20,12 +20,7 @@ export function AppLayout() {
       </div>
 
       {/* Mobile Drawer Sidebar */}
-      <Drawer
-        open={isDrawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        title="NexAI"
-        side="left"
-      >
+      <Drawer open={isDrawerOpen} onClose={() => setDrawerOpen(false)} title="NexAI" side="left">
         <Sidebar onItemClick={() => setDrawerOpen(false)} />
       </Drawer>
 
@@ -34,7 +29,9 @@ export function AppLayout() {
         <main className={styles.content}>
           <Suspense
             fallback={
-              <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--space-12)' }}>
+              <div
+                style={{ display: 'flex', justifyContent: 'center', padding: 'var(--space-12)' }}
+              >
                 <Spinner size="lg" />
               </div>
             }

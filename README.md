@@ -20,6 +20,7 @@ NexAI is a personal knowledge and developer productivity workspace designed with
 ## Quick Start
 
 1. **Install dependencies:**
+
    ```bash
    npm install
    ```
@@ -29,6 +30,7 @@ NexAI is a personal knowledge and developer productivity workspace designed with
    - Copy `client/.env.example` to `client/.env`.
 
 3. **Run development servers:**
+
    ```bash
    npm run dev
    ```
@@ -36,6 +38,7 @@ NexAI is a personal knowledge and developer productivity workspace designed with
    - Server: http://localhost:5000 (Health check: http://localhost:5000/api/health)
 
 4. **Lint and format:**
+
    ```bash
    npm run lint
    npm run format

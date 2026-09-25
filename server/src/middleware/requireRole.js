@@ -11,7 +11,9 @@ export function requireRole(...allowedRoles) {
     }
 
     if (!allowedRoles.includes(req.user.role)) {
-      return next(new ApiError(403, 'FORBIDDEN', 'Insufficient permissions to access this resource'));
+      return next(
+        new ApiError(403, 'FORBIDDEN', 'Insufficient permissions to access this resource'),
+      );
     }
 
     next();

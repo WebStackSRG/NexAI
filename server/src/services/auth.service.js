@@ -88,7 +88,11 @@ export async function login({ email, password }) {
  */
 export async function googleLogin({ credential }) {
   if (!googleClient || !env.GOOGLE_CLIENT_ID) {
-    throw new ApiError(500, 'GOOGLE_AUTH_UNCONFIGURED', 'Google OAuth is not configured on the server');
+    throw new ApiError(
+      500,
+      'GOOGLE_AUTH_UNCONFIGURED',
+      'Google OAuth is not configured on the server',
+    );
   }
 
   let ticket;
@@ -98,7 +102,11 @@ export async function googleLogin({ credential }) {
       audience: env.GOOGLE_CLIENT_ID,
     });
   } catch (error) {
-    throw new ApiError(401, 'INVALID_GOOGLE_TOKEN', `Google token verification failed: ${error.message}`);
+    throw new ApiError(
+      401,
+      'INVALID_GOOGLE_TOKEN',
+      `Google token verification failed: ${error.message}`,
+    );
   }
 
   const payload = ticket.getPayload();
