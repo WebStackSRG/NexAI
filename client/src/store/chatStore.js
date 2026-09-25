@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { chatApi } from '@/lib/api/chat.api.js';
-import { streamChatMessage } from '@/lib/sse.js';
+import { streamChatMessage, sanitizeErrorMessage } from '@/lib/sse.js';
 import { useAuthStore } from './authStore.js';
 import { toast } from './uiStore.js';
 
@@ -282,6 +282,8 @@ export const useChatStore = create((set, get) => ({
         },
         onError: (err) => {
           const is402 = err.status === 402 || err.code === 'INSUFFICIENT_CREDITS';
+          const cleanMessage = sanitizeErrorMessage(err.message || 'Stream error occurred');
+
           set((state) => {
             const msgs = [...state.messages];
             const lastMsg = msgs[msgs.length - 1];
@@ -300,20 +302,22 @@ export const useChatStore = create((set, get) => ({
               isStreaming: false,
               abortController: null,
               insufficientCredits: is402 ? true : state.insufficientCredits,
-              error: err.message || 'Stream error occurred',
+              error: cleanMessage,
             };
           });
 
           if (is402) {
             toast.error('Insufficient credits. Recharge to continue.');
           } else if (err.name !== 'AbortError') {
-            toast.error(err.message || 'Stream error occurred');
+            toast.error(cleanMessage);
           }
         },
       });
     } catch (err) {
       if (err.name !== 'AbortError') {
         const is402 = err.status === 402 || err.code === 'INSUFFICIENT_CREDITS';
+        const cleanMessage = sanitizeErrorMessage(err.message || 'Failed to send message');
+
         set((state) => {
           const msgs = [...state.messages];
           const lastMsg = msgs[msgs.length - 1];
@@ -325,9 +329,13 @@ export const useChatStore = create((set, get) => ({
             isStreaming: false,
             abortController: null,
             insufficientCredits: is402 ? true : state.insufficientCredits,
-            error: err.message || 'Failed to send message',
+            error: cleanMessage,
           };
         });
+
+        if (!is402) {
+          toast.error(cleanMessage);
+        }
       }
     }
   },

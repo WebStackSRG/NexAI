@@ -198,10 +198,17 @@ export async function sendMessage(req, res, next) {
   } catch (error) {
     logger.error({ error: error.message }, 'Error in sendMessage SSE handler');
 
+    const cleanMessage =
+      error.message?.includes('high demand') ||
+      error.message?.includes('503') ||
+      error.message?.includes('UNAVAILABLE')
+        ? 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again in a few moments.'
+        : error.message || 'An error occurred while streaming response';
+
     if (sseStarted) {
       sendSse(res, 'error', {
         code: error.code || 'STREAM_ERROR',
-        message: error.message || 'An error occurred while streaming response',
+        message: cleanMessage,
       });
       closeSse(res);
     } else {

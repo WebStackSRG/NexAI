@@ -16,6 +16,7 @@ vi.mock('@/lib/api/chat.api', () => ({
 
 vi.mock('@/lib/sse', () => ({
   streamChatMessage: vi.fn(),
+  sanitizeErrorMessage: (msg) => msg || 'Error',
 }));
 
 describe('chatStore Zustand Store', () => {

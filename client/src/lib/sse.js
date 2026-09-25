@@ -1,6 +1,50 @@
 import { useAuthStore } from '@/store/authStore';
 
 /**
+ * Unwraps potentially nested or stringified JSON errors into human-readable text.
+ *
+ * @param {any} raw
+ * @returns {string}
+ */
+export function sanitizeErrorMessage(raw) {
+  if (!raw) return 'An error occurred';
+  if (typeof raw !== 'string') {
+    if (typeof raw === 'object' && raw.message) return sanitizeErrorMessage(raw.message);
+    return String(raw);
+  }
+
+  const trimmed = raw.trim();
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      let parsed = JSON.parse(trimmed);
+      let attempts = 0;
+      while (parsed && typeof parsed === 'object' && attempts < 5) {
+        attempts++;
+        if (parsed.error && typeof parsed.error === 'object') {
+          parsed = parsed.error;
+          continue;
+        }
+        if (typeof parsed.message === 'string' && parsed.message.trim().startsWith('{')) {
+          try {
+            parsed = JSON.parse(parsed.message);
+            continue;
+          } catch {
+            return parsed.message;
+          }
+        }
+        if (parsed.message) return String(parsed.message);
+        if (parsed.error && typeof parsed.error === 'string') return parsed.error;
+        break;
+      }
+    } catch {
+      // not valid JSON, return as is
+    }
+  }
+
+  return raw;
+}
+
+/**
  * Parses an SSE text chunk or stream into structured events.
  *
  * @param {ReadableStream<Uint8Array>} readableStream
@@ -37,7 +81,11 @@ export async function parseSseStream(readableStream, { onToken, onDone, onError 
     } else if (currentEvent === 'done') {
       onDone?.(typeof parsed === 'object' && parsed !== null ? parsed : { raw: parsed });
     } else if (currentEvent === 'error') {
-      onError?.(typeof parsed === 'object' && parsed !== null ? parsed : { message: parsed });
+      const errObj = typeof parsed === 'object' && parsed !== null ? parsed : { message: parsed };
+      if (errObj.message) {
+        errObj.message = sanitizeErrorMessage(errObj.message);
+      }
+      onError?.(errObj);
     }
 
     currentEvent = 'message';
@@ -143,7 +191,7 @@ export async function streamChatMessage({
     const err = {
       status: 402,
       code: errorJson?.error?.code || 'INSUFFICIENT_CREDITS',
-      message: errorJson?.error?.message || 'Recharge to continue',
+      message: sanitizeErrorMessage(errorJson?.error?.message || 'Recharge to continue'),
       details: errorJson?.error?.details || null,
     };
     onError?.(err);
@@ -157,10 +205,11 @@ export async function streamChatMessage({
     } catch {
       // Ignore json parse error
     }
+    const rawMsg = errorJson?.error?.message || response.statusText || 'Failed to stream message';
     const err = {
       status: response.status,
       code: errorJson?.error?.code || 'STREAM_ERROR',
-      message: errorJson?.error?.message || response.statusText || 'Failed to stream message',
+      message: sanitizeErrorMessage(rawMsg),
       details: errorJson?.error?.details || null,
     };
     onError?.(err);

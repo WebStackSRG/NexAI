@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { parseSseStream, streamChatMessage } from './sse';
+import { parseSseStream, streamChatMessage, sanitizeErrorMessage } from './sse';
 import { useAuthStore } from '@/store/authStore';
 
 // Helper to create a ReadableStream from string chunks
@@ -172,5 +172,39 @@ describe('streamChatMessage API', () => {
     });
 
     expect(onError).toHaveBeenCalled();
+  });
+});
+
+describe('sanitizeErrorMessage utility', () => {
+  it('unwraps nested stringified JSON errors', () => {
+    const inner = JSON.stringify({
+      error: {
+        code: 503,
+        message:
+          'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.',
+        status: 'UNAVAILABLE',
+      },
+    });
+    const outer = JSON.stringify({
+      error: {
+        message: inner,
+        code: 503,
+        status: 'Service Unavailable',
+      },
+    });
+
+    const sanitized = sanitizeErrorMessage(outer);
+    expect(sanitized).toBe(
+      'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.',
+    );
+  });
+
+  it('preserves clean string messages without changes', () => {
+    expect(sanitizeErrorMessage('Network connection lost')).toBe('Network connection lost');
+  });
+
+  it('handles null and undefined gracefully', () => {
+    expect(sanitizeErrorMessage(null)).toBe('An error occurred');
+    expect(sanitizeErrorMessage(undefined)).toBe('An error occurred');
   });
 });
