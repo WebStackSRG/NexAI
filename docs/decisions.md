@@ -49,3 +49,12 @@ This log tracks architectural and design decisions made for the NexAI project, p
 - **Status:** Accepted
 - **Context:** If the MongoDB database is disconnected, returning HTTP 200 `status: "ok"` masks backend failure from orchestrators, reverse proxies, and cloud providers (e.g. Render).
 - **Decision:** In `/api/health`, check `isDbConnected()`. If connected, return HTTP 200 with `status: "ok"`, `db: "connected"`. If disconnected, return HTTP 503 Service Unavailable with `status: "degraded"`, `db: "disconnected"`.
+
+## ADR-009: Dual-Token Architecture and Auto-Refresh Axios Interceptor
+- **Date:** 2026-09-25
+- **Status:** Accepted
+- **Context:** Access tokens stored in localStorage are vulnerable to XSS attacks. Conversely, putting everything strictly in cookies makes it difficult for client applications to pass credentials to WebSockets, EventSource (SSE streams), and third-party tools.
+- **Decision:** Implement a dual-token strategy:
+  1. **Access Token:** Short-lived (15 minutes), kept in memory in the client Zustand store, passed as `Authorization: Bearer <token>` in HTTP requests and SSE queries.
+  2. **Refresh Token:** Long-lived (7 days), stored in an `httpOnly`, `SameSite=None; Secure` (production) cookie inaccessible to JavaScript.
+  3. **Auto-Refresh Interceptor:** The client Axios instance intercepts 401 Unauthorized responses, queues pending requests, requests a fresh access token from `/api/auth/refresh`, and transparently retries the failed requests without interrupting the user session. On page reload, `checkAuth` runs once on app mount to re-hydrate the session seamlessly.

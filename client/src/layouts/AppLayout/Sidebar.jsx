@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import PropTypes from 'prop-types';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   MessageSquare,
   Bookmark,
@@ -10,14 +11,20 @@ import {
   Shield,
   Sparkles,
   Layers,
+  LogOut,
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { CreditBadge } from '@/components/common/CreditBadge';
+import { Dropdown } from '@/components/ui/Dropdown';
+import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils/cn';
 import styles from './Sidebar.module.scss';
 
 export function Sidebar({ onItemClick }) {
+  const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
+
   const navItems = [
     { to: ROUTES.CHAT, label: 'Chat', icon: <MessageSquare size={18} /> },
     { to: ROUTES.LIBRARY, label: 'Library', icon: <Bookmark size={18} /> },
@@ -37,6 +44,33 @@ export function Sidebar({ onItemClick }) {
       icon: <Layers size={18} />,
     });
   }
+
+  const credits = user?.wallet?.creditsRemaining ?? 100;
+  const userDisplayName = user?.email ? user.email.split('@')[0] : 'User';
+  const userPlan =
+    user?.role === 'admin'
+      ? 'Admin'
+      : user?.wallet?.tier === 'pro_monthly'
+        ? 'Pro Tier'
+        : 'Free Tier';
+
+  const userMenuItems = [
+    {
+      label: 'Settings',
+      icon: <Settings size={16} />,
+      onClick: () => navigate(ROUTES.SETTINGS),
+    },
+    { divider: true },
+    {
+      label: 'Sign Out',
+      icon: <LogOut size={16} />,
+      danger: true,
+      onClick: async () => {
+        await logout();
+        navigate(ROUTES.LOGIN);
+      },
+    },
+  ];
 
   return (
     <aside className={styles.sidebar}>
@@ -62,15 +96,25 @@ export function Sidebar({ onItemClick }) {
       </nav>
 
       <div className={styles.footer}>
-        <CreditBadge credits={100} />
-        <div className={styles.userCard}>
-          <Avatar name="User" size="sm" />
-          <div className={styles.userInfo}>
-            <span className={styles.name}>Demo User</span>
-            <span className={styles.role}>Starter Plan</span>
-          </div>
-        </div>
+        <CreditBadge credits={credits} />
+        <Dropdown
+          trigger={
+            <div className={styles.userCard} role="button" tabIndex={0} style={{ cursor: 'pointer', width: '100%' }}>
+              <Avatar name={user?.email || 'User'} size="sm" />
+              <div className={styles.userInfo}>
+                <span className={styles.name}>{userDisplayName}</span>
+                <span className={styles.role}>{userPlan}</span>
+              </div>
+            </div>
+          }
+          items={userMenuItems}
+          align="left"
+        />
       </div>
     </aside>
   );
 }
+
+Sidebar.propTypes = {
+  onItemClick: PropTypes.func,
+};

@@ -1,29 +1,70 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Mail, Lock, AlertCircle } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { useAuthStore } from '@/store/authStore';
 import { ROUTES } from '@/constants/routes';
 import styles from './Auth.module.scss';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [localError, setLocalError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleSubmit = (e) => {
+  const { login, googleLogin, isAuthenticated, isLoading, error, clearError } = useAuthStore();
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+  const destination = location.state?.from?.pathname || ROUTES.CHAT;
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(destination, { replace: true });
+    }
+  }, [isAuthenticated, navigate, destination]);
+
+  useEffect(() => {
+    return () => clearError();
+  }, [clearError]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    // Temporary mock navigation for Step 1
-    setTimeout(() => {
-      setLoading(false);
-      navigate(ROUTES.CHAT);
-    }, 400);
+    setLocalError('');
+
+    if (!email || !password) {
+      setLocalError('Please fill in all fields');
+      return;
+    }
+
+    const result = await login({ email, password });
+    if (result.success) {
+      navigate(destination, { replace: true });
+    }
   };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    if (credentialResponse.credential) {
+      const result = await googleLogin(credentialResponse.credential);
+      if (result.success) {
+        navigate(destination, { replace: true });
+      }
+    }
+  };
+
+  const errorMessage = localError || error;
 
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
+      {errorMessage && (
+        <div className={styles.errorMessage} role="alert">
+          <AlertCircle size={16} />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
       <Input
         label="Email Address"
         type="email"
@@ -32,6 +73,7 @@ export default function LoginPage() {
         onChange={(e) => setEmail(e.target.value)}
         leftIcon={<Mail size={18} />}
         required
+        autoComplete="email"
       />
 
       <Input
@@ -42,11 +84,28 @@ export default function LoginPage() {
         onChange={(e) => setPassword(e.target.value)}
         leftIcon={<Lock size={18} />}
         required
+        autoComplete="current-password"
       />
 
-      <Button type="submit" variant="primary" fullWidth loading={loading}>
+      <Button type="submit" variant="primary" fullWidth loading={isLoading}>
         Sign In
       </Button>
+
+      {googleClientId && (
+        <>
+          <div className={styles.divider}>or</div>
+          <div className={styles.googleWrapper}>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setLocalError('Google Sign-In failed')}
+              useOneTap={false}
+              theme="outline"
+              shape="rectangular"
+              text="signin_with"
+            />
+          </div>
+        </>
+      )}
 
       <div className={styles.switchText}>
         Don&apos;t have an account? <Link to={ROUTES.REGISTER}>Sign up</Link>

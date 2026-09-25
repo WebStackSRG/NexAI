@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema(
     },
     googleId: {
       type: String,
+      unique: true,
       sparse: true,
     },
     role: {
@@ -57,5 +58,13 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+userSchema.set('toJSON', {
+  transform: (doc, ret) => {
+    delete ret.passwordHash;
+    delete ret.__v;
+    return ret;
+  },
+});
 
 export const User = mongoose.model('User', userSchema);

@@ -4,11 +4,14 @@ import { useTheme } from '@/hooks/useTheme';
 import { IconButton } from '@/components/ui/IconButton';
 import { Kbd } from '@/components/ui/Kbd';
 import { CreditBadge } from '@/components/common/CreditBadge';
+import { useAuthStore } from '@/store/authStore';
 import styles from './Topbar.module.scss';
 
 export function Topbar() {
   const { isDark, toggleTheme } = useTheme();
   const setDrawerOpen = useUiStore((state) => state.setDrawerOpen);
+  const user = useAuthStore((state) => state.user);
+  const credits = user?.wallet?.creditsRemaining ?? 100;
 
   const openCommandPalette = () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
@@ -37,7 +40,7 @@ export function Topbar() {
       </div>
 
       <div className={styles.rightGroup}>
-        <CreditBadge credits={100} />
+        <CreditBadge credits={credits} />
         <IconButton
           icon={isDark ? <Sun size={18} /> : <Moon size={18} />}
           label={`Switch to ${isDark ? 'light' : 'dark'} mode`}

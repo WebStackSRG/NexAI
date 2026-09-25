@@ -10,9 +10,9 @@ const envSchema = z.object({
   CLIENT_URL: z.string().url().default('http://localhost:5173'),
   MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
 
-  // Optional in Step 1 (will become required in subsequent feature steps)
-  JWT_ACCESS_SECRET: z.string().optional(),
-  JWT_REFRESH_SECRET: z.string().optional(),
+  // Required in Step 2: Auth
+  JWT_ACCESS_SECRET: z.string().min(1, 'JWT_ACCESS_SECRET is required'),
+  JWT_REFRESH_SECRET: z.string().min(1, 'JWT_REFRESH_SECRET is required'),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_FLASH_MODEL: z.string().optional(),
