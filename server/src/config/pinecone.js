@@ -11,7 +11,7 @@ let pineconeIndex = null;
  * @returns {any | null}
  */
 export function getPineconeIndex() {
-  if (!env.PINECONE_API_KEY) {
+  if (process.env.NODE_ENV === 'test' || !env.PINECONE_API_KEY) {
     return null;
   }
 

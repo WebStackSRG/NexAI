@@ -2,7 +2,7 @@ import { LibraryItem } from '../models/LibraryItem.js';
 import { extractLinkContent } from '../services/linkExtractor.service.js';
 import { generateLibrarySuggestion } from '../agents/tagging.agent.js';
 import { deductCredits } from '../services/credit.service.js';
-import { embedContent } from '../services/gemini.service.js';
+import * as geminiService from '../services/gemini.service.js';
 import { vectorDbService } from '../services/vectorDb.service.js';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -92,7 +92,7 @@ export const createItem = asyncHandler(async (req, res) => {
   // Vector embedding & upsert
   try {
     const embedText = `${item.title}\n\n${item.summary}\n\n${item.tags.join(' ')}\n\n${item.content ? item.content.slice(0, 1500) : ''}`;
-    const embedding = await embedContent({ contents: embedText });
+    const embedding = await geminiService.embedContent({ contents: embedText });
 
     if (embedding && embedding.length > 0) {
       const vectorId = item._id.toString();
@@ -223,7 +223,7 @@ export const updateItem = asyncHandler(async (req, res) => {
   if (textChanged) {
     try {
       const embedText = `${item.title}\n\n${item.summary}\n\n${item.tags.join(' ')}\n\n${item.content ? item.content.slice(0, 1500) : ''}`;
-      const embedding = await embedContent({ contents: embedText });
+      const embedding = await geminiService.embedContent({ contents: embedText });
 
       if (embedding && embedding.length > 0) {
         const vectorId = item.vectorId || item._id.toString();
@@ -294,7 +294,7 @@ export const searchItems = asyncHandler(async (req, res) => {
 
   // 1. Semantic Vector Search
   try {
-    const queryEmbedding = await embedContent({ contents: q });
+    const queryEmbedding = await geminiService.embedContent({ contents: q });
     if (queryEmbedding && queryEmbedding.length > 0) {
       const vectorMatches = await vectorDbService.query({
         values: queryEmbedding,
