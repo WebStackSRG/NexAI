@@ -21,9 +21,9 @@ import {
   Edit2,
   Trash2,
   Check,
+  Zap,
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
-import { CreditBadge } from '@/components/common/CreditBadge';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { IconButton } from '@/components/ui/IconButton';
 import { Button } from '@/components/ui/Button';
@@ -35,21 +35,6 @@ import { useUiStore } from '@/store/uiStore';
 import { ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils/cn';
 import styles from './Sidebar.module.scss';
-
-function formatChatDate(timestamp) {
-  if (!timestamp) return '';
-  try {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  } catch {
-    return '';
-  }
-}
 
 export function Sidebar({ onItemClick, isMobile = false }) {
   const { user, logout } = useAuthStore();
@@ -85,12 +70,12 @@ export function Sidebar({ onItemClick, isMobile = false }) {
 
   // Primary navigation links: Chat, Library, Prompts, Interview, Wallet, Settings, Admin [if admin]
   const navItems = [
-    { to: ROUTES.CHAT, label: 'Chat', icon: <MessageSquare size={18} /> },
-    { to: ROUTES.LIBRARY, label: 'Library', icon: <Bookmark size={18} /> },
-    { to: ROUTES.PROMPTS, label: 'Prompts', icon: <Terminal size={18} /> },
-    { to: ROUTES.INTERVIEW, label: 'Interview', icon: <Mic size={18} /> },
-    { to: ROUTES.WALLET, label: 'Wallet', icon: <Wallet size={18} /> },
-    { to: ROUTES.SETTINGS, label: 'Settings', icon: <Settings size={18} /> },
+    { to: ROUTES.CHAT, label: 'Chat', icon: <MessageSquare size={17} /> },
+    { to: ROUTES.LIBRARY, label: 'Library', icon: <Bookmark size={17} /> },
+    { to: ROUTES.PROMPTS, label: 'Prompts', icon: <Terminal size={17} /> },
+    { to: ROUTES.INTERVIEW, label: 'Interview', icon: <Mic size={17} /> },
+    { to: ROUTES.WALLET, label: 'Wallet', icon: <Wallet size={17} /> },
+    { to: ROUTES.SETTINGS, label: 'Settings', icon: <Settings size={17} /> },
   ];
 
   // Role-gated: Admin [if admin]
@@ -98,7 +83,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
     navItems.push({
       to: ROUTES.ADMIN,
       label: 'Admin',
-      icon: <Shield size={18} />,
+      icon: <Shield size={17} />,
     });
   }
 
@@ -107,7 +92,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
     navItems.push({
       to: ROUTES.DESIGN_SYSTEM,
       label: 'Design System',
-      icon: <Layers size={18} />,
+      icon: <Layers size={17} />,
     });
   }
 
@@ -161,7 +146,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
     setIsDeleting(false);
     setDeletingChatId(null);
 
-    // If the active chat was deleted and user is on /chat/:id, navigate to /chat
+    // If active chat was deleted and user is viewing it, navigate to /chat
     if (wasActive && location.pathname.startsWith('/chat/')) {
       navigate(ROUTES.CHAT);
     }
@@ -178,8 +163,16 @@ export function Sidebar({ onItemClick, isMobile = false }) {
 
   const userMenuItems = [
     {
+      label: `Recharge (${credits} credits left)`,
+      icon: <Zap size={15} />,
+      onClick: () => {
+        onItemClick?.();
+        navigate(ROUTES.WALLET);
+      },
+    },
+    {
       label: 'Settings',
-      icon: <Settings size={16} />,
+      icon: <Settings size={15} />,
       onClick: () => {
         onItemClick?.();
         navigate(ROUTES.SETTINGS);
@@ -188,7 +181,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
     { divider: true },
     {
       label: 'Sign Out',
-      icon: <LogOut size={16} />,
+      icon: <LogOut size={15} />,
       danger: true,
       onClick: async () => {
         onItemClick?.();
@@ -205,31 +198,44 @@ export function Sidebar({ onItemClick, isMobile = false }) {
     >
       {/* Brand Header */}
       <div className={styles.brandHeader}>
-        <div
-          className={styles.brandLogo}
-          onClick={() => {
-            onItemClick?.();
-            navigate(ROUTES.CHAT);
-          }}
-          role="button"
-          tabIndex={0}
-          title="NexAI"
-        >
-          <div className={styles.logoIcon}>
-            <Sparkles size={16} />
-          </div>
-          <span className={styles.brandName}>NexAI</span>
-        </div>
-
-        {!isMobile && (
+        {isCollapsed ? (
           <IconButton
-            icon={isCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
-            label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            icon={<PanelLeftOpen size={18} />}
+            label="Expand sidebar"
             size="sm"
             variant="ghost"
             onClick={toggleSidebarCollapsed}
-            className={styles.collapseToggle}
+            className={styles.collapsedToggleBtn}
           />
+        ) : (
+          <>
+            <div
+              className={styles.brandLogo}
+              onClick={() => {
+                onItemClick?.();
+                navigate(ROUTES.CHAT);
+              }}
+              role="button"
+              tabIndex={0}
+              title="NexAI"
+            >
+              <div className={styles.logoIcon}>
+                <Sparkles size={16} />
+              </div>
+              <span className={styles.brandName}>NexAI</span>
+            </div>
+
+            {!isMobile && (
+              <IconButton
+                icon={<PanelLeftClose size={18} />}
+                label="Collapse sidebar"
+                size="sm"
+                variant="ghost"
+                onClick={toggleSidebarCollapsed}
+                className={styles.collapseToggle}
+              />
+            )}
+          </>
         )}
       </div>
 
@@ -252,39 +258,12 @@ export function Sidebar({ onItemClick, isMobile = false }) {
             onClick={handleNewChat}
             className={styles.expandedNewChatBtn}
           >
-            + New chat
+            New chat
           </Button>
         )}
       </div>
 
-      {/* Live Search Chats Filter (expanded only) */}
-      {!isCollapsed && (
-        <div className={styles.searchSection}>
-          <div className={styles.searchWrapper}>
-            <Search size={14} className={styles.searchIcon} />
-            <input
-              type="text"
-              placeholder="Search chats..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={styles.searchInput}
-              aria-label="Search chats"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className={styles.clearSearch}
-                aria-label="Clear chat search"
-              >
-                <X size={12} />
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Navigation Links */}
+      {/* Primary Navigation Links */}
       <nav className={styles.navSection} aria-label="Main Navigation">
         {navItems.map((item) => (
           <NavLink
@@ -308,12 +287,35 @@ export function Sidebar({ onItemClick, isMobile = false }) {
             {chats.length > 0 && <span className={styles.recentsCount}>{chats.length}</span>}
           </div>
 
+          {/* Search chats live filter inside recents */}
+          <div className={styles.searchWrapper}>
+            <Search size={13} className={styles.searchIcon} />
+            <input
+              type="text"
+              placeholder="Search chats..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={styles.searchInput}
+              aria-label="Search chats"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className={styles.clearSearch}
+                aria-label="Clear chat search"
+              >
+                <X size={11} />
+              </button>
+            )}
+          </div>
+
           <div className={styles.recentsList} role="list" aria-label="Recent chats">
             {isLoadingChats ? (
               <div className={styles.skeletonList}>
-                <Skeleton height="38px" radius="md" />
-                <Skeleton height="38px" radius="md" />
-                <Skeleton height="38px" radius="md" />
+                <Skeleton height="34px" radius="md" />
+                <Skeleton height="34px" radius="md" />
+                <Skeleton height="34px" radius="md" />
               </div>
             ) : chats.length === 0 ? (
               <div className={styles.emptyRecents}>
@@ -321,13 +323,12 @@ export function Sidebar({ onItemClick, isMobile = false }) {
               </div>
             ) : filteredChats.length === 0 ? (
               <div className={styles.noMatch}>
-                <p>No chats found</p>
+                <p>No chats matching &quot;{searchQuery}&quot;</p>
               </div>
             ) : (
               filteredChats.map((chat) => {
                 const isActive = chat._id === activeChatId;
                 const isEditing = chat._id === editingChatId;
-                const chatDate = formatChatDate(chat.updatedAt || chat.createdAt);
 
                 return (
                   <div
@@ -367,7 +368,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
                           onClick={(e) => handleSaveRename(chat._id, e)}
                           aria-label="Save title"
                         >
-                          <Check size={13} />
+                          <Check size={12} />
                         </button>
                         <button
                           type="button"
@@ -375,17 +376,14 @@ export function Sidebar({ onItemClick, isMobile = false }) {
                           onClick={handleCancelRename}
                           aria-label="Cancel rename"
                         >
-                          <X size={13} />
+                          <X size={12} />
                         </button>
                       </div>
                     ) : (
                       <>
-                        <div className={styles.chatMeta}>
-                          <span className={styles.chatTitle} title={chat.title}>
-                            {chat.title}
-                          </span>
-                          {chatDate && <span className={styles.chatDate}>{chatDate}</span>}
-                        </div>
+                        <span className={styles.chatTitle} title={chat.title}>
+                          {chat.title}
+                        </span>
 
                         <div className={styles.chatActions} onClick={(e) => e.stopPropagation()}>
                           <Dropdown
@@ -425,36 +423,31 @@ export function Sidebar({ onItemClick, isMobile = false }) {
         </div>
       )}
 
-      {/* User Wallet Badge Card Footer */}
+      {/* User Wallet Badge Card Footer (Unified without duplicacy) */}
       <div className={styles.footerSection}>
         {!isCollapsed ? (
-          <>
-            <CreditBadge
-              credits={credits}
-              onClick={() => {
-                onItemClick?.();
-                navigate(ROUTES.WALLET);
-              }}
-            />
-            <Dropdown
-              trigger={
-                <div
-                  className={styles.userCard}
-                  role="button"
-                  tabIndex={0}
-                  aria-label="User account menu"
-                >
-                  <Avatar name={user?.email || 'User'} size="sm" />
-                  <div className={styles.userInfo}>
-                    <span className={styles.userName}>{userDisplayName}</span>
-                    <span className={styles.userPlan}>{userPlan}</span>
-                  </div>
+          <Dropdown
+            trigger={
+              <div
+                className={styles.userCard}
+                role="button"
+                tabIndex={0}
+                aria-label="User account menu"
+              >
+                <Avatar name={user?.email || 'User'} size="sm" />
+                <div className={styles.userInfo}>
+                  <span className={styles.userName}>{userDisplayName}</span>
+                  <span className={styles.userPlan}>{userPlan}</span>
                 </div>
-              }
-              items={userMenuItems}
-              align="left"
-            />
-          </>
+                <div className={styles.creditChip} title={`${credits} credits remaining`}>
+                  <Zap size={11} className={styles.creditIcon} />
+                  <span>{credits}</span>
+                </div>
+              </div>
+            }
+            items={userMenuItems}
+            align="left"
+          />
         ) : (
           <div className={styles.collapsedFooter}>
             <Dropdown
@@ -468,16 +461,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
                   <Avatar name={user?.email || 'User'} size="sm" />
                 </div>
               }
-              items={[
-                {
-                  label: `Credits: ${credits}`,
-                  icon: <Sparkles size={14} />,
-                  onClick: () => {
-                    navigate(ROUTES.WALLET);
-                  },
-                },
-                ...userMenuItems,
-              ]}
+              items={userMenuItems}
               align="left"
             />
           </div>

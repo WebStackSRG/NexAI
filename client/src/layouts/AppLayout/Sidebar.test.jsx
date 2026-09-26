@@ -43,7 +43,7 @@ describe('Sidebar Component', () => {
 
     // Brand and primary action
     expect(screen.getByText('NexAI')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /\+ new chat/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /new chat/i })).toBeInTheDocument();
 
     // Primary nav items
     expect(screen.getByRole('link', { name: /chat/i })).toBeInTheDocument();
