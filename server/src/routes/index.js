@@ -6,6 +6,7 @@ import adminRoutes from './admin.routes.js';
 import chatRoutes from './chat.routes.js';
 import libraryRoutes from './library.routes.js';
 import projectRoutes from './project.routes.js';
+import promptRoutes from './prompt.routes.js';
 
 const router = Router();
 
@@ -16,5 +17,7 @@ router.use('/admin', adminRoutes);
 router.use('/chats', chatRoutes);
 router.use('/library', libraryRoutes);
 router.use('/projects', projectRoutes);
+router.use('/prompts', promptRoutes);
 
 export default router;
+

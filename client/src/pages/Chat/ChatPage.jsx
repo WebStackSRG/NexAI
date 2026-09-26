@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { MessageSquare } from 'lucide-react';
 import { ChatHero, MessageThread, ChatInput } from '@/features/chat';
 import { useChatStore } from '@/store/chatStore';
@@ -8,6 +8,7 @@ import styles from './ChatPage.module.scss';
 export default function ChatPage() {
   const { chatId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     chats,
@@ -22,10 +23,19 @@ export default function ChatPage() {
 
   const [prefillPrompt, setPrefillPrompt] = useState('');
 
+  // Handle prefill prompt from navigation state (e.g. Prompt Vault "Use in Chat")
+  useEffect(() => {
+    if (location.state?.prefill) {
+      setPrefillPrompt(location.state.prefill);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, navigate, location.pathname]);
+
   // Initial fetch of chats on mount
   useEffect(() => {
     fetchChats();
   }, [fetchChats]);
+
 
   // Synchronize route param chatId with activeChatId in store
   useEffect(() => {
@@ -58,7 +68,11 @@ export default function ChatPage() {
   return (
     <div className={styles.chatContainer} data-testid="chat-page">
       {isEmptyChat ? (
-        <ChatHero onSendPrompt={handleSendFromHero} />
+        <ChatHero
+          onSendPrompt={handleSendFromHero}
+          initialPrompt={prefillPrompt}
+          onClearInitialPrompt={() => setPrefillPrompt('')}
+        />
       ) : (
         <div className={styles.activeWorkspace}>
           {/* Active Conversation Header */}

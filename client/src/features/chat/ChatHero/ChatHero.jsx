@@ -14,13 +14,16 @@ import {
   ChevronDown,
   Sparkles,
   Cpu,
+  Terminal,
 } from 'lucide-react';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { IconButton } from '@/components/ui/IconButton';
+import { PromptPickerModal, VariableFillModal } from '@/features/prompts';
 import { useChatStore } from '@/store/chatStore';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { cn } from '@/lib/utils/cn';
 import styles from './ChatHero.module.scss';
+
 
 const STARTER_PROMPTS = [
   {
@@ -45,13 +48,45 @@ const STARTER_PROMPTS = [
   },
 ];
 
-export function ChatHero({ onSendPrompt }) {
+export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) {
   const { selectedModel, setSelectedModel, insufficientCredits, isStreaming } = useChatStore();
 
   const [input, setInput] = useState('');
   const [attachedFile, setAttachedFile] = useState(null);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [selectedPromptForVariables, setSelectedPromptForVariables] = useState(null);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  const insertCompiledPrompt = (compiledText) => {
+    setInput((prev) => (prev ? `${prev}\n\n${compiledText}` : compiledText));
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.selectionStart = textareaRef.current.value.length;
+        textareaRef.current.selectionEnd = textareaRef.current.value.length;
+      }
+    }, 0);
+  };
+
+  const handleSelectPrompt = (prompt) => {
+    if (prompt.variables && prompt.variables.length > 0) {
+      setSelectedPromptForVariables(prompt);
+    } else {
+      insertCompiledPrompt(prompt.template);
+    }
+  };
+
+  // Handle external prefill from Prompt Vault
+  useEffect(() => {
+    if (initialPrompt) {
+      setInput(initialPrompt);
+      onClearInitialPrompt?.();
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+      }
+    }
+  }, [initialPrompt, onClearInitialPrompt]);
 
   // Web Speech API Voice Dictation Hook
   const { isSupported: isVoiceSupported, isListening, toggleListening } = useSpeechRecognition({
@@ -62,6 +97,7 @@ export function ChatHero({ onSendPrompt }) {
       }
     },
   });
+
 
   // Adjust textarea height dynamically if multiline, default to single-line
   useEffect(() => {
@@ -234,6 +270,16 @@ export function ChatHero({ onSendPrompt }) {
 
               <IconButton
                 type="button"
+                icon={<Terminal size={15} />}
+                label="Use prompt template"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsPickerOpen(true)}
+                className={styles.toolBtn}
+              />
+
+              <IconButton
+                type="button"
                 icon={
                   isListening ? (
                     <MicOff size={16} className={styles.activeMicIcon} />
@@ -287,10 +333,31 @@ export function ChatHero({ onSendPrompt }) {
           ))}
         </div>
       </div>
+
+      {/* Prompt Selector Modal */}
+      <PromptPickerModal
+        open={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        onSelectPrompt={handleSelectPrompt}
+      />
+
+      {/* Variable Fill Modal */}
+      {selectedPromptForVariables && (
+        <VariableFillModal
+          open={Boolean(selectedPromptForVariables)}
+          onClose={() => setSelectedPromptForVariables(null)}
+          prompt={selectedPromptForVariables}
+          onConfirm={insertCompiledPrompt}
+          actionLabel="Use in Chat"
+        />
+      )}
     </div>
   );
 }
 
 ChatHero.propTypes = {
   onSendPrompt: PropTypes.func,
+  initialPrompt: PropTypes.string,
+  onClearInitialPrompt: PropTypes.func,
 };
+

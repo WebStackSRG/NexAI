@@ -914,3 +914,143 @@ Remove a source file from the project workspace.
 }
 ```
 
+---
+
+## Prompt Vault (Step 7 / Prompts)
+
+Reusable prompt templates with variable extraction and dynamic in-chat parameter substitution.
+
+### GET `/api/prompts`
+
+Retrieve all prompt templates created by the authenticated user, sorted by favorites first.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Query Parameters:**
+  - `tag` (optional): Filter prompts containing a specific tag.
+  - `search` (optional): Case-insensitive search on title, description, template, and tags.
+  - `isFavorite` (optional, `'true' | 'false'`): Filter favorites.
+- **Response `200 OK`**:
+
+```json
+{
+  "data": [
+    {
+      "_id": "67406677...",
+      "userId": "673f1122...",
+      "title": "Code Reviewer",
+      "description": "Reviews code against standard engineering guidelines",
+      "template": "Analyze the following {{language}} code:\n\n{{code}}\n\nFocus on: {{focus_areas}}",
+      "variables": ["language", "code", "focus_areas"],
+      "tags": ["engineering", "review"],
+      "isFavorite": true,
+      "createdAt": "2026-09-26T14:30:00.000Z",
+      "updatedAt": "2026-09-26T14:30:00.000Z"
+    }
+  ]
+}
+```
+
+### POST `/api/prompts`
+
+Create a new prompt template. Variables with `{{variable_name}}` syntax are automatically extracted, trimmed, and deduplicated.
+
+- **Auth:** Bearer Token
+- **Method:** `POST`
+- **Request Body:**
+
+```json
+{
+  "title": "Code Reviewer",
+  "description": "Reviews code against standard engineering guidelines",
+  "template": "Analyze the following {{language}} code:\n\n{{code}}",
+  "tags": ["engineering", "review"],
+  "isFavorite": true
+}
+```
+
+- **Response `201 Created`**:
+
+```json
+{
+  "data": {
+    "_id": "67406677...",
+    "userId": "673f1122...",
+    "title": "Code Reviewer",
+    "description": "Reviews code against standard engineering guidelines",
+    "template": "Analyze the following {{language}} code:\n\n{{code}}",
+    "variables": ["language", "code"],
+    "tags": ["engineering", "review"],
+    "isFavorite": true,
+    "createdAt": "2026-09-26T14:30:00.000Z",
+    "updatedAt": "2026-09-26T14:30:00.000Z"
+  }
+}
+```
+
+### GET `/api/prompts/:id`
+
+Retrieve details of a single prompt template owned by the authenticated user.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Response `200 OK`**:
+
+```json
+{
+  "data": {
+    "_id": "67406677...",
+    "title": "Code Reviewer",
+    "template": "Analyze the following {{language}} code:\n\n{{code}}",
+    "variables": ["language", "code"],
+    "tags": ["engineering"],
+    "isFavorite": true
+  }
+}
+```
+
+### PATCH `/api/prompts/:id`
+
+Update prompt title, description, template, tags, or favorite flag. Re-extracts variables automatically if the template changes.
+
+- **Auth:** Bearer Token
+- **Method:** `PATCH`
+- **Request Body (partial update):**
+
+```json
+{
+  "title": "Senior Code Reviewer",
+  "template": "Analyze the following {{language}} code with strict type-safety:\n\n{{code}}"
+}
+```
+
+- **Response `200 OK`**:
+
+```json
+{
+  "data": {
+    "_id": "67406677...",
+    "title": "Senior Code Reviewer",
+    "variables": ["language", "code"]
+  }
+}
+```
+
+### DELETE `/api/prompts/:id`
+
+Delete a prompt template strictly isolated to the authenticated owner.
+
+- **Auth:** Bearer Token
+- **Method:** `DELETE`
+- **Response `200 OK`**:
+
+```json
+{
+  "data": {
+    "message": "Prompt deleted successfully",
+    "id": "67406677..."
+  }
+}
+```
+
+
