@@ -42,11 +42,12 @@ export const useChatStore = create((set, get) => ({
 
   /**
    * Create a new chat session
-   * @param {string} [title]
+   * @param {string | { title?: string, projectId?: string }} [options]
    */
-  createChat: async (title = 'New Chat') => {
+  createChat: async (options = 'New Chat') => {
     try {
-      const response = await chatApi.createChat(title);
+      const payload = typeof options === 'string' ? { title: options } : options;
+      const response = await chatApi.createChat(payload);
       const newChat = response.data;
       set((state) => ({
         chats: [newChat, ...state.chats],
@@ -92,20 +93,50 @@ export const useChatStore = create((set, get) => ({
   },
 
   /**
-   * Update chat title
+   * Update chat details (title, projectId, pinned)
    * @param {string} chatId
-   * @param {string} title
+   * @param {string | { title?: string, projectId?: string, pinned?: boolean }} payload
    */
-  updateChatTitle: async (chatId, title) => {
+  updateChatDetails: async (chatId, payload) => {
     try {
-      const response = await chatApi.updateChat(chatId, title);
+      const response = await chatApi.updateChat(chatId, payload);
       const updatedChat = response.data;
       set((state) => ({
         chats: state.chats.map((c) => (c._id === chatId ? updatedChat : c)),
       }));
       return updatedChat;
     } catch (err) {
-      const message = err.message || 'Failed to rename chat';
+      const message = err.message || 'Failed to update chat';
+      toast.error(message);
+      return null;
+    }
+  },
+
+  /**
+   * Update chat title
+   * @param {string} chatId
+   * @param {string} title
+   */
+  updateChatTitle: async (chatId, title) => {
+    return get().updateChatDetails(chatId, title);
+  },
+
+  /**
+   * Move chat to a project or remove from project (null)
+   * @param {string} chatId
+   * @param {string | null} projectId
+   */
+  moveChatToProject: async (chatId, projectId) => {
+    try {
+      const response = await chatApi.updateChat(chatId, { projectId });
+      const updatedChat = response.data;
+      set((state) => ({
+        chats: state.chats.map((c) => (c._id === chatId ? updatedChat : c)),
+      }));
+      toast.success(projectId ? 'Chat moved to project' : 'Chat removed from project');
+      return updatedChat;
+    } catch (err) {
+      const message = err.message || 'Failed to move chat';
       toast.error(message);
       return null;
     }

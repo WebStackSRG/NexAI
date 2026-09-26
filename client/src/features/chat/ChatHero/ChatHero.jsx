@@ -1,11 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import {
-  Sparkles,
-  Cpu,
+  Plus,
   Mic,
   MicOff,
-  Paperclip,
   ArrowUp,
   X,
   FileText,
@@ -14,6 +12,8 @@ import {
   Mail,
   Server,
   ChevronDown,
+  Sparkles,
+  Cpu,
 } from 'lucide-react';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { IconButton } from '@/components/ui/IconButton';
@@ -24,22 +24,22 @@ import styles from './ChatHero.module.scss';
 
 const STARTER_PROMPTS = [
   {
-    icon: <HelpCircle size={18} />,
+    icon: <HelpCircle size={17} />,
     title: 'Explain a Concept',
     prompt: 'Explain quantum computing in simple, intuitive terms.',
   },
   {
-    icon: <Code2 size={18} />,
+    icon: <Code2 size={17} />,
     title: 'Code Assistance',
     prompt: 'Write a Python script to parse and transform a CSV dataset.',
   },
   {
-    icon: <Mail size={18} />,
+    icon: <Mail size={17} />,
     title: 'Professional Writing',
     prompt: 'Draft a polite follow-up email after a job interview.',
   },
   {
-    icon: <Server size={18} />,
+    icon: <Server size={17} />,
     title: 'System Architecture',
     prompt: 'Design a scalable caching strategy for an API using Redis.',
   },
@@ -63,11 +63,16 @@ export function ChatHero({ onSendPrompt }) {
     },
   });
 
-  // Adjust textarea height dynamically
+  // Adjust textarea height dynamically if multiline, default to single-line
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 180)}px`;
+      const scrollH = textareaRef.current.scrollHeight;
+      if (scrollH > 40) {
+        textareaRef.current.style.height = `${Math.min(scrollH, 120)}px`;
+      } else {
+        textareaRef.current.style.height = '24px';
+      }
     }
   }, [input]);
 
@@ -86,7 +91,7 @@ export function ChatHero({ onSendPrompt }) {
     setInput('');
     setAttachedFile(null);
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = '24px';
     }
 
     if (onSendPrompt) {
@@ -106,7 +111,6 @@ export function ChatHero({ onSendPrompt }) {
     if (file) {
       setAttachedFile(file);
     }
-    // Reset file input so re-selecting same file triggers change
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -137,13 +141,15 @@ export function ChatHero({ onSendPrompt }) {
     },
   ];
 
+  const hasContent = Boolean(input.trim() || attachedFile);
+
   return (
     <div className={styles.heroContainer} data-testid="chat-hero">
       <div className={styles.heroContent}>
         {/* Gemini-inspired Hero Headline */}
         <div className={styles.greetingHeader}>
           <div className={styles.sparkleIcon}>
-            <Sparkles size={28} />
+            <Sparkles size={24} />
           </div>
           <h1 className={styles.heroHeadline}>Where should we start?</h1>
           <p className={styles.heroSubtitle}>
@@ -151,51 +157,49 @@ export function ChatHero({ onSendPrompt }) {
           </p>
         </div>
 
-        {/* Glowing Floating Input Bar */}
-        <div className={styles.glowingInputCard}>
-          {/* Top Bar inside Input: Model Selector & Attached File */}
-          <div className={styles.cardHeader}>
-            <Dropdown
-              trigger={
-                <button
-                  type="button"
-                  className={styles.modelTrigger}
-                  aria-label="Select AI Model"
-                >
-                  <span className={styles.modelIcon}>
-                    {selectedModel === 'pro' ? <Cpu size={14} /> : <Sparkles size={14} />}
-                  </span>
-                  <span className={styles.modelName}>
-                    {selectedModel === 'pro' ? 'Gemini 3.1 Pro' : 'Gemini 3.8 Flash'}
-                  </span>
-                  <ChevronDown size={13} className={styles.chevron} />
-                </button>
-              }
-              items={modelMenuItems}
-              align="left"
+        {/* Floating attached file badge if any */}
+        {attachedFile && (
+          <div className={styles.fileBadgeRow}>
+            <div className={styles.fileBadge} title={attachedFile.name}>
+              <FileText size={13} />
+              <span className={styles.fileName}>{attachedFile.name}</span>
+              <button
+                type="button"
+                onClick={() => setAttachedFile(null)}
+                className={styles.removeFileBtn}
+                aria-label="Remove attached file"
+              >
+                <X size={11} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Gemini One-Liner Pill Capsule Input */}
+        <div className={styles.composerCapsule}>
+          <form onSubmit={handleSubmit} className={styles.composerForm}>
+            {/* Left '+' Attachment Button */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+              aria-label="Attach file"
+            />
+            <IconButton
+              type="button"
+              icon={<Plus size={18} />}
+              label="Attach context file"
+              variant="ghost"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              className={styles.attachBtn}
             />
 
-            {attachedFile && (
-              <div className={styles.fileBadge} title={attachedFile.name}>
-                <FileText size={13} />
-                <span className={styles.fileName}>{attachedFile.name}</span>
-                <button
-                  type="button"
-                  onClick={() => setAttachedFile(null)}
-                  className={styles.removeFileBtn}
-                  aria-label="Remove attached file"
-                >
-                  <X size={11} />
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Main Textarea */}
-          <form onSubmit={handleSubmit} className={styles.composerForm}>
+            {/* Center Input Field */}
             <textarea
               ref={textareaRef}
-              rows={2}
+              rows={1}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -203,89 +207,82 @@ export function ChatHero({ onSendPrompt }) {
               placeholder={
                 insufficientCredits
                   ? 'Recharge your credits to send messages...'
-                  : 'Ask NexAI anything... (Enter to send, Shift + Enter for new line)'
+                  : 'Ask NexAI anything...'
               }
-              className={styles.textarea}
+              className={styles.inputField}
               aria-label="Ask NexAI anything"
             />
 
-            {/* Bottom Actions Row */}
-            <div className={styles.cardFooter}>
-              <div className={styles.leftTools}>
-                {/* File context attachment trigger */}
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  style={{ display: 'none' }}
-                  aria-label="Attach file"
-                />
-                <IconButton
-                  type="button"
-                  icon={<Paperclip size={17} />}
-                  label="Attach context file"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  className={styles.toolBtn}
-                />
+            {/* Right Controls: Model Selector + Mic + Send */}
+            <div className={styles.rightControls}>
+              <Dropdown
+                trigger={
+                  <button
+                    type="button"
+                    className={styles.modelTrigger}
+                    aria-label="Select AI Model"
+                  >
+                    <span className={styles.modelName}>
+                      {selectedModel === 'pro' ? 'Gemini 3.1 Pro' : 'Gemini 3.8 Flash'}
+                    </span>
+                    <ChevronDown size={13} className={styles.chevron} />
+                  </button>
+                }
+                items={modelMenuItems}
+                align="right"
+              />
 
-                {/* Web Speech API Voice Dictation Button */}
-                <IconButton
-                  type="button"
-                  icon={
-                    isListening ? (
-                      <MicOff size={17} className={styles.activeMicIcon} />
-                    ) : (
-                      <Mic size={17} />
-                    )
-                  }
-                  label={
-                    !isVoiceSupported
-                      ? 'Voice input not supported in this browser'
-                      : isListening
-                        ? 'Stop listening'
-                        : 'Voice dictation'
-                  }
-                  disabled={!isVoiceSupported}
-                  variant={isListening ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={toggleListening}
-                  className={cn(styles.toolBtn, isListening && styles.listeningMic)}
-                />
-              </div>
+              <IconButton
+                type="button"
+                icon={
+                  isListening ? (
+                    <MicOff size={16} className={styles.activeMicIcon} />
+                  ) : (
+                    <Mic size={16} />
+                  )
+                }
+                label={
+                  !isVoiceSupported
+                    ? 'Voice input not supported in this browser'
+                    : isListening
+                      ? 'Stop listening'
+                      : 'Voice dictation'
+                }
+                disabled={!isVoiceSupported}
+                variant={isListening ? 'primary' : 'ghost'}
+                size="sm"
+                onClick={toggleListening}
+                className={cn(styles.toolBtn, isListening && styles.listeningMic)}
+              />
 
-              {/* Submit button */}
-              <div className={styles.rightTools}>
+              {hasContent && (
                 <IconButton
                   type="submit"
-                  icon={<ArrowUp size={18} />}
+                  icon={<ArrowUp size={16} />}
                   label="Send prompt"
                   variant="primary"
-                  size="md"
-                  disabled={(!input.trim() && !attachedFile) || insufficientCredits}
+                  size="sm"
+                  disabled={!hasContent || insufficientCredits}
                   className={styles.sendBtn}
                 />
-              </div>
+              )}
             </div>
           </form>
         </div>
 
-        {/* Starter Prompt Suggestion Chips */}
-        <div className={styles.chipsSection} aria-label="Suggested starter prompts">
+        {/* Minimalist Gemini Quick Prompts (clean text rows, not cards) */}
+        <div className={styles.quickPromptsList} aria-label="Suggested starter prompts">
           {STARTER_PROMPTS.map((item, index) => (
             <button
               key={index}
               type="button"
-              className={styles.promptChip}
+              className={styles.quickPromptRow}
               onClick={() => handleSelectChip(item.prompt)}
               aria-label={item.title}
             >
-              <div className={styles.chipIcon}>{item.icon}</div>
-              <div className={styles.chipText}>
-                <span className={styles.chipTitle}>{item.title}</span>
-                <span className={styles.chipPrompt}>{item.prompt}</span>
-              </div>
+              <span className={styles.promptIcon}>{item.icon}</span>
+              <span className={styles.promptText}>{item.prompt}</span>
+              <span className={styles.promptCategory}>{item.title}</span>
             </button>
           ))}
         </div>

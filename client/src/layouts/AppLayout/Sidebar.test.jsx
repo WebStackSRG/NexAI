@@ -5,12 +5,21 @@ import { Sidebar } from './Sidebar';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore';
 import { useUiStore } from '@/store/uiStore';
+import { useProjectStore, DEFAULT_PROJECTS } from '@/store/projectStore';
 
 describe('Sidebar Component', () => {
   beforeEach(() => {
     localStorage.clear();
     useUiStore.setState({
       isSidebarCollapsed: false,
+    });
+    useProjectStore.setState({
+      projects: DEFAULT_PROJECTS,
+      isLoading: false,
+      fetchProjects: vi.fn().mockResolvedValue(DEFAULT_PROJECTS),
+      createProject: vi.fn(),
+      updateProject: vi.fn(),
+      deleteProject: vi.fn(),
     });
     useAuthStore.setState({
       user: {
@@ -23,7 +32,7 @@ describe('Sidebar Component', () => {
     useChatStore.setState({
       chats: [
         { _id: 'chat-1', title: 'React Architecture Review', createdAt: new Date().toISOString() },
-        { _id: 'chat-2', title: 'Python Web Scraping', createdAt: new Date().toISOString() },
+        { _id: 'chat-2', title: 'Python Web Scraping', createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString() },
       ],
       activeChatId: 'chat-1',
       isLoadingChats: false,
@@ -34,38 +43,51 @@ describe('Sidebar Component', () => {
     });
   });
 
-  it('renders expanded sidebar brand, primary navigation, recents, and user card', () => {
+  it('renders expanded sidebar brand, single top search icon, primary navigation, projects, chats, and bottom settings', () => {
     render(
       <MemoryRouter>
         <Sidebar />
       </MemoryRouter>,
     );
 
-    // Brand and primary action
+    // Brand and single header search icon
     expect(screen.getByText('NexAI')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /new chat/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /search workspace/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /new chat/i }).length).toBeGreaterThanOrEqual(1);
 
     // Primary nav items
     expect(screen.getByRole('link', { name: /chat/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /library/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /prompts/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /interview/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /wallet/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /settings/i })).toBeInTheDocument();
 
-    // Non-admin user should NOT see Admin link
-    expect(screen.queryByRole('link', { name: /admin/i })).not.toBeInTheDocument();
+    // ChatGPT-style "... More" section
+    const moreBtn = screen.getByRole('button', { name: /toggle more navigation links/i });
+    expect(moreBtn).toBeInTheDocument();
+    // Expanding More reveals Wallet
+    fireEvent.click(moreBtn);
+    expect(screen.getByRole('menuitem', { name: /wallet/i })).toBeInTheDocument();
 
-    // Recents
+    // Non-admin user should NOT see Admin link even under More
+    expect(screen.queryByRole('menuitem', { name: /admin/i })).not.toBeInTheDocument();
+
+    // Projects Section
+    expect(screen.getByText('Projects')).toBeInTheDocument();
+    expect(screen.getByText('JS & WebStack')).toBeInTheDocument();
+
+    // Chats Section with 3-dots filter button
+    expect(screen.getByText('Chats')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /filter chats/i })).toBeInTheDocument();
     expect(screen.getByText('React Architecture Review')).toBeInTheDocument();
     expect(screen.getByText('Python Web Scraping')).toBeInTheDocument();
 
-    // User info and wallet
+    // User profile and direct bottom Settings button on the right side
     expect(screen.getByText('developer')).toBeInTheDocument();
     expect(screen.getByText('Free Tier')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^settings$/i })).toBeInTheDocument();
   });
 
-  it('renders Admin link when user has admin role', () => {
+  it('renders Admin link under More when user has admin role', () => {
     useAuthStore.setState({
       user: {
         email: 'admin@nexai.local',
@@ -81,7 +103,9 @@ describe('Sidebar Component', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('link', { name: /admin/i })).toBeInTheDocument();
+    const moreBtn = screen.getByRole('button', { name: /toggle more navigation links/i });
+    fireEvent.click(moreBtn);
+    expect(screen.getByRole('menuitem', { name: /admin/i })).toBeInTheDocument();
   });
 
   it('toggles collapsible state smoothly', () => {
@@ -102,20 +126,48 @@ describe('Sidebar Component', () => {
     expect(screen.getByRole('button', { name: /new chat/i })).toBeInTheDocument();
   });
 
-  it('filters recent chat list with search input', () => {
+  it('filters chat history using the three-dots filter menu', () => {
     render(
       <MemoryRouter>
         <Sidebar />
       </MemoryRouter>,
     );
 
-    const searchInput = screen.getByLabelText(/search chats/i);
-    expect(searchInput).toBeInTheDocument();
+    // Both chats are visible initially
+    expect(screen.getByText('React Architecture Review')).toBeInTheDocument();
+    expect(screen.getByText('Python Web Scraping')).toBeInTheDocument();
 
-    fireEvent.change(searchInput, { target: { value: 'React' } });
+    // Click 3-dots filter button
+    const filterBtn = screen.getByRole('button', { name: /filter chats/i });
+    fireEvent.click(filterBtn);
 
+    // Click 'Today' filter option
+    const todayOption = screen.getByRole('menuitem', { name: /today/i });
+    fireEvent.click(todayOption);
+
+    // Today chat should remain, older chat should be filtered out
     expect(screen.getByText('React Architecture Review')).toBeInTheDocument();
     expect(screen.queryByText('Python Web Scraping')).not.toBeInTheDocument();
+  });
+
+  it('toggles projects and chats collapsible sections', () => {
+    render(
+      <MemoryRouter>
+        <Sidebar />
+      </MemoryRouter>,
+    );
+
+    // Projects can be collapsed
+    const projectsToggle = screen.getByRole('button', { name: /toggle projects section/i });
+    expect(screen.getByText('JS & WebStack')).toBeInTheDocument();
+    fireEvent.click(projectsToggle);
+    expect(screen.queryByText('JS & WebStack')).not.toBeInTheDocument();
+
+    // Chats can be collapsed
+    const chatsToggle = screen.getByRole('button', { name: /toggle chats section/i });
+    expect(screen.getByText('React Architecture Review')).toBeInTheDocument();
+    fireEvent.click(chatsToggle);
+    expect(screen.queryByText('React Architecture Review')).not.toBeInTheDocument();
   });
 
   it('triggers onItemClick when rendered in mobile drawer', () => {

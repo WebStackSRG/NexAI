@@ -1,4 +1,5 @@
 import { Chat } from '../models/Chat.js';
+import { Project } from '../models/Project.js';
 import { Message } from '../models/Message.js';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -12,7 +13,11 @@ import { logger } from '../utils/logger.js';
  * GET /api/chats
  */
 export const getChats = asyncHandler(async (req, res) => {
-  const chats = await Chat.find({ userId: req.user._id }).sort({ updatedAt: -1 });
+  const filter = { userId: req.user._id };
+  if (req.query.projectId) {
+    filter.projectId = req.query.projectId;
+  }
+  const chats = await Chat.find(filter).sort({ updatedAt: -1 });
   res.status(200).json({ data: chats });
 });
 
@@ -21,28 +26,32 @@ export const getChats = asyncHandler(async (req, res) => {
  * POST /api/chats
  */
 export const createChat = asyncHandler(async (req, res) => {
-  const { title } = req.body;
+  const { title, projectId } = req.body;
   const chat = await Chat.create({
     userId: req.user._id,
     title: title || 'New Chat',
+    projectId: projectId || null,
   });
   res.status(201).json({ data: chat });
 });
 
 /**
- * Updates the title of an existing chat session.
+ * Updates an existing chat session (title, projectId, pinned).
  * PATCH /api/chats/:id
  */
 export const updateChat = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { title } = req.body;
+  const { title, projectId, pinned } = req.body;
 
   const chat = await Chat.findOne({ _id: id, userId: req.user._id });
   if (!chat) {
     throw new ApiError(404, 'CHAT_NOT_FOUND', 'Chat conversation not found');
   }
 
-  chat.title = title;
+  if (title !== undefined) chat.title = title;
+  if (projectId !== undefined) chat.projectId = projectId;
+  if (pinned !== undefined) chat.pinned = pinned;
+
   await chat.save();
 
   res.status(200).json({ data: chat });
@@ -129,12 +138,27 @@ export async function sendMessage(req, res, next) {
     // Load full message history for context
     const history = await Message.find({ chatId: chat._id }).sort({ createdAt: 1 });
 
+    // If chat belongs to a project, inject project custom instructions and sources
+    let customInstructions = '';
+    let projectSources = [];
+    if (chat.projectId) {
+      const project = await Project.findOne({ _id: chat.projectId, userId: req.user._id });
+      if (project?.customInstructions) {
+        customInstructions = project.customInstructions;
+      }
+      if (project?.sources && project.sources.length > 0) {
+        projectSources = project.sources;
+      }
+    }
+
     let fullText = '';
     let tokensUsed = 0;
 
     const stream = streamChatReply({
       messages: history,
       model,
+      customInstructions,
+      sources: projectSources,
     });
 
     for await (const chunk of stream) {

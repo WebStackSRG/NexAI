@@ -13,14 +13,23 @@ import {
   Shield,
   Layers,
   LogOut,
-  X,
   PanelLeftClose,
   PanelLeftOpen,
   MoreHorizontal,
+  ChevronDown,
+  ChevronRight,
+  Folder,
   Edit2,
   Trash2,
   Check,
+  X,
   Zap,
+  Pin,
+  Archive,
+  Share2,
+  List,
+  Plus,
+  ExternalLink,
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Dropdown } from '@/components/ui/Dropdown';
@@ -29,7 +38,10 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore';
+import { useProjectStore } from '@/store/projectStore';
 import { useUiStore } from '@/store/uiStore';
+import { toast } from '@/store/uiStore';
+import { CreateProjectModal, MoveToProjectModal } from '@/features/projects';
 import { ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils/cn';
 import styles from './Sidebar.module.scss';
@@ -46,6 +58,8 @@ export function Sidebar({ onItemClick, isMobile = false }) {
     deleteChat,
   } = useChatStore();
 
+  const { projects, fetchProjects, deleteProject } = useProjectStore();
+
   const isCollapsedInStore = useUiStore((state) => state.isSidebarCollapsed);
   const toggleSidebarCollapsed = useUiStore((state) => state.toggleSidebarCollapsed);
 
@@ -55,50 +69,157 @@ export function Sidebar({ onItemClick, isMobile = false }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [searchQuery, setSearchQuery] = useState('');
+  // Collapsible sections and state
+  const [isProjectsOpen, setIsProjectsOpen] = useState(true);
+  const [isChatsOpen, setIsChatsOpen] = useState(true);
+  const [organizeMode, setOrganizeMode] = useState('list'); // 'list' | 'project'
+  const [chatFilter, setChatFilter] = useState('all'); // 'all' | 'today' | 'week' | 'older'
+
+  // Modals state for projects
+  const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
+  const [projectToEdit, setProjectToEdit] = useState(null);
+  const [movingChat, setMovingChat] = useState(null);
+
+  // Local storage persisted pinned and archived chats
+  const [pinnedChatIds, setPinnedChatIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nexai_pinned_chats');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [archivedChatIds, setArchivedChatIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nexai_archived_chats');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [editingChatId, setEditingChatId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
   const [deletingChatId, setDeletingChatId] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Initial fetch of chat list
+  // Initial fetch of chats and projects
   useEffect(() => {
     fetchChats();
-  }, [fetchChats]);
+    fetchProjects();
+  }, [fetchChats, fetchProjects]);
 
-  // Primary navigation links
-  const navItems = [
+  // Primary visible navigation links
+  const primaryNavItems = [
     { to: ROUTES.CHAT, label: 'Chat', icon: <MessageSquare size={17} /> },
     { to: ROUTES.LIBRARY, label: 'Library', icon: <Bookmark size={17} /> },
     { to: ROUTES.PROMPTS, label: 'Prompts', icon: <Terminal size={17} /> },
     { to: ROUTES.INTERVIEW, label: 'Interview', icon: <Mic size={17} /> },
-    { to: ROUTES.WALLET, label: 'Wallet', icon: <Wallet size={17} /> },
-    { to: ROUTES.SETTINGS, label: 'Settings', icon: <Settings size={17} /> },
   ];
 
-  // Role-gated: Admin [if admin]
+  // Secondary items for ChatGPT-style floating "... More" popover
+  const moreNavDropdownItems = [
+    {
+      label: 'Wallet',
+      icon: <Wallet size={16} />,
+      onClick: () => {
+        navigate(ROUTES.WALLET);
+        onItemClick?.();
+      },
+    },
+  ];
+
   if (user?.role === 'admin') {
-    navItems.push({
-      to: ROUTES.ADMIN,
+    moreNavDropdownItems.push({
       label: 'Admin',
-      icon: <Shield size={17} />,
+      icon: <Shield size={16} />,
+      onClick: () => {
+        navigate(ROUTES.ADMIN);
+        onItemClick?.();
+      },
     });
   }
 
-  // Dev-only Design System Link
   if (import.meta.env.DEV) {
-    navItems.push({
-      to: ROUTES.DESIGN_SYSTEM,
+    moreNavDropdownItems.push({
       label: 'Design System',
-      icon: <Layers size={17} />,
+      icon: <Layers size={16} />,
+      onClick: () => {
+        navigate(ROUTES.DESIGN_SYSTEM);
+        onItemClick?.();
+      },
     });
   }
 
-  const filteredChats = useMemo(() => {
-    if (!searchQuery.trim()) return chats;
-    const query = searchQuery.toLowerCase();
-    return chats.filter((c) => c.title?.toLowerCase().includes(query));
-  }, [chats, searchQuery]);
+  // Filter out archived chats and apply date categorization
+  const visibleChats = useMemo(() => {
+    let list = chats.filter((c) => !archivedChatIds.includes(c._id));
+
+    if (chatFilter !== 'all') {
+      const now = new Date();
+      const oneDay = 24 * 60 * 60 * 1000;
+      const sevenDays = 7 * oneDay;
+
+      list = list.filter((chat) => {
+        const chatDate = new Date(chat.updatedAt || chat.createdAt);
+        const diff = now - chatDate;
+
+        if (chatFilter === 'today') return diff < oneDay;
+        if (chatFilter === 'week') return diff >= oneDay && diff < sevenDays;
+        if (chatFilter === 'older') return diff >= sevenDays;
+        return true;
+      });
+    }
+
+    return list;
+  }, [chats, archivedChatIds, chatFilter]);
+
+  // Separate pinned and unpinned chats
+  const pinnedChats = useMemo(() => {
+    return visibleChats.filter((c) => pinnedChatIds.includes(c._id));
+  }, [visibleChats, pinnedChatIds]);
+
+  const unpinnedChats = useMemo(() => {
+    return visibleChats.filter((c) => !pinnedChatIds.includes(c._id));
+  }, [visibleChats, pinnedChatIds]);
+
+  const togglePin = (chatId, e) => {
+    e?.stopPropagation();
+    setPinnedChatIds((prev) => {
+      const next = prev.includes(chatId) ? prev.filter((id) => id !== chatId) : [chatId, ...prev];
+      try {
+        localStorage.setItem('nexai_pinned_chats', JSON.stringify(next));
+      } catch (err) {
+        void err;
+      }
+      return next;
+    });
+  };
+
+  const handleArchive = (chatId, e) => {
+    e?.stopPropagation();
+    setArchivedChatIds((prev) => {
+      const next = [...prev, chatId];
+      try {
+        localStorage.setItem('nexai_archived_chats', JSON.stringify(next));
+      } catch (err) {
+        void err;
+      }
+      return next;
+    });
+    toast.info('Conversation archived');
+  };
+
+  const handleShare = async (chat, e) => {
+    e?.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/chat/${chat._id}`);
+      toast.success('Chat link copied to clipboard!');
+    } catch {
+      toast.info('Link ready to share');
+    }
+  };
 
   const handleNewChat = () => {
     selectChat(null);
@@ -110,6 +231,24 @@ export function Sidebar({ onItemClick, isMobile = false }) {
     selectChat(chatId);
     navigate(`/chat/${chatId}`);
     onItemClick?.();
+  };
+
+  const handleSelectProject = (project) => {
+    const id = project._id || project.id;
+    navigate(`/projects/${id}`);
+    onItemClick?.();
+  };
+
+  const handleStartEditProject = (project, e) => {
+    e?.stopPropagation();
+    setProjectToEdit(project);
+    setIsCreateProjectOpen(true);
+  };
+
+  const handleDeleteProject = async (project, e) => {
+    e?.stopPropagation();
+    const id = project._id || project.id;
+    await deleteProject(id);
   };
 
   const handleStartRename = (chat, e) => {
@@ -144,7 +283,6 @@ export function Sidebar({ onItemClick, isMobile = false }) {
     setIsDeleting(false);
     setDeletingChatId(null);
 
-    // If active chat was deleted and user is viewing it, navigate to /chat
     if (wasActive && location.pathname.startsWith('/chat/')) {
       navigate(ROUTES.CHAT);
     }
@@ -193,12 +331,138 @@ export function Sidebar({ onItemClick, isMobile = false }) {
     },
   ];
 
+  const renderChatItem = (chat) => {
+    const isActive = chat._id === activeChatId;
+    const isEditing = chat._id === editingChatId;
+    const isPinned = pinnedChatIds.includes(chat._id);
+
+    return (
+      <div
+        key={chat._id}
+        className={cn(styles.chatItem, isActive && styles.active)}
+        onClick={() => {
+          if (!isEditing) {
+            handleSelectChat(chat._id);
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !isEditing) {
+            handleSelectChat(chat._id);
+          }
+        }}
+      >
+        {isEditing ? (
+          <div className={styles.editRow} onClick={(e) => e.stopPropagation()}>
+            <input
+              type="text"
+              className={styles.editInput}
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSaveRename(chat._id, e);
+                if (e.key === 'Escape') handleCancelRename(e);
+              }}
+              autoFocus
+            />
+            <button
+              type="button"
+              className={styles.inlineActionBtn}
+              onClick={(e) => handleSaveRename(chat._id, e)}
+              aria-label="Save title"
+            >
+              <Check size={12} />
+            </button>
+            <button
+              type="button"
+              className={styles.inlineActionBtn}
+              onClick={handleCancelRename}
+              aria-label="Cancel rename"
+            >
+              <X size={12} />
+            </button>
+          </div>
+        ) : (
+          <>
+            <span className={styles.chatTitle} title={chat.title}>
+              {chat.title}
+            </span>
+
+            {/* Hover Actions: Quick Pin Icon + Three Dots Context Menu */}
+            <div className={styles.chatActions} onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                className={cn(styles.pinBtn, isPinned && styles.isPinned)}
+                onClick={(e) => togglePin(chat._id, e)}
+                title={isPinned ? 'Unpin chat' : 'Pin chat'}
+                aria-label={isPinned ? 'Unpin chat' : 'Pin chat'}
+              >
+                <Pin size={13} className={styles.pinIcon} />
+              </button>
+
+              <Dropdown
+                trigger={
+                  <IconButton
+                    icon={<MoreHorizontal size={14} />}
+                    label="Chat options"
+                    size="sm"
+                    variant="ghost"
+                    className={styles.itemMenuBtn}
+                  />
+                }
+                items={[
+                  {
+                    label: 'Share',
+                    icon: <Share2 size={13} />,
+                    onClick: (e) => handleShare(chat, e),
+                  },
+                  {
+                    label: 'Rename',
+                    icon: <Edit2 size={13} />,
+                    onClick: (e) => handleStartRename(chat, e),
+                  },
+                  {
+                    label: isPinned ? 'Unpin chat' : 'Pin chat',
+                    icon: <Pin size={13} />,
+                    onClick: (e) => togglePin(chat._id, e),
+                  },
+                  {
+                    label: 'Archive',
+                    icon: <Archive size={13} />,
+                    onClick: (e) => handleArchive(chat._id, e),
+                  },
+                  {
+                    label: 'Delete',
+                    icon: <Trash2 size={13} />,
+                    danger: true,
+                    onClick: (e) => handleStartDelete(chat._id, e),
+                  },
+                  { divider: true },
+                  {
+                    label: 'Move to project',
+                    icon: <Folder size={13} />,
+                    trailing: <ChevronRight size={13} />,
+                    onClick: () => {
+                      setMovingChat(chat);
+                    },
+                  },
+                ]}
+                align="right"
+              />
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
   return (
     <aside
       className={cn(styles.sidebar, isCollapsed && styles.collapsed, isMobile && styles.mobile)}
       aria-label="Sidebar navigation"
     >
-      {/* Brand Header */}
+      {/* Brand Header: Single search icon + collapse toggle on top right */}
       <div className={styles.brandHeader}>
         {isCollapsed ? (
           <IconButton
@@ -272,9 +536,9 @@ export function Sidebar({ onItemClick, isMobile = false }) {
         )}
       </div>
 
-      {/* Primary Navigation Links */}
+      {/* Primary Navigation Links + ChatGPT-style floating "... More" popover */}
       <nav className={styles.navSection} aria-label="Main Navigation">
-        {navItems.map((item) => (
+        {primaryNavItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -286,175 +550,339 @@ export function Sidebar({ onItemClick, isMobile = false }) {
             <span className={styles.navLabel}>{item.label}</span>
           </NavLink>
         ))}
-      </nav>
 
-      {/* Recent Chat History List (expanded only) */}
-      {!isCollapsed && (
-        <div className={styles.recentsSection}>
-          <div className={styles.recentsHeader}>
-            <span className={styles.recentsTitle}>Chats</span>
-            {chats.length > 0 && <span className={styles.recentsCount}>{chats.length}</span>}
-          </div>
-
-          {/* Search chats live filter */}
-          <div className={styles.searchWrapper}>
-            <Search size={13} className={styles.searchIcon} />
-            <input
-              type="text"
-              placeholder="Search chats..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={styles.searchInput}
-              aria-label="Search chats"
-            />
-            {searchQuery && (
+        {/* ChatGPT Style "... More" row with floating flyout dropdown */}
+        {!isCollapsed && (
+          <Dropdown
+            trigger={
               <button
                 type="button"
-                onClick={() => setSearchQuery('')}
-                className={styles.clearSearch}
-                aria-label="Clear chat search"
+                className={cn(styles.navItem, styles.moreTriggerBtn)}
+                aria-label="Toggle more navigation links"
               >
-                <X size={11} />
+                <span className={styles.navIcon}>
+                  <MoreHorizontal size={17} />
+                </span>
+                <span className={styles.navLabel}>More</span>
               </button>
+            }
+            items={moreNavDropdownItems}
+            align={isMobile ? 'left' : 'flyout'}
+            className={styles.moreDropdownWrapper}
+          />
+        )}
+      </nav>
+
+      {/* Scrollable Middle Container: Projects & Chats */}
+      <div className={styles.middleScrollArea}>
+        {/* Collapsible Projects Section (ChatGPT Style) */}
+        {!isCollapsed && (
+          <div className={styles.sectionBlock}>
+            <div className={styles.sectionHeaderRow}>
+              <button
+                type="button"
+                className={styles.titleToggleBtn}
+                onClick={() => setIsProjectsOpen((prev) => !prev)}
+                aria-expanded={isProjectsOpen}
+                aria-label="Toggle projects section"
+              >
+                <span className={styles.sectionTitle}>Projects</span>
+                <span className={styles.sectionChevron}>
+                  {isProjectsOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                </span>
+              </button>
+
+              <IconButton
+                icon={<Plus size={14} />}
+                label="New project"
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setProjectToEdit(null);
+                  setIsCreateProjectOpen(true);
+                }}
+                className={styles.headerQuickBtn}
+              />
+            </div>
+
+            {isProjectsOpen && (
+              <div className={styles.sectionList}>
+                {projects.map((proj) => {
+                  const projId = proj._id || proj.id;
+                  const isActive = location.pathname === `/projects/${projId}`;
+
+                  return (
+                    <div
+                      key={projId}
+                      className={cn(styles.listItem, isActive && styles.active)}
+                      onClick={() => handleSelectProject(proj)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSelectProject(proj);
+                      }}
+                    >
+                      <Folder
+                        size={14}
+                        className={styles.itemIcon}
+                        style={{ color: proj.color || '#8b5cf6' }}
+                      />
+                      <span className={styles.itemTitle}>{proj.name}</span>
+                      <div
+                        className={styles.projectActions}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Dropdown
+                          trigger={
+                            <IconButton
+                              icon={<MoreHorizontal size={13} />}
+                              label="Project options"
+                              size="sm"
+                              variant="ghost"
+                              className={styles.itemMenuBtn}
+                            />
+                          }
+                          items={[
+                            {
+                              label: 'Open workspace',
+                              icon: <ExternalLink size={13} />,
+                              onClick: () => handleSelectProject(proj),
+                            },
+                            {
+                              label: 'Edit project',
+                              icon: <Edit2 size={13} />,
+                              onClick: (e) => handleStartEditProject(proj, e),
+                            },
+                            {
+                              label: 'Delete project',
+                              icon: <Trash2 size={13} />,
+                              danger: true,
+                              onClick: (e) => handleDeleteProject(proj, e),
+                            },
+                          ]}
+                          align="right"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
+        )}
 
-          <div className={styles.recentsList} role="list" aria-label="Recent chats">
-            {isLoadingChats ? (
-              <div className={styles.skeletonList}>
-                <Skeleton height="32px" radius="md" />
-                <Skeleton height="32px" radius="md" />
-                <Skeleton height="32px" radius="md" />
-              </div>
-            ) : chats.length === 0 ? (
-              <div className={styles.emptyRecents}>
-                <p>No conversations yet</p>
-              </div>
-            ) : filteredChats.length === 0 ? (
-              <div className={styles.noMatch}>
-                <p>No chats matching &quot;{searchQuery}&quot;</p>
-              </div>
-            ) : (
-              filteredChats.map((chat) => {
-                const isActive = chat._id === activeChatId;
-                const isEditing = chat._id === editingChatId;
+        {/* Collapsible Chats Section (ChatGPT Style: New chat edit icon + 3-dots with 'Organize chats') */}
+        {!isCollapsed && (
+          <div className={styles.sectionBlock}>
+            <div className={styles.sectionHeaderRow}>
+              <button
+                type="button"
+                className={styles.titleToggleBtn}
+                onClick={() => setIsChatsOpen((prev) => !prev)}
+                aria-expanded={isChatsOpen}
+                aria-label="Toggle chats section"
+              >
+                <span className={styles.sectionTitle}>Chats</span>
+                <span className={styles.sectionChevron}>
+                  {isChatsOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                </span>
+              </button>
 
-                return (
-                  <div
-                    key={chat._id}
-                    className={cn(styles.chatItem, isActive && styles.active)}
-                    onClick={() => {
-                      if (!isEditing) {
-                        handleSelectChat(chat._id);
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !isEditing) {
-                        handleSelectChat(chat._id);
-                      }
-                    }}
-                  >
-                    {isEditing ? (
-                      <div className={styles.editRow} onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="text"
-                          className={styles.editInput}
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSaveRename(chat._id, e);
-                            if (e.key === 'Escape') handleCancelRename(e);
-                          }}
-                          autoFocus
-                        />
-                        <button
-                          type="button"
-                          className={styles.inlineActionBtn}
-                          onClick={(e) => handleSaveRename(chat._id, e)}
-                          aria-label="Save title"
-                        >
-                          <Check size={12} />
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.inlineActionBtn}
-                          onClick={handleCancelRename}
-                          aria-label="Cancel rename"
-                        >
-                          <X size={12} />
-                        </button>
+              {/* Two header action icons: New Chat + 3-Dots Organize Dropdown */}
+              <div className={styles.headerRightControls}>
+                <IconButton
+                  icon={<SquarePen size={14} />}
+                  label="New chat"
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleNewChat}
+                  className={styles.headerQuickBtn}
+                />
+
+                <Dropdown
+                  trigger={
+                    <IconButton
+                      icon={<MoreHorizontal size={14} />}
+                      label="Filter chats"
+                      size="sm"
+                      variant="ghost"
+                      className={styles.headerQuickBtn}
+                    />
+                  }
+                  items={[
+                    { header: true, label: 'Organize chats' },
+                    {
+                      label: 'In one list',
+                      icon: <List size={14} />,
+                      trailing: organizeMode === 'list' && chatFilter === 'all' ? <Check size={14} /> : undefined,
+                      active: organizeMode === 'list' && chatFilter === 'all',
+                      onClick: () => {
+                        setOrganizeMode('list');
+                        setChatFilter('all');
+                      },
+                    },
+                    {
+                      label: 'By project',
+                      icon: <Folder size={14} />,
+                      trailing: organizeMode === 'project' ? <Check size={14} /> : undefined,
+                      active: organizeMode === 'project',
+                      onClick: () => setOrganizeMode('project'),
+                    },
+                    { divider: true },
+                    { header: true, label: 'Filter by date' },
+                    {
+                      label: 'Today',
+                      trailing: chatFilter === 'today' ? <Check size={14} /> : undefined,
+                      active: chatFilter === 'today',
+                      onClick: () => setChatFilter('today'),
+                    },
+                    {
+                      label: 'Previous 7 days',
+                      trailing: chatFilter === 'week' ? <Check size={14} /> : undefined,
+                      active: chatFilter === 'week',
+                      onClick: () => setChatFilter('week'),
+                    },
+                    {
+                      label: 'Older',
+                      trailing: chatFilter === 'older' ? <Check size={14} /> : undefined,
+                      active: chatFilter === 'older',
+                      onClick: () => setChatFilter('older'),
+                    },
+                  ]}
+                  align="right"
+                />
+              </div>
+            </div>
+
+            {isChatsOpen && (
+              <div className={styles.sectionList} role="list" aria-label="Recent chats">
+                {isLoadingChats ? (
+                  <div className={styles.skeletonList}>
+                    <Skeleton height="30px" radius="md" />
+                    <Skeleton height="30px" radius="md" />
+                    <Skeleton height="30px" radius="md" />
+                  </div>
+                ) : visibleChats.length === 0 ? (
+                  <div className={styles.emptyNotice}>
+                    <p>No conversations yet</p>
+                  </div>
+                ) : (
+                  <>
+                    {organizeMode === 'project' ? (
+                      <div className={styles.projectGroups}>
+                        {projects.map((proj) => {
+                          const projId = (proj._id || proj.id)?.toString();
+                          const projChats = visibleChats.filter(
+                            (c) => (c.projectId?.toString() || c.projectId) === projId,
+                          );
+                          if (projChats.length === 0) return null;
+                          return (
+                            <div key={projId} className={styles.chatGroup}>
+                              <div
+                                className={styles.groupHeader}
+                                onClick={() => handleSelectProject(proj)}
+                                style={{ cursor: 'pointer' }}
+                              >
+                                <Folder size={11} style={{ color: proj.color || '#8b5cf6' }} />
+                                <span>{proj.name}</span>
+                                <span className={styles.groupCount}>({projChats.length})</span>
+                              </div>
+                              {projChats.map((chat) => renderChatItem(chat))}
+                            </div>
+                          );
+                        })}
+
+                        {/* Standalone Chats (Not assigned to any project) */}
+                        {(() => {
+                          const standaloneChats = visibleChats.filter((c) => !c.projectId);
+                          if (standaloneChats.length === 0) return null;
+                          return (
+                            <div className={styles.chatGroup}>
+                              <div className={styles.groupHeader}>
+                                <span>Standalone Chats</span>
+                                <span className={styles.groupCount}>({standaloneChats.length})</span>
+                              </div>
+                              {standaloneChats.map((chat) => renderChatItem(chat))}
+                            </div>
+                          );
+                        })()}
                       </div>
                     ) : (
                       <>
-                        <span className={styles.chatTitle} title={chat.title}>
-                          {chat.title}
-                        </span>
+                        {/* Pinned Section */}
+                        {pinnedChats.length > 0 && (
+                          <div className={styles.chatGroup}>
+                            <div className={styles.groupHeader}>
+                              <Pin size={11} className={styles.groupPinIcon} />
+                              <span>Pinned</span>
+                            </div>
+                            {pinnedChats.map((chat) => renderChatItem(chat))}
+                          </div>
+                        )}
 
-                        <div className={styles.chatActions} onClick={(e) => e.stopPropagation()}>
-                          <Dropdown
-                            trigger={
-                              <IconButton
-                                icon={<MoreHorizontal size={15} />}
-                                label="Chat options"
-                                size="sm"
-                                variant="ghost"
-                                className={styles.itemMenuBtn}
-                              />
-                            }
-                            items={[
-                              {
-                                label: 'Rename',
-                                icon: <Edit2 size={13} />,
-                                onClick: (e) => handleStartRename(chat, e),
-                              },
-                              { divider: true },
-                              {
-                                label: 'Delete',
-                                icon: <Trash2 size={13} />,
-                                danger: true,
-                                onClick: (e) => handleStartDelete(chat._id, e),
-                              },
-                            ]}
-                            align="right"
-                          />
-                        </div>
+                        {/* Unpinned / Recent Section */}
+                        {unpinnedChats.length > 0 && (
+                          <div className={styles.chatGroup}>
+                            {pinnedChats.length > 0 && (
+                              <div className={styles.groupHeader}>
+                                <span>Recent</span>
+                              </div>
+                            )}
+                            {unpinnedChats.map((chat) => renderChatItem(chat))}
+                          </div>
+                        )}
                       </>
                     )}
-                  </div>
-                );
-              })
+                  </>
+                )}
+              </div>
             )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* User Wallet Badge Card Footer (ChatGPT Style) */}
+      {/* User Profile Footer Card (with Settings icon on the right side) */}
       <div className={styles.footerSection}>
         {!isCollapsed ? (
-          <Dropdown
-            trigger={
-              <div
-                className={styles.userCard}
-                role="button"
-                tabIndex={0}
-                aria-label="User account menu"
-              >
-                <Avatar name={user?.email || 'User'} size="sm" />
-                <div className={styles.userInfo}>
-                  <span className={styles.userName}>{userDisplayName}</span>
-                  <span className={styles.userPlan}>{userPlan}</span>
-                </div>
-                <div className={styles.creditChip} title={`${credits} credits remaining`}>
-                  <Zap size={11} className={styles.creditIcon} />
-                  <span>{credits}</span>
-                </div>
-              </div>
-            }
-            items={userMenuItems}
-            align="left"
-          />
+          <div className={styles.footerRow}>
+            <div className={styles.userCardContainer}>
+              <Dropdown
+                trigger={
+                  <div
+                    className={styles.userCard}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="User account menu"
+                  >
+                    <Avatar name={user?.email || 'User'} size="sm" />
+                    <div className={styles.userInfo}>
+                      <span className={styles.userName}>{userDisplayName}</span>
+                      <span className={styles.userPlan}>{userPlan}</span>
+                    </div>
+                    <div className={styles.creditChip} title={`${credits} credits remaining`}>
+                      <Zap size={11} className={styles.creditIcon} />
+                      <span>{credits}</span>
+                    </div>
+                  </div>
+                }
+                items={userMenuItems}
+                align="left"
+              />
+            </div>
+
+            {/* Direct Settings button on the right side of the bottom user profile */}
+            <IconButton
+              icon={<Settings size={16} />}
+              label="Settings"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                onItemClick?.();
+                navigate(ROUTES.SETTINGS);
+              }}
+              className={styles.footerSettingsBtn}
+            />
+          </div>
         ) : (
           <div className={styles.collapsedFooter}>
             <Dropdown
@@ -471,6 +899,17 @@ export function Sidebar({ onItemClick, isMobile = false }) {
               items={userMenuItems}
               align="left"
             />
+            <IconButton
+              icon={<Settings size={16} />}
+              label="Settings"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                onItemClick?.();
+                navigate(ROUTES.SETTINGS);
+              }}
+              className={styles.collapsedSettingsBtn}
+            />
           </div>
         )}
       </div>
@@ -485,6 +924,28 @@ export function Sidebar({ onItemClick, isMobile = false }) {
         loading={isDeleting}
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeletingChatId(null)}
+      />
+
+      <CreateProjectModal
+        open={isCreateProjectOpen}
+        onClose={() => {
+          setIsCreateProjectOpen(false);
+          setProjectToEdit(null);
+        }}
+        projectToEdit={projectToEdit}
+        onSuccess={(p) => {
+          if (p) navigate(`/projects/${p._id || p.id}`);
+        }}
+      />
+
+      <MoveToProjectModal
+        open={Boolean(movingChat)}
+        onClose={() => setMovingChat(null)}
+        chat={movingChat}
+        onSuccess={() => {
+          fetchChats();
+          fetchProjects();
+        }}
       />
     </aside>
   );

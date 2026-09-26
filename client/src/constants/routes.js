@@ -12,6 +12,8 @@ export const ROUTES = {
   SEARCH: '/search',
   WALLET: '/wallet',
   SETTINGS: '/settings',
+  PROJECTS: '/projects',
+  PROJECT_ID: '/projects/:projectId',
   ADMIN: '/admin',
   DESIGN_SYSTEM: '/design-system',
 };

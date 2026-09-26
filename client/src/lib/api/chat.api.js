@@ -10,19 +10,21 @@ export const chatApi = {
 
   /**
    * Create a new chat session
-   * @param {string} [title]
+   * @param {string | { title?: string, projectId?: string }} [options]
    */
-  createChat(title) {
-    return apiClient.post('/chats', { title });
+  createChat(options) {
+    const payload = typeof options === 'string' ? { title: options } : options || {};
+    return apiClient.post('/chats', payload);
   },
 
   /**
-   * Update chat title
+   * Update chat title, projectId or pinned state
    * @param {string} id
-   * @param {string} title
+   * @param {string | { title?: string, projectId?: string, pinned?: boolean }} payload
    */
-  updateChat(id, title) {
-    return apiClient.patch(`/chats/${id}`, { title });
+  updateChat(id, payload) {
+    const data = typeof payload === 'string' ? { title: payload } : payload;
+    return apiClient.patch(`/chats/${id}`, data);
   },
 
   /**
