@@ -8,6 +8,8 @@ import libraryRoutes from './library.routes.js';
 import projectRoutes from './project.routes.js';
 import promptRoutes from './prompt.routes.js';
 import interviewRoutes from './interview.routes.js';
+import searchRoutes from './search.routes.js';
+import walletRoutes from './wallet.routes.js';
 
 const router = Router();
 
@@ -20,6 +22,8 @@ router.use('/library', libraryRoutes);
 router.use('/projects', projectRoutes);
 router.use('/prompts', promptRoutes);
 router.use('/interview', interviewRoutes);
+router.use('/search', searchRoutes);
+router.use('/wallet', walletRoutes);
 
 export default router;
 

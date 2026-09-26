@@ -513,14 +513,14 @@ VITE_RAZORPAY_KEY_ID=
 ### Upcoming Build Steps
 
 
-**Step 8: Consolidated Library & Document Management** (`feature/consolidated-library`)
+**Step 8: Consolidated Library & Document Management** (`feature/consolidated-library`) — `[COMPLETED]`
 - Unify Documents and Library into one centralized knowledge hub with tabbed filtering: `All`, `Notes & Links`, `Documents`, `Files`, `Interviews`.
 - Structured AI document generator (resumes, project specs, reports) with split-pane live preview, inline editing, and client-side PDF export (`pdf-lib`).
 - Custom local file uploads (PDF/text/markdown) saved to the Library.
 - Chat composer attachment picker: select existing library items or upload local files as chat context.
 - Done when: Structured docs can be generated and exported to PDF; files can be uploaded and attached to chat prompts; all items appear in their respective Library tabs.
 
-**Step 9: AI Interview Platform** (`feature/ai-interview`)
+**Step 9: AI Interview Platform** (`feature/ai-interview`) — `[COMPLETED]`
 - Dedicated `/interview` route with Setup view (Role, Seniority, Viva / Capstone Defense, and Topic selection).
 - Live interactive simulation arena:
   - Gemini acts as an experienced Technical Lead or Viva Examiner with turn-by-turn challenges and follow-ups.
@@ -533,14 +533,25 @@ VITE_RAZORPAY_KEY_ID=
   - Metered with `creditCheck` and atomic token deduction: $\lceil \text{totalTokens} / 100 \rceil$.
 - Done when: A complete mock interview runs from setup to evaluation, voice visualizer animates, transcript tracks turns, scorecard is saved in Library, and credit balance updates accurately.
 
-**Step 10: Unified Search & Command Palette** (`feature/search`)
-- Unified `/search` page and quick-access Command Palette (Ctrl+K).
-- Merges results across Library (notes, docs, files, interviews), Prompts, and Chat History using hybrid semantic vector and text matching.
-- Done when: Ctrl+K or `/search` quickly navigates to any item or screen.
+**Step 10: Unified Search & Command Palette** (`feature/search`) — `[COMPLETED]`
+- Cross-domain hybrid search engine combining vector embeddings (`geminiService` + `vectorDbService`) and MongoDB full-text / regex search across Library, Prompts, and Chats.
+- Dedicated `/search` page with category tabs (`All`, `Library`, `Prompts`, `Chats`), live counts, debounced search, highlighted snippet matches, and recent search caching.
+- Enhanced global Command Palette (Ctrl+K) performing live hybrid search across chats, prompts, and library items alongside fast navigation actions.
+- Done when: Ctrl+K or `/search` quickly navigates to any item or screen across the workspace; all unit & integration tests pass with strict user scoping.
 
-**Step 11: Wallet & Billing** (`feature/wallet-billing`)
+---
+
+**Step 11: Wallet & Billing** (`feature/wallet-billing`) — `[COMPLETED]`
 - Plans, Razorpay Checkout integration in test mode, HMAC verification endpoint, raw body webhook handler, and idempotent transaction ledger.
-- Done when: A test card recharge adds credits exactly once, even if both webhook and verify arrive simultaneously.
+- Server-defined plans (`server/src/config/plans.js`) ensuring prices and credits are never determined by the client.
+- Raw body webhook parser mounted exclusively before `express.json()` at `/api/webhooks/razorpay`.
+- Concurrency-safe atomic transaction ledger preventing double-credits on simultaneous webhook and verify requests.
+- Full wallet frontend (`/wallet`) with balance overview, plan cards, test mode quick-recharge, and paginated transaction ledger.
+- Done when: A test card recharge adds credits exactly once, even if both webhook and verify arrive simultaneously; unit and integration tests verify idempotency.
+
+---
+
+### Upcoming Build Steps
 
 **Step 12: Admin Dashboard** (`feature/admin-dashboard`)
 - Role-gated `/admin` route with stat cards (tokens, mock revenue, active users), token consumption charts, Flash vs Pro model split, recent transactions, and error logs.

@@ -7,6 +7,7 @@ import { requestLogger } from './middleware/requestLogger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { ApiError } from './utils/ApiError.js';
 import apiRoutes from './routes/index.js';
+import webhookRoutes from './routes/webhook.routes.js';
 
 export const app = express();
 
@@ -22,6 +23,11 @@ app.use(
   }),
 );
 app.use(cookieParser());
+
+// Webhook routes require raw body Buffer for HMAC SHA256 signature verification
+app.use('/api/webhooks', express.raw({ type: '*/*' }), webhookRoutes);
+app.use('/webhooks', express.raw({ type: '*/*' }), webhookRoutes);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(requestLogger);

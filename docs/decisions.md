@@ -157,3 +157,32 @@ This log tracks architectural and design decisions made for the NexAI project, p
   4. **Scorecard Generation & Library Archival:** In `concludeInterview`, simulated sessions compute a comprehensive scorecard (0-100 overall score, category breakdown, recommendations) and auto-archive into `LibraryItem` with `type: 'interview'` and `[Simulation]` title badge.
   5. **Frontend Ergonomics:** Added a "🎮 Demo Simulation (No Credits Required)" button to `InterviewSetup.jsx` and the credit warning banner in `InterviewPage.jsx`, and added a `Demo Simulation` badge to `InterviewArena.jsx`.
   6. **Zero Regression Safety:** Live Gemini AI logic and credit wallet metering remain 100% untouched and fully active when `isSimulation` is false.
+
+## ADR-018: Unified Hybrid Search and Enhanced Command Palette Architecture
+
+- **Date:** 2026-09-26
+- **Status:** Accepted
+- **Context:** Finding previously created content in personal AI workspaces is fragmented when users have to individually check the Library, Prompt Vault, and Chat History. A unified, cross-domain hybrid retrieval system was required that combines vector semantic similarity with full-text indexing, backed by a global keyboard-accessible Command Palette (Ctrl+K).
+- **Decision:**
+  1. **Cross-Domain Search Engine:** Implemented `search.service.js` and `GET /api/search?q=&type=&limit=` executing scoped queries strictly isolated to `req.user._id`:
+     - **Knowledge Library:** Hybrid retrieval combining vector similarity via `vectorDbService.query` (using Gemini embedding `text-embedding-004`) and MongoDB `$text` / regex search on title, summary, content, tags, and document sections.
+     - **Prompt Vault:** Full-text and regex search on prompt title, description, template, and tags, prioritizing favorites.
+     - **Chat History:** Search across chat titles and message contents, returning matched messages with surrounding snippet context and role attribution.
+  2. **Categorized Multi-Tab Search UI:** Built `/search` page featuring real-time debounced search, category tabs with live counts (`All`, `Library`, `Prompts`, `Chats`), highlighted snippet matches, empty states with recent search caching in `localStorage`, and direct navigation links to respective workspaces.
+  3. **Live Command Palette Integration:** Upgraded global `CommandPalette` (Ctrl+K) to dynamically execute live unified searches alongside standard navigation commands, presenting categorized results for instant keyboard-driven jump actions.
+
+## ADR-019: Wallet, Razorpay Test Mode, Webhook Architecture & Concurrency Idempotency
+
+- **Date:** 2026-09-26
+- **Status:** Accepted
+- **Context:** Metered SaaS applications require robust billing flows where user wallets are credited based on verified third-party payment gateways. Because payment notifications can arrive concurrently from both client-side redirect/checkout verification and server-side webhook deliveries (or duplicate webhook retries), an atomic idempotency strategy is mandatory to eliminate double-crediting.
+- **Decision:**
+  1. **Server-Side Plan Configuration:** All plan tiers, currency pricing (in INR and paise), credit quantities, and privilege elevations are hard-coded in `server/src/config/plans.js`. The client never dictates price or credit amounts (`GET /api/wallet/plans`).
+  2. **Raw-Body Webhook Parser Isolation:** In `server/src/app.js`, mounted `/api/webhooks` with `express.raw({ type: '*/*' })` strictly *before* global `express.json()` middleware. This preserves the pristine HTTP body buffer required for authentic Razorpay HMAC SHA256 signature verification (`X-Razorpay-Signature`).
+  3. **Atomic Idempotent Transaction Ledger:**
+     - A unique index on `Transaction.paymentId` is enforced in MongoDB.
+     - When a payment is processed via `/wallet/verify` or `/webhooks/razorpay`, `processSuccessfulPayment` atomically attempts `findOneAndUpdate({ orderId, status: { $ne: 'success' } }, ...)` or catches MongoDB `E11000` duplicate key collisions on `paymentId`.
+     - User wallet credits (`wallet.creditsRemaining`) are incremented via `$inc` **if and only if** the transaction status transition lock is acquired. Concurrent requests or repeated retries safely return the existing transaction record without duplicate crediting.
+  4. **Razorpay Test Mode Integration:** Built `client/src/features/wallet/` (`PlanCard`, `TransactionTable`) and `WalletPage.jsx` supporting dynamic script injection (`https://checkout.razorpay.com/v1/checkout.js`), test-card checkout flows, and a zero-friction "⚡ Instant Test Mode Recharge" action for automated grading and offline demo environments.
+
+

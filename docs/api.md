@@ -1297,5 +1297,326 @@ Retrieve details and transcript of a single interview session isolated to the us
 }
 ```
 
+---
+
+## Unified Hybrid Search (Step 10)
+
+### GET `/api/search`
+
+Executes cross-domain hybrid semantic and full-text search across Personal Library, Prompt Vault, and Conversations. Scoped strictly to the authenticated user.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Query Parameters:**
+  - `q` (required, string 1-200 chars): Search keyword or natural language query
+  - `type` (optional, enum: `'all' | 'library' | 'prompts' | 'chats'`, default: `'all'`): Target domain filter
+  - `limit` (optional, number 1-50, default: `20`): Maximum results per category
+
+- **Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "query": "Docker",
+    "type": "all",
+    "counts": {
+      "total": 3,
+      "library": 1,
+      "prompts": 1,
+      "chats": 1
+    },
+    "library": [
+      {
+        "_id": "674099aabbccddeeff0011",
+        "userId": "67401122aabbccddeeff0011",
+        "type": "note",
+        "title": "Microservices Architecture with Docker",
+        "summary": "Deep dive into container orchestration and service mesh pattern",
+        "tags": ["docker", "microservices", "devops"],
+        "category": "other",
+        "matchSource": "text",
+        "similarityScore": 0.88,
+        "createdAt": "2026-09-26T12:00:00.000Z"
+      }
+    ],
+    "prompts": [
+      {
+        "_id": "674099aabbccddeeff0022",
+        "userId": "67401122aabbccddeeff0011",
+        "title": "Docker Compose Generator",
+        "description": "Generates multi-container docker compose configuration",
+        "template": "Create a docker-compose.yml for {{service_name}} using {{db_type}}",
+        "variables": ["service_name", "db_type"],
+        "tags": ["docker", "devops"],
+        "isFavorite": true,
+        "createdAt": "2026-09-26T12:00:00.000Z"
+      }
+    ],
+    "chats": [
+      {
+        "_id": "674099aabbccddeeff0033",
+        "chatId": "674099aabbccddeeff0044",
+        "title": "Docker Deployment Debugging",
+        "pinned": false,
+        "matchType": "message",
+        "role": "assistant",
+        "snippet": "...Use an Alpine base image and separate dependency installation layers...",
+        "createdAt": "2026-09-26T12:00:00.000Z",
+        "updatedAt": "2026-09-26T12:05:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Wallet & Billing (Step 11)
+
+### GET `/api/wallet`
+
+Retrieves current credit balance, membership tier, and cumulative token consumption for the authenticated user.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "wallet": {
+      "creditsRemaining": 1300,
+      "tier": "free",
+      "totalTokensConsumed": 45200
+    }
+  }
+}
+```
+
+---
+
+### GET `/api/wallet/plans`
+
+Fetches active recharge packages strictly from server configuration. Prices and credit allocations are never determined by the client.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "plans": [
+      {
+        "id": "starter_pack",
+        "name": "Starter Top-Up",
+        "description": "Perfect for quick tests, assignments, and light chat sessions",
+        "amountINR": 49,
+        "amountPaise": 4900,
+        "credits": 500,
+        "tier": "free",
+        "badge": null,
+        "popular": false,
+        "features": [
+          "500 AI credits (~50,000 tokens)",
+          "Gemini 3.8 Flash access",
+          "Personal Library storage",
+          "PDF & Document export"
+        ]
+      },
+      {
+        "id": "pro_pack",
+        "name": "Pro Developer Pack",
+        "description": "Best value for active development, mock interviews, and project workspaces",
+        "amountINR": 99,
+        "amountPaise": 9900,
+        "credits": 1200,
+        "tier": "free",
+        "badge": "Popular",
+        "popular": true,
+        "features": [
+          "1,200 AI credits (~120,000 tokens)",
+          "Gemini Flash & Pro models",
+          "Priority SSE streaming",
+          "AI Mock Interview simulations",
+          "Full Library & Hybrid Search"
+        ]
+      },
+      {
+        "id": "power_pack",
+        "name": "Power Studio Tier",
+        "description": "Massive capacity for extensive document drafting, capstone prep, and heavy usage",
+        "amountINR": 249,
+        "amountPaise": 24900,
+        "credits": 3500,
+        "tier": "pro_monthly",
+        "badge": "Best Value",
+        "popular": false,
+        "features": [
+          "3,500 AI credits (~350,000 tokens)",
+          "Pro Monthly tier upgrade",
+          "Unlimited project workspaces",
+          "Comprehensive interview analytics",
+          "Full cross-domain vector search"
+        ]
+      }
+    ]
+  }
+}
+```
+
+---
+
+### POST `/api/wallet/orders`
+
+Creates a Razorpay checkout order and registers a pending transaction in the billing ledger.
+
+- **Auth:** Bearer Token
+- **Method:** `POST`
+- **Request Body:**
+
+```json
+{
+  "planId": "pro_pack"
+}
+```
+
+- **Response `201 Created`:**
+
+```json
+{
+  "data": {
+    "orderId": "order_NX12345678",
+    "amount": 9900,
+    "currency": "INR",
+    "keyId": "rzp_test_..."
+  }
+}
+```
+
+---
+
+### POST `/api/wallet/verify`
+
+Verifies the Razorpay Checkout HMAC SHA256 signature and atomically credits the wallet ledger. Operates idempotently to guarantee credits are added only once.
+
+- **Auth:** Bearer Token
+- **Method:** `POST`
+- **Request Body:**
+
+```json
+{
+  "razorpay_order_id": "order_NX12345678",
+  "razorpay_payment_id": "pay_NX87654321",
+  "razorpay_signature": "0a1b2c3d4e5f6g7h8i9j..."
+}
+```
+
+- **Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "success": true,
+    "credited": true,
+    "alreadyProcessed": false,
+    "creditsRemaining": 1300,
+    "transaction": {
+      "_id": "674100aabbccddeeff0011",
+      "userId": "67401122aabbccddeeff0011",
+      "amountINR": 99,
+      "creditsAdded": 1200,
+      "orderId": "order_NX12345678",
+      "paymentId": "pay_NX87654321",
+      "planId": "pro_pack",
+      "status": "success",
+      "createdAt": "2026-09-26T17:30:00.000Z"
+    }
+  }
+}
+```
+
+---
+
+### GET `/api/wallet/transactions`
+
+Returns paginated billing ledger transactions scoped strictly to the authenticated user.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Query Parameters:**
+  - `page` (optional, default: 1): Page number
+  - `limit` (optional, default: 10, max: 50): Items per page
+
+- **Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "transactions": [
+      {
+        "_id": "674100aabbccddeeff0011",
+        "userId": "67401122aabbccddeeff0011",
+        "amountINR": 99,
+        "creditsAdded": 1200,
+        "orderId": "order_NX12345678",
+        "paymentId": "pay_NX87654321",
+        "planId": "pro_pack",
+        "status": "success",
+        "createdAt": "2026-09-26T17:30:00.000Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 1,
+      "pages": 1
+    }
+  }
+}
+```
+
+---
+
+### POST `/api/webhooks/razorpay`
+
+Public webhook endpoint for asynchronous payment notifications from Razorpay servers. Uses raw request body buffer to verify HMAC SHA256 signature against `RAZORPAY_WEBHOOK_SECRET`.
+
+- **Auth:** Public (HMAC Verified via `X-Razorpay-Signature`)
+- **Method:** `POST`
+- **Headers:**
+  - `X-Razorpay-Signature`: HMAC SHA256 hex digest of raw request body
+- **Request Body (Raw JSON Buffer):**
+
+```json
+{
+  "event": "payment.captured",
+  "payload": {
+    "payment": {
+      "entity": {
+        "id": "pay_NX87654321",
+        "order_id": "order_NX12345678",
+        "amount": 9900,
+        "notes": {
+          "userId": "67401122aabbccddeeff0011",
+          "planId": "pro_pack"
+        }
+      }
+    }
+  }
+}
+```
+
+- **Response `200 OK`:**
+
+```json
+{
+  "status": "ok",
+  "received": true
+}
+```
+
+
+
 
 
