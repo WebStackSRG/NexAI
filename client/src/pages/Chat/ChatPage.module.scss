@@ -1,37 +1,23 @@
 @use '@/styles/abstracts' as *;
 
-.chatPage {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  height: calc(100vh - var(--topbar-height) - var(--space-8));
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  background-color: var(--color-bg-surface);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-
-  @include up(md) {
-    height: calc(100vh - var(--topbar-height) - var(--space-12));
-  }
-}
-
-.desktopSidebar {
-  display: none;
-
-  @include up(md) {
-    display: flex;
-    height: 100%;
-  }
-}
-
-.mainWorkspace {
+.chatContainer {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 auto;
   height: 100%;
+  width: 100%;
+  min-height: 0;
   background-color: var(--color-bg-app);
+  overflow: hidden;
+}
+
+.activeWorkspace {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
 }
 
 .chatHeader {
@@ -50,14 +36,6 @@
   align-items: center;
   gap: var(--space-3);
   min-width: 0;
-}
-
-.mobileToggle {
-  display: block;
-
-  @include up(md) {
-    display: none;
-  }
 }
 
 .titleInfo {
@@ -92,7 +70,7 @@
 .threadArea {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
 }

@@ -32,15 +32,39 @@ export function formatConversationHistory(rawMessages) {
  * @param {Object} options
  * @param {Array<{role: string, content: string}>} options.messages - Raw history
  * @param {'flash' | 'pro'} [options.model='flash'] - Model selection
+ * @param {string} [options.customInstructions=''] - Custom project or user instructions
+ * @param {Array<{name: string, content: string, mimeType?: string}>} [options.sources=[]] - Project sources
  * @returns {AsyncGenerator<{text: string, usageMetadata: any}, void, unknown>}
  */
-export async function* streamChatReply({ messages, model = 'flash' }) {
+export async function* streamChatReply({
+  messages,
+  model = 'flash',
+  customInstructions = '',
+  sources = [],
+}) {
   const contents = formatConversationHistory(messages);
+
+  let systemInstruction = CHAT_SYSTEM_PROMPT;
+  if (customInstructions && customInstructions.trim()) {
+    systemInstruction += `\n\n[PROJECT CUSTOM INSTRUCTIONS]:\nFollow these custom project instructions for all responses:\n${customInstructions.trim()}`;
+  }
+
+  if (Array.isArray(sources) && sources.length > 0) {
+    const formattedSources = sources
+      .map((s, idx) => {
+        const fileHeading = `--- SOURCE ${idx + 1}: ${s.name || s.originalName || 'Document'} (${s.mimeType || 'text'}) ---`;
+        const safeContent = (s.content || '').slice(0, 50000);
+        return `${fileHeading}\n${safeContent}\n${'-'.repeat(fileHeading.length)}`;
+      })
+      .join('\n\n');
+
+    systemInstruction += `\n\n[PROJECT KNOWLEDGE BASE / SOURCES]:\nThe user has uploaded the following project source files. Use this knowledge base as primary ground truth context to answer questions accurately:\n\n${formattedSources}`;
+  }
 
   yield* streamContent({
     contents,
     model,
-    systemInstruction: CHAT_SYSTEM_PROMPT,
+    systemInstruction,
   });
 }
 

@@ -1,11 +1,23 @@
 import { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUp, Square, Zap, Sparkles, Cpu } from 'lucide-react';
+import {
+  ArrowUp,
+  Square,
+  Zap,
+  Sparkles,
+  Cpu,
+  Mic,
+  MicOff,
+  Paperclip,
+  FileText,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { IconButton } from '@/components/ui/IconButton';
 import { useChatStore } from '@/store/chatStore';
 import { useAuthStore } from '@/store/authStore';
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils/cn';
 import styles from './ChatInput.module.scss';
@@ -23,7 +35,19 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
   } = useChatStore();
 
   const [input, setInput] = useState('');
+  const [attachedFile, setAttachedFile] = useState(null);
   const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  // Web Speech API Voice Dictation Hook
+  const { isSupported: isVoiceSupported, isListening, toggleListening } = useSpeechRecognition({
+    onResult: (transcription) => {
+      setInput((prev) => (prev ? `${prev} ${transcription}` : transcription));
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+      }
+    },
+  });
 
   // Initialize model from user settings if available
   useEffect(() => {
@@ -53,11 +77,18 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
-    if (!input.trim() || isStreaming || insufficientCredits) {
+    const trimmed = input.trim();
+    if ((!trimmed && !attachedFile) || isStreaming || insufficientCredits) {
       return;
     }
-    const messageToSend = input;
+
+    let messageToSend = trimmed;
+    if (attachedFile) {
+      messageToSend = `[Context File: ${attachedFile.name}]\n\n${trimmed}`;
+    }
+
     setInput('');
+    setAttachedFile(null);
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
@@ -68,6 +99,16 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAttachedFile(file);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -91,27 +132,85 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
 
       <form className={styles.composerForm} onSubmit={handleSubmit}>
         <div className={styles.toolbar}>
-          <div className={styles.modelSelector}>
-            <button
+          <div className={styles.leftToolbar}>
+            <div className={styles.modelSelector}>
+              <button
+                type="button"
+                className={cn(styles.modelPill, selectedModel === 'flash' && styles.activeModel)}
+                onClick={() => setSelectedModel('flash')}
+                disabled={isStreaming}
+                title="Gemini Flash (fast and cost-effective)"
+              >
+                <Sparkles size={14} />
+                <span>Flash</span>
+              </button>
+              <button
+                type="button"
+                className={cn(styles.modelPill, selectedModel === 'pro' && styles.activeModel)}
+                onClick={() => setSelectedModel('pro')}
+                disabled={isStreaming}
+                title="Gemini Pro (deep reasoning and complex tasks)"
+              >
+                <Cpu size={14} />
+                <span>Pro</span>
+              </button>
+            </div>
+
+            {attachedFile && (
+              <div className={styles.fileBadge} title={attachedFile.name}>
+                <FileText size={12} />
+                <span className={styles.fileName}>{attachedFile.name}</span>
+                <button
+                  type="button"
+                  onClick={() => setAttachedFile(null)}
+                  className={styles.removeFileBtn}
+                  aria-label="Remove attached file"
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className={styles.rightToolbar}>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+              aria-label="Attach file"
+            />
+            <IconButton
               type="button"
-              className={cn(styles.modelPill, selectedModel === 'flash' && styles.activeModel)}
-              onClick={() => setSelectedModel('flash')}
-              disabled={isStreaming}
-              title="Gemini Flash (fast and cost-effective)"
-            >
-              <Sparkles size={14} />
-              <span>Flash</span>
-            </button>
-            <button
+              icon={<Paperclip size={16} />}
+              label="Attach context file"
+              variant="ghost"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              className={styles.toolBtn}
+            />
+            <IconButton
               type="button"
-              className={cn(styles.modelPill, selectedModel === 'pro' && styles.activeModel)}
-              onClick={() => setSelectedModel('pro')}
-              disabled={isStreaming}
-              title="Gemini Pro (deep reasoning and complex tasks)"
-            >
-              <Cpu size={14} />
-              <span>Pro</span>
-            </button>
+              icon={
+                isListening ? (
+                  <MicOff size={16} className={styles.activeMicIcon} />
+                ) : (
+                  <Mic size={16} />
+                )
+              }
+              label={
+                !isVoiceSupported
+                  ? 'Voice input not supported in this browser'
+                  : isListening
+                    ? 'Stop listening'
+                    : 'Voice dictation'
+              }
+              disabled={!isVoiceSupported}
+              variant={isListening ? 'primary' : 'ghost'}
+              size="sm"
+              onClick={toggleListening}
+              className={cn(styles.toolBtn, isListening && styles.listeningMic)}
+            />
           </div>
         </div>
 
@@ -149,7 +248,7 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
                 label="Send message"
                 variant="primary"
                 size="md"
-                disabled={!input.trim() || insufficientCredits}
+                disabled={(!input.trim() && !attachedFile) || insufficientCredits}
                 className={styles.sendButton}
               />
             )}
