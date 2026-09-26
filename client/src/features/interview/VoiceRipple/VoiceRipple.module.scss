@@ -1,0 +1,243 @@
+@use '@/styles/abstracts' as *;
+
+.rippleContainer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+
+  // Sizing definitions
+  &.sm {
+    width: 100px;
+    height: 100px;
+
+    .centerOrb {
+      width: 52px;
+      height: 52px;
+    }
+  }
+
+  &.md {
+    width: 180px;
+    height: 180px;
+
+    .centerOrb {
+      width: 80px;
+      height: 80px;
+    }
+  }
+
+  &.lg {
+    width: 240px;
+    height: 240px;
+
+    .centerOrb {
+      width: 108px;
+      height: 108px;
+    }
+  }
+}
+
+// Center glowing avatar orb
+.centerOrb {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background-color: var(--color-bg-elevated);
+  border: 2px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+  color: var(--color-text-secondary);
+  transition:
+    transform var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.orbIcon {
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+// Mini waveform bars overlay inside or beneath center orb
+.waveBars {
+  position: absolute;
+  bottom: 8px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+}
+
+.bar {
+  width: 2px;
+  background-color: currentColor;
+  border-radius: var(--radius-full);
+  animation: wavePulse 0.8s ease-in-out infinite alternate;
+  will-change: transform;
+
+  &:nth-child(1) {
+    height: 40%;
+    animation-delay: 0.1s;
+  }
+  &:nth-child(2) {
+    height: 80%;
+    animation-delay: 0.25s;
+  }
+  &:nth-child(3) {
+    height: 100%;
+    animation-delay: 0s;
+  }
+  &:nth-child(4) {
+    height: 70%;
+    animation-delay: 0.35s;
+  }
+  &:nth-child(5) {
+    height: 35%;
+    animation-delay: 0.15s;
+  }
+}
+
+// Concentric ripple rings
+.rippleRing {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.85);
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--color-border);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+  will-change: transform, opacity;
+}
+
+// Subtle ambient breathing when idle
+.rippleContainer:not(.active) {
+  .rippleRing {
+    width: 90%;
+    height: 90%;
+    opacity: 0.15;
+    border-color: var(--color-border);
+    animation: ambientPulse 4s ease-in-out infinite;
+  }
+}
+
+// Active speech state: Concentric ripple keyframe animations
+.active {
+  .centerOrb {
+    transform: scale(1.05);
+    box-shadow: 0 0 24px var(--ripple-glow, color-mix(in srgb, var(--color-accent) 40%, transparent));
+  }
+
+  .rippleRing {
+    animation: ripplePulse 2.4s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+
+    &.ring1 {
+      width: 100%;
+      height: 100%;
+      animation-delay: 0s;
+    }
+
+    &.ring2 {
+      width: 100%;
+      height: 100%;
+      animation-delay: 0.6s;
+    }
+
+    &.ring3 {
+      width: 100%;
+      height: 100%;
+      animation-delay: 1.2s;
+    }
+
+    &.ring4 {
+      width: 100%;
+      height: 100%;
+      animation-delay: 1.8s;
+    }
+  }
+
+  // Interviewer persona active speaking theme (Accent / Purple / AI lead)
+  &.interviewer {
+    --ripple-color: var(--color-accent);
+    --ripple-glow: color-mix(in srgb, var(--color-accent) 50%, transparent);
+
+    .centerOrb {
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+      background-color: color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-elevated));
+    }
+
+    .rippleRing {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 16px var(--ripple-glow);
+    }
+  }
+
+  // Candidate active speaking theme (Cyan / Info / Microphone input)
+  &.candidate {
+    --ripple-color: var(--color-info);
+    --ripple-glow: color-mix(in srgb, var(--color-info) 50%, transparent);
+
+    .centerOrb {
+      border-color: var(--color-info);
+      color: var(--color-info);
+      background-color: color-mix(in srgb, var(--color-info) 10%, var(--color-bg-elevated));
+    }
+
+    .rippleRing {
+      border-color: var(--color-info);
+      box-shadow: 0 0 16px var(--ripple-glow);
+    }
+  }
+}
+
+.statusLabel {
+  margin-top: var(--space-3);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-align: center;
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+
+// Hardware-accelerated keyframe definitions
+@keyframes ripplePulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.35);
+    opacity: 0;
+  }
+}
+
+@keyframes ambientPulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(0.85);
+    opacity: 0.15;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(0.95);
+    opacity: 0.28;
+  }
+}
+
+@keyframes wavePulse {
+  0% {
+    transform: scaleY(0.4);
+  }
+  100% {
+    transform: scaleY(1.3);
+  }
+}

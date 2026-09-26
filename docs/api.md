@@ -1115,4 +1115,184 @@ Delete a prompt template strictly isolated to the authenticated owner.
 }
 ```
 
+---
+
+## AI Mock Interview Platform (Step 9)
+
+### POST `/api/interview/start`
+
+Initiate a new interactive mock interview session with persona-calibrated greeting and initial scenario question.
+
+- **Auth:** Bearer Token
+- **Rate Limit:** 30 req/min
+- **Credit Metering:** Enabled via `creditCheck` & `deductCredits` ($\lceil \text{totalTokens} / 100 \rceil$)
+- **Method:** `POST`
+- **Request Body:**
+
+```json
+{
+  "role": "Full-Stack Engineer",
+  "difficulty": "mid",
+  "topic": "MERN Stack Architecture & REST/WebSocket APIs",
+  "model": "flash"
+}
+```
+
+- **Response `201 Created`:**
+
+```json
+{
+  "session": {
+    "_id": "67408899aabbccddeeff0011",
+    "userId": "67401122aabbccddeeff0011",
+    "role": "Full-Stack Engineer",
+    "difficulty": "mid",
+    "topic": "MERN Stack Architecture & REST/WebSocket APIs",
+    "status": "in_progress",
+    "messages": [
+      {
+        "role": "assistant",
+        "content": "Welcome! Let's begin by discussing how you would architect real-time updates in a Node.js and MongoDB system.",
+        "tokensUsed": 120,
+        "timestamp": "2026-09-26T10:00:00.000Z"
+      }
+    ],
+    "scorecard": null,
+    "totalTokensUsed": 120,
+    "createdAt": "2026-09-26T10:00:00.000Z",
+    "updatedAt": "2026-09-26T10:00:00.000Z"
+  },
+  "creditsDeducted": 2,
+  "creditsRemaining": 98
+}
+```
+
+### POST `/api/interview/:id/respond`
+
+Submit candidate answer (dictated or typed) and stream interviewer critique and next technical scenario question via Server-Sent Events (SSE).
+
+- **Auth:** Bearer Token
+- **Rate Limit:** 30 req/min
+- **Credit Metering:** Enabled via `creditCheck` & `deductCredits`
+- **Method:** `POST`
+- **Request Body:**
+
+```json
+{
+  "content": "I would use Socket.io or native WebSockets backed by Redis pub/sub for cross-node message broadcasting.",
+  "model": "flash"
+}
+```
+
+- **Response `200 OK` (Stream: `text/event-stream`):**
+
+```text
+event: token
+data: {"text":"That's a solid architectural pattern. "}
+
+event: token
+data: {"text":"How would you handle backpressure if a slow consumer falls behind?"}
+
+event: done
+data: {"message":{"role":"assistant","content":"...","tokensUsed":180},"tokensUsed":180,"creditsDeducted":2,"creditsRemaining":96}
+```
+
+### POST `/api/interview/:id/conclude`
+
+Conclude the interview, evaluate candidate responses against technical benchmarks, generate a comprehensive JSON scorecard, and auto-archive the completed interview and transcript into the Library (`type: 'interview'`).
+
+- **Auth:** Bearer Token
+- **Rate Limit:** 30 req/min
+- **Credit Metering:** Enabled via `creditCheck` & `deductCredits`
+- **Method:** `POST`
+- **Response `200 OK`:**
+
+```json
+{
+  "session": {
+    "_id": "67408899aabbccddeeff0011",
+    "status": "completed",
+    "scorecard": {
+      "overallScore": 88,
+      "rating": "Strong Hire",
+      "categories": {
+        "technicalAccuracy": 90,
+        "problemSolving": 88,
+        "communication": 90,
+        "systemDesign": 85
+      },
+      "strengths": [
+        "Clear articulation of WebSocket pub/sub architecture",
+        "Deep understanding of Redis scalability and buffering"
+      ],
+      "improvements": [
+        "Further elaborate on database replica set failover strategies"
+      ],
+      "summary": "Excellent technical competence across full-stack architecture with structured communication.",
+      "recommendedTopics": ["Redis Streams", "MongoDB Change Streams"]
+    }
+  },
+  "libraryItem": {
+    "_id": "674099aabbccddeeff0022",
+    "type": "interview",
+    "title": "Mock Interview: Full-Stack Engineer (MERN Stack Architecture & REST/WebSocket APIs)",
+    "summary": "Excellent technical competence across full-stack architecture with structured communication.",
+    "role": "Full-Stack Engineer",
+    "difficulty": "mid",
+    "topic": "MERN Stack Architecture & REST/WebSocket APIs",
+    "scorecard": { ... },
+    "transcript": [ ... ]
+  },
+  "creditsDeducted": 3,
+  "creditsRemaining": 93
+}
+```
+
+### GET `/api/interview`
+
+List all interview sessions for the authenticated user sorted newest first.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Response `200 OK`:**
+
+```json
+{
+  "interviews": [
+    {
+      "_id": "67408899aabbccddeeff0011",
+      "role": "Full-Stack Engineer",
+      "difficulty": "mid",
+      "topic": "MERN Stack Architecture",
+      "status": "completed",
+      "scorecard": { "overallScore": 88, "rating": "Strong Hire" },
+      "createdAt": "2026-09-26T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+### GET `/api/interview/:id`
+
+Retrieve details and transcript of a single interview session isolated to the user.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Response `200 OK`:**
+
+```json
+{
+  "interview": {
+    "_id": "67408899aabbccddeeff0011",
+    "role": "Full-Stack Engineer",
+    "difficulty": "mid",
+    "topic": "MERN Stack Architecture",
+    "status": "completed",
+    "messages": [ ... ],
+    "scorecard": { ... }
+  }
+}
+```
+
+
 

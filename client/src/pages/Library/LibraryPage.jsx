@@ -24,6 +24,7 @@ import {
   DocGeneratorModal,
   FileUploaderModal,
   DocumentViewModal,
+  InterviewViewModal,
 } from '@/features/library';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -62,6 +63,7 @@ export default function LibraryPage() {
     openDocGenModal,
     openUploadModal,
     openViewDocModal,
+    openViewInterviewModal,
     exportPdf,
     openDeleteDialog,
     closeDeleteDialog,
@@ -350,6 +352,7 @@ export default function LibraryPage() {
               onEdit={openEditModal}
               onDelete={openDeleteDialog}
               onViewDoc={openViewDocModal}
+              onViewInterview={openViewInterviewModal}
               onExportPdf={exportPdf}
             />
           ))}
@@ -362,6 +365,7 @@ export default function LibraryPage() {
       <DocGeneratorModal />
       <FileUploaderModal />
       <DocumentViewModal />
+      <InterviewViewModal />
 
       {/* Delete Confirmation */}
       <ConfirmDialog

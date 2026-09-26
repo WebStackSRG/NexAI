@@ -83,9 +83,24 @@ NexAI is a personal knowledge and developer productivity workspace designed with
     - Project Gallery (`/projects`) and workspace page (`/projects/:id`) with capacity tracker (2MB text quota)
     - Sidebar projects collapsible drawer with direct project-scoped chat initiation and chat movement
   - 114 tests passing across monorepo (60 backend, 54 frontend)
-- [ ] **Step 7: Prompt Vault & In-Chat Template Integration** (`feature/prompt-vault`)
-- [ ] **Step 8: Consolidated Library & Document Management** (`feature/consolidated-library`)
-- [ ] **Step 9: AI Interview Platform** (`feature/ai-interview`)
+- [x] **Step 7: Prompt Vault & In-Chat Template Integration** (`feature/prompt-vault`)
+  - Dedicated `/prompts` route with dynamic prompt template creation and syntax highlighting for `{{variables}}`
+  - Variable fill modal with real-time preview and direct injection into chat
+  - Favorite pinning, tag filtering, and instant search
+- [x] **Step 8: Consolidated Library & Document Management** (`feature/consolidated-library`)
+  - Polymorphic Library items (`link`, `note`, `document`, `file`, `interview`) with tabbed filtering
+  - Structured AI document generation (`pdf-lib`) with PDF export and custom file attachment
+  - Suggest -> Review -> Confirm workflow with reactive token deduction
+- [x] **Step 9: AI Mock Interview Platform** (`feature/ai-interview`)
+  - Dedicated `/interview` route with Role, Seniority, and Topic setup configuration
+  - Interactive simulation arena with Gemini Senior Technical Lead / Viva Defense Examiner persona
+  - Hardware-accelerated CSS `VoiceRipple` visualizer responding to candidate and AI speech
+  - Web Speech API speech-to-text dictation and synthesized text-to-speech audio readout
+  - Real-time SSE streaming responses with turn critique and progressive technical follow-ups
+  - Comprehensive performance scorecard evaluation (0-100 rating, category breakdown, strengths, areas for improvement)
+  - Automatic archival of completed scorecard and transcript into the Library under `type: 'interview'`
+  - Metered with `creditCheck` and atomic token deduction ($\lceil \text{totalTokens} / 100 \rceil$)
+  - 167 tests passing across monorepo (89 backend, 78 frontend)
 - [ ] **Step 10: Unified Search & Command Palette** (`feature/search`)
 - [ ] **Step 11: Wallet & Billing** (`feature/wallet-billing`)
 - [ ] **Step 12: Admin Dashboard** (`feature/admin-dashboard`)
