@@ -338,4 +338,71 @@ describe('AI Mock Interview Platform Integration Tests (Step 9)', () => {
       expect(singleRes2.body.interview.role).toBe('Full-Stack Engineer');
     });
   });
+
+  describe('Demo Simulation Mode (No Credits Required)', () => {
+    it('should allow user with 0 credits to run full interview lifecycle without AI or token charges', async () => {
+      // Set user credits to 0
+      userA.wallet.creditsRemaining = 0;
+      await userA.save();
+
+      // 1. Start simulation
+      const startRes = await request(app)
+        .post('/api/interview/start')
+        .set('Authorization', `Bearer ${tokenA}`)
+        .send({
+          role: 'Full-Stack Engineer',
+          difficulty: 'mid',
+          topic: 'MERN Stack Architecture',
+          isSimulation: true,
+        });
+
+      expect(startRes.status).toBe(201);
+      expect(startRes.body.session.isSimulation).toBe(true);
+      expect(startRes.body.creditsDeducted).toBe(0);
+      expect(startRes.body.creditsRemaining).toBe(0);
+      expect(startRes.body.session.messages[0].content).toContain('simulated technical screening');
+
+      const sessionId = startRes.body.session._id;
+
+      // 2. Respond to simulation question over SSE
+      const respondRes = await request(app)
+        .post(`/api/interview/${sessionId}/respond`)
+        .set('Authorization', `Bearer ${tokenA}`)
+        .set('x-simulation', 'true')
+        .send({
+          content: 'I isolate service boundaries into domain modules and use structured error handling.',
+          isSimulation: true,
+        });
+
+      expect(respondRes.status).toBe(200);
+      expect(respondRes.headers['content-type']).toContain('text/event-stream');
+      expect(respondRes.text).toContain('event: token');
+      expect(respondRes.text).toContain('event: done');
+      expect(respondRes.text).toContain('"creditsDeducted":0');
+
+      // 3. Conclude simulation and generate scorecard
+      const concludeRes = await request(app)
+        .post(`/api/interview/${sessionId}/conclude`)
+        .set('Authorization', `Bearer ${tokenA}`)
+        .set('x-simulation', 'true')
+        .send({ isSimulation: true });
+
+      expect(concludeRes.status).toBe(200);
+      expect(concludeRes.body.session.status).toBe('completed');
+      expect(concludeRes.body.session.scorecard).toBeDefined();
+      expect(concludeRes.body.session.scorecard.overallScore).toBeGreaterThanOrEqual(70);
+      expect(concludeRes.body.creditsDeducted).toBe(0);
+      expect(concludeRes.body.creditsRemaining).toBe(0);
+
+      // Verify auto-archival into Library with simulation markers
+      expect(concludeRes.body.libraryItem).toBeDefined();
+      expect(concludeRes.body.libraryItem.type).toBe('interview');
+      expect(concludeRes.body.libraryItem.title).toContain('[Simulation]');
+      expect(concludeRes.body.libraryItem.tags).toContain('simulation');
+
+      // Verify user credits remain 0 (no unauthorized deductions or negatives)
+      const freshUser = await User.findById(userA._id);
+      expect(freshUser.wallet.creditsRemaining).toBe(0);
+    });
+  });
 });

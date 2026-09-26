@@ -10,6 +10,15 @@ export function creditCheck(req, _res, next) {
       throw new ApiError(401, 'UNAUTHORIZED', 'Authentication required for credit check');
     }
 
+    // Allow mock interview simulation without deducting credits if simulation mode is flagged
+    if (
+      req.body?.isSimulation === true ||
+      req.query?.simulation === 'true' ||
+      req.headers?.['x-simulation'] === 'true'
+    ) {
+      return next();
+    }
+
     const creditsRemaining = req.user.wallet?.creditsRemaining ?? 0;
 
     if (creditsRemaining <= 0) {

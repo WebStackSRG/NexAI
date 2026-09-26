@@ -40,4 +40,14 @@ describe('InterviewSetup Component', () => {
     fireEvent.click(startBtn);
     expect(defaultProps.onStart).toHaveBeenCalled();
   });
+
+  it('triggers onStartSimulation when Demo Simulation button is clicked', () => {
+    const onStartSimulation = vi.fn();
+    render(<InterviewSetup {...defaultProps} onStartSimulation={onStartSimulation} />);
+    const demoBtn = screen.getByRole('button', {
+      name: /Demo Simulation/i,
+    });
+    fireEvent.click(demoBtn);
+    expect(onStartSimulation).toHaveBeenCalled();
+  });
 });

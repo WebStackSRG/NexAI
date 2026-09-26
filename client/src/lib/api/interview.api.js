@@ -3,19 +3,21 @@ import { apiClient } from './client.js';
 export const interviewApi = {
   /**
    * Start a new mock interview session
-   * @param {{ role: string, difficulty: 'junior' | 'mid' | 'senior', topic: string, model?: 'flash' | 'pro' }} data
+   * @param {{ role: string, difficulty: 'junior' | 'mid' | 'senior', topic: string, model?: 'flash' | 'pro', isSimulation?: boolean }} data
    */
   startInterview(data) {
-    return apiClient.post('/interview/start', data);
+    const headers = data?.isSimulation ? { 'x-simulation': 'true' } : {};
+    return apiClient.post('/interview/start', data, { headers });
   },
 
   /**
    * Conclude an interview session, generate scorecard, and auto-archive to library
    * @param {string} id
-   * @param {{ model?: 'flash' | 'pro' }} [data]
+   * @param {{ model?: 'flash' | 'pro', isSimulation?: boolean }} [data]
    */
   concludeInterview(id, data = {}) {
-    return apiClient.post(`/interview/${id}/conclude`, data);
+    const headers = data?.isSimulation ? { 'x-simulation': 'true' } : {};
+    return apiClient.post(`/interview/${id}/conclude`, data, { headers });
   },
 
   /**

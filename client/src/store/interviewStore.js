@@ -110,6 +110,7 @@ export const useInterviewStore = create((set, get) => ({
     const difficulty = config.difficulty || get().difficulty;
     const topic = config.topic || get().topic;
     const model = config.model || get().selectedModel;
+    const isSimulation = Boolean(config.isSimulation);
 
     set({
       isStarting: true,
@@ -125,6 +126,7 @@ export const useInterviewStore = create((set, get) => ({
         difficulty,
         topic,
         model,
+        isSimulation,
       });
 
       const { session, creditsRemaining } = res.data;
@@ -206,6 +208,7 @@ export const useInterviewStore = create((set, get) => ({
         interviewId: session._id,
         content: trimmed,
         model,
+        isSimulation: Boolean(session.isSimulation),
         signal: abortController.signal,
         onToken: (text) => {
           set((state) => {
@@ -349,7 +352,10 @@ export const useInterviewStore = create((set, get) => ({
 
     try {
       const model = get().selectedModel;
-      const res = await interviewApi.concludeInterview(session._id, { model });
+      const res = await interviewApi.concludeInterview(session._id, {
+        model,
+        isSimulation: Boolean(session.isSimulation),
+      });
       const { session: updatedSession, libraryItem, creditsRemaining } = res.data;
 
       if (typeof creditsRemaining === 'number') {

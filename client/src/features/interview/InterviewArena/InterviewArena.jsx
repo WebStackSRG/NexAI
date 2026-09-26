@@ -204,6 +204,11 @@ export function InterviewArena({
             <Badge variant="accent" size="sm" className={styles.diffBadge}>
               {session?.difficulty}
             </Badge>
+            {session?.isSimulation && (
+              <Badge variant="warning" size="sm">
+                🎮 Demo Simulation
+              </Badge>
+            )}
           </div>
           <p className={styles.topicSubtitle} title={session?.topic}>
             {session?.topic}

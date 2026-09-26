@@ -59,6 +59,17 @@ export default function InterviewPage() {
       difficulty,
       topic,
       model: selectedModel,
+      isSimulation: false,
+    });
+  };
+
+  const handleStartSimulation = () => {
+    startInterview({
+      role,
+      difficulty,
+      topic,
+      model: selectedModel,
+      isSimulation: true,
     });
   };
 
@@ -95,13 +106,23 @@ export default function InterviewPage() {
             <div>
               <strong className={styles.warningTitle}>Credit Balance Depleted</strong>
               <p className={styles.warningText}>
-                Mock interview simulations require token metering. Recharge your wallet to continue.
+                Live AI interviews require token metering. Recharge your wallet to continue, or test with our free demo simulation.
               </p>
             </div>
           </div>
-          <Button variant="primary" size="sm" onClick={handleRechargeClick}>
-            Recharge Credits
-          </Button>
+          <div className={styles.warningActions}>
+            <Button variant="primary" size="sm" onClick={handleRechargeClick}>
+              Recharge Credits
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleStartSimulation}
+              loading={isStarting}
+            >
+              🎮 Try Demo Simulation
+            </Button>
+          </div>
         </div>
       )}
 
@@ -143,6 +164,7 @@ export default function InterviewPage() {
             onTopicChange={(val) => setSetupField('topic', val)}
             onModelChange={(val) => setSetupField('selectedModel', val)}
             onStart={handleStart}
+            onStartSimulation={handleStartSimulation}
             isStarting={isStarting}
             sessions={sessions}
             onSelectSession={loadSession}

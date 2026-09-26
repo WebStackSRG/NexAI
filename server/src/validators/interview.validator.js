@@ -15,6 +15,7 @@ export const startInterviewSchema = z.object({
     .min(2, 'Topic must be at least 2 characters')
     .max(200, 'Topic must not exceed 200 characters'),
   model: z.enum(['flash', 'pro']).optional(),
+  isSimulation: z.boolean().optional(),
 });
 
 export const respondInterviewSchema = z.object({
@@ -24,6 +25,7 @@ export const respondInterviewSchema = z.object({
     .min(1, 'Response content cannot be empty')
     .max(8000, 'Response content cannot exceed 8000 characters'),
   model: z.enum(['flash', 'pro']).optional(),
+  isSimulation: z.boolean().optional(),
 });
 
 export const interviewIdParamSchema = z.object({

@@ -1134,9 +1134,12 @@ Initiate a new interactive mock interview session with persona-calibrated greeti
   "role": "Full-Stack Engineer",
   "difficulty": "mid",
   "topic": "MERN Stack Architecture & REST/WebSocket APIs",
-  "model": "flash"
+  "model": "flash",
+  "isSimulation": false
 }
 ```
+
+> **Simulation Mode**: Set `"isSimulation": true` (or pass header `x-simulation: true`) to bypass credit requirements and run a free interactive simulation without contacting Gemini or deducting credits.
 
 - **Response `201 Created`:**
 

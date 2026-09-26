@@ -113,6 +113,10 @@ const interviewSessionSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    isSimulation: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );
