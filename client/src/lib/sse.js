@@ -228,3 +228,97 @@ export async function streamChatMessage({
 
   await parseSseStream(response.body, { onToken, onDone, onError });
 }
+
+/**
+ * Initiates an authenticated SSE stream for sending a candidate response in an interview.
+ *
+ * @param {Object} params
+ * @param {string} params.interviewId
+ * @param {string} params.content
+ * @param {string} [params.model]
+ * @param {AbortSignal} [params.signal]
+ * @param {(text: string) => void} [params.onToken]
+ * @param {(doneData: any) => void} [params.onDone]
+ * @param {(errorData: any) => void} [params.onError]
+ * @returns {Promise<void>}
+ */
+export async function streamInterviewResponse({
+  interviewId,
+  content,
+  model,
+  isSimulation,
+  signal,
+  onToken,
+  onDone,
+  onError,
+}) {
+  const token = useAuthStore.getState().accessToken;
+  const baseUrl = import.meta.env.VITE_API_URL || '/api';
+  const url = `${baseUrl}/interview/${interviewId}/respond`;
+
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  if (isSimulation) {
+    headers['x-simulation'] = 'true';
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ content, model, isSimulation: Boolean(isSimulation) }),
+    signal,
+    credentials: 'include',
+  });
+
+  if (response.status === 402) {
+    let errorJson = null;
+    try {
+      errorJson = await response.json();
+    } catch {
+      // Ignore json parse error
+    }
+    const err = {
+      status: 402,
+      code: errorJson?.error?.code || 'INSUFFICIENT_CREDITS',
+      message: sanitizeErrorMessage(errorJson?.error?.message || 'Recharge to continue'),
+      details: errorJson?.error?.details || null,
+    };
+    onError?.(err);
+    throw err;
+  }
+
+  if (!response.ok) {
+    let errorJson = null;
+    try {
+      errorJson = await response.json();
+    } catch {
+      // Ignore json parse error
+    }
+    const rawMsg = errorJson?.error?.message || response.statusText || 'Failed to stream interview response';
+    const err = {
+      status: response.status,
+      code: errorJson?.error?.code || 'STREAM_ERROR',
+      message: sanitizeErrorMessage(rawMsg),
+      details: errorJson?.error?.details || null,
+    };
+    onError?.(err);
+    throw err;
+  }
+
+  if (!response.body) {
+    const err = {
+      status: 500,
+      code: 'EMPTY_RESPONSE_BODY',
+      message: 'Server returned an empty response body',
+    };
+    onError?.(err);
+    throw err;
+  }
+
+  await parseSseStream(response.body, { onToken, onDone, onError });
+}
+

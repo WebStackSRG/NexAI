@@ -32,6 +32,7 @@ export function LibraryCard({
   onTagClick,
   activeTag,
   onViewDoc,
+  onViewInterview,
   onExportPdf,
 }) {
   const isLink = item.type === 'link';
@@ -127,6 +128,18 @@ export function LibraryCard({
             </>
           )}
 
+          {isInterview && (
+            <button
+              type="button"
+              className={styles.actionBtn}
+              onClick={() => onViewInterview?.(item)}
+              aria-label="View interview scorecard"
+              title="View Scorecard"
+            >
+              <Eye size={14} />
+            </button>
+          )}
+
           {isLink && item.url && (
             <a
               href={item.url}
@@ -164,9 +177,15 @@ export function LibraryCard({
 
       <Card.Body className={styles.body}>
         <h3
-          className={cn(styles.title, isDoc && styles.clickableTitle)}
+          className={cn(styles.title, (isDoc || isInterview) && styles.clickableTitle)}
           title={item.title}
-          onClick={isDoc ? () => onViewDoc?.(item) : undefined}
+          onClick={
+            isDoc
+              ? () => onViewDoc?.(item)
+              : isInterview
+                ? () => onViewInterview?.(item)
+                : undefined
+          }
         >
           {item.title}
         </h3>

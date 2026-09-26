@@ -145,3 +145,15 @@ This log tracks architectural and design decisions made for the NexAI project, p
   4. **Frontend Workspaces UI:** Created `/projects` gallery and `/projects/:id` workspace pages with split-screen layout, project capacity progress bar (up to 2MB text capacity), source file uploader, source text viewer modal, and project settings modal.
   5. **Unified Sidebar Integration:** Integrated a collapsible "Projects" section in the primary sidebar with quick creation, project switching, chat unlinking/moving, and direct chat creation within projects.
 
+## ADR-017: AI Mock Interview Demo Simulation Mode (Zero-Credit Testing Engine)
+
+- **Date:** 2026-09-26
+- **Status:** Accepted
+- **Context:** When developers or users evaluate the AI Mock Interview Platform locally or during staging with zero credit balance or when third-party Gemini API quotas are exhausted, testing the end-to-end interactive workflow (setup, Web Speech dictation, Voice Ripple audio visualizer, real-time SSE critique streaming, scorecard evaluation, and polymorphic library archival) was blocked by HTTP 402 `INSUFFICIENT_CREDITS`.
+- **Decision:**
+  1. **Session Simulation Flag:** Added `isSimulation: { type: Boolean, default: false }` to `InterviewSession` schema and Zod validators.
+  2. **Zero-Credit Middleware Exemption:** `creditCheck` middleware passes requests through when `isSimulation: true` (or `x-simulation: true` header / `?simulation=true` query) is present, with zero token deductions.
+  3. **Multi-Turn SSE Streaming Simulator:** In `respondInterview`, simulated sessions stream realistic multi-turn technical questions (Concurrency & Boundaries &rarr; Resilience & Load Shedding &rarr; Observability & Tracing &rarr; Distributed Caching & Tradeoffs) in real-time word chunks over SSE, triggering authentic typing and Voice Ripple visualizer animations.
+  4. **Scorecard Generation & Library Archival:** In `concludeInterview`, simulated sessions compute a comprehensive scorecard (0-100 overall score, category breakdown, recommendations) and auto-archive into `LibraryItem` with `type: 'interview'` and `[Simulation]` title badge.
+  5. **Frontend Ergonomics:** Added a "🎮 Demo Simulation (No Credits Required)" button to `InterviewSetup.jsx` and the credit warning banner in `InterviewPage.jsx`, and added a `Demo Simulation` badge to `InterviewArena.jsx`.
+  6. **Zero Regression Safety:** Live Gemini AI logic and credit wallet metering remain 100% untouched and fully active when `isSimulation` is false.

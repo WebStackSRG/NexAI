@@ -45,6 +45,10 @@ export const useLibraryStore = create((set, get) => ({
   viewingDoc: null,
   isExportingPdf: false,
 
+  // Interview View / Scorecard modal state
+  isViewInterviewModalOpen: false,
+  viewingInterview: null,
+
   // Edit modal state
   isEditModalOpen: false,
   editingItem: null,
@@ -315,6 +319,14 @@ export const useLibraryStore = create((set, get) => ({
 
   closeViewDocModal: () => {
     set({ isViewDocModalOpen: false, viewingDoc: null });
+  },
+
+  openViewInterviewModal: (item) => {
+    set({ isViewInterviewModalOpen: true, viewingInterview: item });
+  },
+
+  closeViewInterviewModal: () => {
+    set({ isViewInterviewModalOpen: false, viewingInterview: null });
   },
 
   exportPdf: async (item) => {
