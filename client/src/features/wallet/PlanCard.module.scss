@@ -1,0 +1,118 @@
+.planCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justifyContent: space-between;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-surface);
+  padding: var(--space-6);
+  transition: transform var(--duration-base) var(--ease-standard),
+              border-color var(--duration-base) var(--ease-standard),
+              box-shadow var(--duration-base) var(--ease-standard);
+
+  &:hover {
+    border-color: var(--color-border-hover);
+    box-shadow: var(--shadow-md);
+  }
+
+  &.popular {
+    border-color: var(--color-accent);
+    background: linear-gradient(
+      180deg,
+      rgba(139, 92, 246, 0.04) 0%,
+      var(--color-bg-surface) 100%
+    );
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.12);
+  }
+}
+
+.popularTag {
+  position: absolute;
+  top: -12px;
+  right: var(--space-6);
+}
+
+.header {
+  margin-bottom: var(--space-4);
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justifyContent: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.description {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+  min-height: 36px;
+}
+
+.priceBlock {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: var(--space-4) 0;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.price {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+}
+
+.creditsAmount {
+  font-size: var(--text-sm);
+  color: var(--color-accent);
+  font-weight: var(--weight-medium);
+}
+
+.featuresList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-6) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  flex-grow: 1;
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+
+  svg {
+    flex-shrink: 0;
+    color: var(--color-success);
+  }
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: auto;
+}
+
+.testAction {
+  width: 100%;
+  font-size: var(--text-xs);
+}
