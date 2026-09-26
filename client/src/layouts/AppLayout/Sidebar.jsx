@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
+  SquarePen,
+  Search,
   MessageSquare,
   Bookmark,
   Terminal,
@@ -9,15 +11,12 @@ import {
   Wallet,
   Settings,
   Shield,
-  Sparkles,
   Layers,
   LogOut,
-  Plus,
-  Search,
   X,
   PanelLeftClose,
   PanelLeftOpen,
-  MoreVertical,
+  MoreHorizontal,
   Edit2,
   Trash2,
   Check,
@@ -26,7 +25,6 @@ import {
 import { Avatar } from '@/components/ui/Avatar';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { IconButton } from '@/components/ui/IconButton';
-import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { useAuthStore } from '@/store/authStore';
@@ -68,7 +66,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
     fetchChats();
   }, [fetchChats]);
 
-  // Primary navigation links: Chat, Library, Prompts, Interview, Wallet, Settings, Admin [if admin]
+  // Primary navigation links
   const navItems = [
     { to: ROUTES.CHAT, label: 'Chat', icon: <MessageSquare size={17} /> },
     { to: ROUTES.LIBRARY, label: 'Library', icon: <Bookmark size={17} /> },
@@ -152,6 +150,10 @@ export function Sidebar({ onItemClick, isMobile = false }) {
     }
   };
 
+  const openCommandPalette = () => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
+  };
+
   const credits = user?.wallet?.creditsRemaining ?? 100;
   const userDisplayName = user?.email ? user.email.split('@')[0] : 'User';
   const userPlan =
@@ -163,7 +165,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
 
   const userMenuItems = [
     {
-      label: `Recharge (${credits} credits left)`,
+      label: `Recharge (${credits} credits remaining)`,
       icon: <Zap size={15} />,
       onClick: () => {
         onItemClick?.();
@@ -210,7 +212,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
         ) : (
           <>
             <div
-              className={styles.brandLogo}
+              className={styles.brandTitle}
               onClick={() => {
                 onItemClick?.();
                 navigate(ROUTES.CHAT);
@@ -219,47 +221,54 @@ export function Sidebar({ onItemClick, isMobile = false }) {
               tabIndex={0}
               title="NexAI"
             >
-              <div className={styles.logoIcon}>
-                <Sparkles size={16} />
-              </div>
-              <span className={styles.brandName}>NexAI</span>
+              NexAI
             </div>
 
-            {!isMobile && (
+            <div className={styles.headerActions}>
               <IconButton
-                icon={<PanelLeftClose size={18} />}
-                label="Collapse sidebar"
+                icon={<Search size={17} />}
+                label="Search workspace"
                 size="sm"
                 variant="ghost"
-                onClick={toggleSidebarCollapsed}
-                className={styles.collapseToggle}
+                onClick={openCommandPalette}
+                className={styles.headerActionBtn}
               />
-            )}
+              {!isMobile && (
+                <IconButton
+                  icon={<PanelLeftClose size={18} />}
+                  label="Collapse sidebar"
+                  size="sm"
+                  variant="ghost"
+                  onClick={toggleSidebarCollapsed}
+                  className={styles.headerActionBtn}
+                />
+              )}
+            </div>
           </>
         )}
       </div>
 
-      {/* Primary Action: + New chat */}
+      {/* Primary Action: New chat */}
       <div className={styles.newChatWrapper}>
         {isCollapsed ? (
           <IconButton
-            icon={<Plus size={18} />}
+            icon={<SquarePen size={18} />}
             label="New chat"
-            variant="primary"
+            variant="ghost"
             size="md"
             onClick={handleNewChat}
             className={styles.collapsedNewChatBtn}
           />
         ) : (
-          <Button
-            variant="primary"
-            leftIcon={<Plus size={16} />}
-            fullWidth
-            onClick={handleNewChat}
+          <button
+            type="button"
             className={styles.expandedNewChatBtn}
+            onClick={handleNewChat}
+            aria-label="New chat"
           >
-            New chat
-          </Button>
+            <SquarePen size={17} className={styles.newChatIcon} />
+            <span>New chat</span>
+          </button>
         )}
       </div>
 
@@ -283,11 +292,11 @@ export function Sidebar({ onItemClick, isMobile = false }) {
       {!isCollapsed && (
         <div className={styles.recentsSection}>
           <div className={styles.recentsHeader}>
-            <span className={styles.recentsTitle}>Recent chats</span>
+            <span className={styles.recentsTitle}>Chats</span>
             {chats.length > 0 && <span className={styles.recentsCount}>{chats.length}</span>}
           </div>
 
-          {/* Search chats live filter inside recents */}
+          {/* Search chats live filter */}
           <div className={styles.searchWrapper}>
             <Search size={13} className={styles.searchIcon} />
             <input
@@ -313,9 +322,9 @@ export function Sidebar({ onItemClick, isMobile = false }) {
           <div className={styles.recentsList} role="list" aria-label="Recent chats">
             {isLoadingChats ? (
               <div className={styles.skeletonList}>
-                <Skeleton height="34px" radius="md" />
-                <Skeleton height="34px" radius="md" />
-                <Skeleton height="34px" radius="md" />
+                <Skeleton height="32px" radius="md" />
+                <Skeleton height="32px" radius="md" />
+                <Skeleton height="32px" radius="md" />
               </div>
             ) : chats.length === 0 ? (
               <div className={styles.emptyRecents}>
@@ -347,8 +356,6 @@ export function Sidebar({ onItemClick, isMobile = false }) {
                       }
                     }}
                   >
-                    <MessageSquare size={14} className={styles.chatIcon} />
-
                     {isEditing ? (
                       <div className={styles.editRow} onClick={(e) => e.stopPropagation()}>
                         <input
@@ -389,7 +396,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
                           <Dropdown
                             trigger={
                               <IconButton
-                                icon={<MoreVertical size={13} />}
+                                icon={<MoreHorizontal size={15} />}
                                 label="Chat options"
                                 size="sm"
                                 variant="ghost"
@@ -423,7 +430,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
         </div>
       )}
 
-      {/* User Wallet Badge Card Footer (Unified without duplicacy) */}
+      {/* User Wallet Badge Card Footer (ChatGPT Style) */}
       <div className={styles.footerSection}>
         {!isCollapsed ? (
           <Dropdown

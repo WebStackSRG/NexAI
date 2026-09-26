@@ -59,7 +59,7 @@
   width: 60px;
   height: 60px;
   border-radius: var(--radius-xl);
-  background: linear-gradient(135deg, var(--color-accent), var(--violet-600));
+  background: linear-gradient(135deg, var(--color-accent), var(--green-600));
   color: var(--color-accent-contrast);
   margin-bottom: var(--space-4);
   box-shadow: 0 8px 24px color-mix(in srgb, var(--color-accent) 30%, transparent);
@@ -174,7 +174,7 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--color-accent), var(--violet-600));
+  background: linear-gradient(135deg, var(--color-accent), var(--green-600));
   color: var(--color-accent-contrast);
   box-shadow: var(--shadow-sm);
 }
@@ -221,7 +221,7 @@
   transition: box-shadow var(--duration-fast) var(--ease-standard);
 
   &.userBubble {
-    background: linear-gradient(135deg, var(--color-accent), var(--violet-600));
+    background: linear-gradient(135deg, var(--color-accent), var(--green-600));
     color: var(--color-accent-contrast);
     border-bottom-right-radius: var(--radius-sm);
     box-shadow: 0 2px 8px color-mix(in srgb, var(--color-accent) 25%, transparent);
