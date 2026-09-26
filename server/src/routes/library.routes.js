@@ -5,6 +5,7 @@ import { creditCheck } from '../middleware/creditCheck.js';
 import { validate } from '../middleware/validate.js';
 import {
   suggestLibrarySchema,
+  generateDocumentSchema,
   createLibraryItemSchema,
   updateLibraryItemSchema,
   queryLibrarySchema,
@@ -12,6 +13,8 @@ import {
 } from '../validators/library.validator.js';
 import {
   suggestItem,
+  generateDocument,
+  exportDocumentPdf,
   createItem,
   listItems,
   getItemById,
@@ -40,7 +43,7 @@ const aiLimiter = rateLimit({
 // All library routes require authentication
 router.use(auth);
 
-// Suggestion endpoint (metred AI call, does not save to DB)
+// Suggestion endpoint (metered AI call, does not save to DB)
 router.post(
   '/suggest',
   aiLimiter,
@@ -49,7 +52,19 @@ router.post(
   suggestItem,
 );
 
-// Core CRUD
+// Structured Document Generation endpoint (metered AI call, does not save to DB)
+router.post(
+  '/documents/generate',
+  aiLimiter,
+  creditCheck,
+  validate({ body: generateDocumentSchema }),
+  generateDocument,
+);
+
+// Styled PDF Export stream endpoint
+router.get('/documents/:id/export.pdf', exportDocumentPdf);
+
+// Core CRUD & Search
 router.post('/', validate({ body: createLibraryItemSchema }), createItem);
 router.get('/', validate({ query: queryLibrarySchema }), listItems);
 router.get('/search', validate({ query: searchLibrarySchema }), searchItems);
