@@ -499,15 +499,19 @@ VITE_RAZORPAY_KEY_ID=
   - Collapsible Projects section in the sidebar with instant project switching, chat movement, and direct project-scoped chat initiation.
 - Done when: Sidebar smoothly collapses to 64px and expands to 260px; New Chat creates a session without extra sub-sidebars; hero state renders when chat is empty; voice dictation inputs text into composer; projects isolate instructions and sources; tests (114 passing) & lint (0 errors, 0 warnings) pass.
 
+**Step 7: Prompt Vault & In-Chat Template Integration** (`feature/prompt-vault`) — `[COMPLETED]`
+- Full CRUD for prompt templates (`/api/prompts`), Mongoose `Prompt` model with title, description, template, tags, variables, and favorite toggle.
+- Real-time variable auto-extraction and bracket whitespace trimming with regex `/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g`.
+- In-chat template integration:
+  - "Save to Prompt Vault" action button on both user and assistant message bubbles.
+  - "Use Prompt" template trigger in `ChatInput` composer and `ChatHero` capsule.
+  - `VariableFillModal` with live preview of parameter substitution, clipboard copying, and direct insertion into chat with focus and cursor persistence.
+- Done when: Users can manage prompt templates in `/prompts`, filter by tags and favorites, fill variables in real-time modal, save chat messages directly to vault, and inject compiled templates into chat; all tests (137 passing) & lint (0 errors) pass.
+
 ---
 
 ### Upcoming Build Steps
 
-**Step 7: Prompt Vault & In-Chat Template Integration** (`feature/prompt-vault`)
-- Full CRUD for prompt templates, real-time variable detection with `{{variable}}` syntax, variable fill modal, and tag filtering.
-- One-click "Save to Prompt Vault" action on chat messages.
-- Inserting a prompt directly into chat with pre-filled variables.
-- Done when: Users can save templates, fill variables in a modal, and start a new chat with the compiled prompt.
 
 **Step 8: Consolidated Library & Document Management** (`feature/consolidated-library`)
 - Unify Documents and Library into one centralized knowledge hub with tabbed filtering: `All`, `Notes & Links`, `Documents`, `Files`, `Interviews`.

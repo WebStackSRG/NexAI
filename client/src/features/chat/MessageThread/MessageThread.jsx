@@ -9,17 +9,21 @@ import {
   RotateCcw,
   Edit3,
   AlertCircle,
+  BookmarkPlus,
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { MarkdownRenderer } from '../MarkdownRenderer';
+import { PromptFormModal } from '@/features/prompts';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore';
+import { usePromptStore } from '@/store/promptStore';
 import { toast } from '@/store/uiStore';
 import { cn } from '@/lib/utils/cn';
 import styles from './MessageThread.module.scss';
+
 
 const PROMPT_SUGGESTIONS = [
   {
@@ -53,11 +57,13 @@ function formatTime(timestamp) {
 export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
   const user = useAuthStore((state) => state.user);
   const { messages, isLoadingMessages, isStreaming, stopGeneration, resendPrompt } = useChatStore();
+  const createPrompt = usePromptStore((state) => state.createPrompt);
 
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
+  const [savePromptData, setSavePromptData] = useState(null);
   const userScrolledUpRef = useRef(false);
 
   const handleCopy = async (text, id) => {
@@ -284,6 +290,21 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                               <RotateCcw size={13} />
                               <span>Resend</span>
                             </button>
+                            <button
+                              type="button"
+                              className={styles.actionBtn}
+                              onClick={() =>
+                                setSavePromptData({
+                                  title: 'Saved User Prompt',
+                                  template: message.content,
+                                })
+                              }
+                              title="Save to Prompt Vault"
+                              aria-label="Save to Prompt Vault"
+                            >
+                              <BookmarkPlus size={13} />
+                              <span>Save to Vault</span>
+                            </button>
                           </>
                         ) : (
                           <>
@@ -311,6 +332,21 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                             >
                               <RotateCcw size={13} />
                               <span>Regenerate</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.actionBtn}
+                              onClick={() =>
+                                setSavePromptData({
+                                  title: 'Saved AI Response',
+                                  template: message.content,
+                                })
+                              }
+                              title="Save to Prompt Vault"
+                              aria-label="Save to Prompt Vault"
+                            >
+                              <BookmarkPlus size={13} />
+                              <span>Save to Vault</span>
                             </button>
                           </>
                         )}
@@ -350,7 +386,18 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
           </button>
         )}
       </div>
+
+      {/* Save to Prompt Vault Modal */}
+      <PromptFormModal
+        open={Boolean(savePromptData)}
+        onClose={() => setSavePromptData(null)}
+        initialData={savePromptData}
+        onSubmit={async (data) => {
+          await createPrompt(data);
+        }}
+      />
     </div>
+
   );
 }
 

@@ -12,15 +12,18 @@ import {
   Paperclip,
   FileText,
   X,
+  Terminal,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { IconButton } from '@/components/ui/IconButton';
+import { PromptPickerModal, VariableFillModal } from '@/features/prompts';
 import { useChatStore } from '@/store/chatStore';
 import { useAuthStore } from '@/store/authStore';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils/cn';
 import styles from './ChatInput.module.scss';
+
 
 export function ChatInput({ prefillValue, onClearPrefill }) {
   const navigate = useNavigate();
@@ -36,11 +39,33 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
 
   const [input, setInput] = useState('');
   const [attachedFile, setAttachedFile] = useState(null);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [selectedPromptForVariables, setSelectedPromptForVariables] = useState(null);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  const insertCompiledPrompt = (compiledText) => {
+    setInput((prev) => (prev ? `${prev}\n\n${compiledText}` : compiledText));
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.selectionStart = textareaRef.current.value.length;
+        textareaRef.current.selectionEnd = textareaRef.current.value.length;
+      }
+    }, 0);
+  };
+
+  const handleSelectPrompt = (prompt) => {
+    if (prompt.variables && prompt.variables.length > 0) {
+      setSelectedPromptForVariables(prompt);
+    } else {
+      insertCompiledPrompt(prompt.template);
+    }
+  };
+
   // Web Speech API Voice Dictation Hook
   const { isSupported: isVoiceSupported, isListening, toggleListening } = useSpeechRecognition({
+
     onResult: (transcription) => {
       setInput((prev) => (prev ? `${prev} ${transcription}` : transcription));
       if (textareaRef.current) {
@@ -182,6 +207,15 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
             />
             <IconButton
               type="button"
+              icon={<Terminal size={16} />}
+              label="Use prompt template"
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsPickerOpen(true)}
+              className={styles.toolBtn}
+            />
+            <IconButton
+              type="button"
               icon={<Paperclip size={16} />}
               label="Attach context file"
               variant="ghost"
@@ -255,6 +289,24 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
           </div>
         </div>
       </form>
+
+      {/* Prompt Selector Modal */}
+      <PromptPickerModal
+        open={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        onSelectPrompt={handleSelectPrompt}
+      />
+
+      {/* Variable Fill Modal */}
+      {selectedPromptForVariables && (
+        <VariableFillModal
+          open={Boolean(selectedPromptForVariables)}
+          onClose={() => setSelectedPromptForVariables(null)}
+          prompt={selectedPromptForVariables}
+          onConfirm={insertCompiledPrompt}
+          actionLabel="Insert into Chat"
+        />
+      )}
     </div>
   );
 }

@@ -44,9 +44,10 @@ Every AI agent working on NexAI must strictly adhere to the project foundations 
 | **Step 4** | Chat UI, Markdown/Code Highlighting, Live Balance Sync | `feature/chat-ui` | ✅ **COMPLETED** | 19 client tests |
 | **Step 5** | Personal Library, Vector Embeddings, Hybrid Search | `feature/library` | ✅ **COMPLETED** | 10 integration tests |
 | **Step 6** | Unified Sidebar, Chat Canvas & **Project Workspaces** | `feature/sidebar-and-hero-ui` | ✅ **COMPLETED & MERGED TO DEV** | 114 tests passing across monorepo |
-| **Step 7** | **Prompt Vault & In-Chat Template Integration** | `feature/prompt-vault` | 🎯 **NEXT ACTIVE STEP** | Ready for execution |
-| **Step 8** | Consolidated Library & Document Management | `feature/consolidated-library` | ⏳ UPCOMING | Prerequisite for Step 9 |
+| **Step 7** | **Prompt Vault & In-Chat Template Integration** | `feature/prompt-vault` | ✅ **COMPLETED** | 137 tests passing across monorepo |
+| **Step 8** | Consolidated Library & Document Management | `feature/consolidated-library` | 🎯 **NEXT ACTIVE STEP** | Prerequisite for Step 9 |
 | **Step 9** | **AI Mock Interview Platform** | `feature/ai-interview` | ⏳ UPCOMING (Scheduled after Step 8) | Depends on Step 8 polymorphic schema |
+
 | **Step 10**| Unified Search & Command Palette (Ctrl+K) | `feature/search` | ⏳ UPCOMING | Hybrid index search |
 | **Step 11**| Wallet, Recharge & Razorpay Billing | `feature/wallet-billing` | ⏳ UPCOMING | Webhook idempotency |
 | **Step 12**| Admin Analytics Dashboard | `feature/admin-dashboard` | ⏳ UPCOMING | Role-gated Recharts |
@@ -167,7 +168,7 @@ Use these copy-paste ready prompt templates for executing the upcoming phases of
 
 ---
 
-### Step 7: Prompt Vault & In-Chat Template Integration — `[NEXT ACTIVE STEP]`
+### Step 7: Prompt Vault & In-Chat Template Integration — `[COMPLETED]`
 
 #### 🚀 Implementation Prompt
 
@@ -214,7 +215,7 @@ Verify Step 7:
 
 ---
 
-### Step 8: Consolidated Library & Document Management
+### Step 8: Consolidated Library & Document Management — `[NEXT ACTIVE STEP]`
 
 #### 🚀 Implementation Prompt
 
