@@ -69,9 +69,18 @@ NexAI is a personal knowledge and developer productivity workspace designed with
   - Dense embeddings via Gemini embedding models (`text-embedding-004`)
   - Semantic vector search merged with MongoDB text-ranking fallback
   - Library UI with tag filtering, search bar, skeleton loading, empty states, edit and delete dialogs
-- [ ] **Step 6: Prompt Vault** (`feature/prompt-vault`)
-- [ ] **Step 7: Document Generation** (`feature/doc-gen`)
-- [ ] **Step 8: Unified Search** (`feature/search`)
-- [ ] **Step 9: Wallet & Billing** (`feature/wallet-billing`)
-- [ ] **Step 10: Admin Dashboard** (`feature/admin-dashboard`)
-- [ ] **Step 11: Hardening & Deployment**
+- [x] **Step 6: Unified Collapsible Sidebar & Minimalist Chat Canvas** (`feature/sidebar-and-hero-ui`)
+  - Single responsive navigation sidebar (260px expanded / 64px compact icon rail) with localStorage persistence
+  - Direct integration of `+ New chat`, live chat title filter, recents list with rename and delete popovers
+  - Role-gated primary navigation (Admin link strictly for `user.role === 'admin'`)
+  - Gemini-inspired Hero state ("Where should we start?") with glowing floating prompt bar and starter suggestion chips
+  - Web Speech API voice dictation with feature detection and pulsing animation
+  - Model selection dropdown (Gemini 3.8 Flash / Gemini 3.1 Pro) and context file attachment trigger
+  - Full-bleed edge-to-edge chat conversation canvas
+- [ ] **Step 7: Prompt Vault & In-Chat Template Integration** (`feature/prompt-vault`)
+- [ ] **Step 8: Consolidated Library & Document Management** (`feature/consolidated-library`)
+- [ ] **Step 9: AI Interview Platform** (`feature/ai-interview`)
+- [ ] **Step 10: Unified Search & Command Palette** (`feature/search`)
+- [ ] **Step 11: Wallet & Billing** (`feature/wallet-billing`)
+- [ ] **Step 12: Admin Dashboard** (`feature/admin-dashboard`)
+- [ ] **Step 13: Hardening & Viva Prep** (`feature/hardening`)

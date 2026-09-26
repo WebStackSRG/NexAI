@@ -3,10 +3,28 @@ import { create } from 'zustand';
 const initialTheme =
   typeof window !== 'undefined' ? localStorage.getItem('nexai_theme') || 'dark' : 'dark';
 
+const initialSidebarCollapsed =
+  typeof window !== 'undefined'
+    ? localStorage.getItem('nexai_sidebar_collapsed') === 'true'
+    : false;
+
 export const useUiStore = create((set, get) => ({
   theme: initialTheme,
   isDrawerOpen: false,
+  isSidebarCollapsed: initialSidebarCollapsed,
   toasts: [],
+
+  setSidebarCollapsed: (isSidebarCollapsed) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('nexai_sidebar_collapsed', String(isSidebarCollapsed));
+    }
+    set({ isSidebarCollapsed });
+  },
+
+  toggleSidebarCollapsed: () => {
+    const next = !get().isSidebarCollapsed;
+    get().setSidebarCollapsed(next);
+  },
 
   setTheme: (theme) => {
     if (typeof window !== 'undefined') {
