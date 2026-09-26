@@ -32,6 +32,68 @@ Every AI agent working on NexAI must strictly adhere to the project foundations 
    - Merge back using `--no-ff`: `git checkout dev && git merge --no-ff feature/<name>`
    - Delete the feature branch once verified. `main` is reserved exclusively for production releases.
 
+### 1.2 Step Progress & Current Repository State
+
+> **CRITICAL FOR ALL AGENTS:** Always check this status ledger before proposing or writing code. **NEVER** re-implement, duplicate, or overwrite completed steps.
+
+| Step | Scope / Feature | Branch | Status | Test Coverage |
+| :--- | :--- | :--- | :--- | :--- |
+| **Step 1** | Scaffold, Tooling, Tokens & Base Primitives | `feature/scaffold` | ✅ **COMPLETED** | Verified |
+| **Step 2** | JWT Auth, Cookies, Google OAuth, Refresh Interceptor | `feature/auth` | ✅ **COMPLETED** | 13 integration tests |
+| **Step 3** | Backend Chat, Gemini SSE Streaming, Atomic Credit Deduction | `feature/backend-chat` | ✅ **COMPLETED** | 13 integration tests |
+| **Step 4** | Chat UI, Markdown/Code Highlighting, Live Balance Sync | `feature/chat-ui` | ✅ **COMPLETED** | 19 client tests |
+| **Step 5** | Personal Library, Vector Embeddings, Hybrid Search | `feature/library` | ✅ **COMPLETED** | 10 integration tests |
+| **Step 6** | Unified Sidebar, Chat Canvas & **Project Workspaces** | `feature/sidebar-and-hero-ui` | ✅ **COMPLETED & MERGED TO DEV** | 114 tests passing across monorepo |
+| **Step 7** | **Prompt Vault & In-Chat Template Integration** | `feature/prompt-vault` | 🎯 **NEXT ACTIVE STEP** | Ready for execution |
+| **Step 8** | Consolidated Library & Document Management | `feature/consolidated-library` | ⏳ UPCOMING | Prerequisite for Step 9 |
+| **Step 9** | **AI Mock Interview Platform** | `feature/ai-interview` | ⏳ UPCOMING (Scheduled after Step 8) | Depends on Step 8 polymorphic schema |
+| **Step 10**| Unified Search & Command Palette (Ctrl+K) | `feature/search` | ⏳ UPCOMING | Hybrid index search |
+| **Step 11**| Wallet, Recharge & Razorpay Billing | `feature/wallet-billing` | ⏳ UPCOMING | Webhook idempotency |
+| **Step 12**| Admin Analytics Dashboard | `feature/admin-dashboard` | ⏳ UPCOMING | Role-gated Recharts |
+| **Step 13**| Hardening, Supertest E2E Suite & Viva Defense Guide | `feature/hardening` | ⏳ UPCOMING | Production release gate |
+
+---
+
+### 1.3 Architecture FAQ: Why is the AI Interview Platform Scheduled as Step 9?
+
+A common question during development planning is: **"Should the Interview section come earlier or next?"**
+
+The Answer: **The Interview section is strictly scheduled as Step 9, and was NOT skipped or missed.**
+Here is the strict architectural dependency chain:
+1. **Dependency on Consolidated Library (Step 8):** In Step 9, when a mock interview concludes, the Gemini agent generates an assessment scorecard and transcript that **must be automatically archived into the user's Library under `type: 'interview'`**. Step 8 establishes this polymorphic `LibraryItem` schema (`type: 'link' | 'note' | 'document' | 'file' | 'interview'`). Building Step 9 before Step 8 would require temporary throwaway schemas or broken foreign references.
+2. **Dependency on Voice and Prompt Foundation (Steps 6 & 7):** Step 6 introduced Web Speech API voice dictation (`useSpeechRecognition`), and Step 7 introduces prompt parameter injection which the interview arena utilizes for viva examiner personas.
+3. **Execution Plan:** Follow the exact order: **Step 6 (Done) $\rightarrow$ Step 7 (Next) $\rightarrow$ Step 8 $\rightarrow$ Step 9 (AI Interview)**.
+
+---
+
+### 1.4 UI Consistency & Design Token Invariants
+
+All future screens, modals, and components must adhere strictly to the established NexAI UI standard:
+
+1. **Tokens Only (Zero Hard-Coded Values):**
+   - **Colors:** Use CSS custom properties: `var(--color-bg-app)`, `var(--color-bg-surface)`, `var(--color-bg-elevated)`, `var(--color-border)`, `var(--color-text-primary)`, `var(--color-text-secondary)`, `var(--color-accent)`.
+   - **Current Accent:** Emerald Green (`#10b981` / `--color-accent`) is active across both themes.
+   - **Spacing:** Use 4px token scale: `var(--space-1)` (4px) through `var(--space-16)` (64px).
+   - **Typography:** `var(--font-sans)` for UI, `var(--font-mono)` for code/logs.
+   - **Transitions:** `var(--duration-base) var(--ease-standard)`.
+2. **Dual-Theme Support:**
+   - Dark theme is default (`[data-theme='dark']`).
+   - Every component must also look sharp and readable in Light theme (`[data-theme='light']`). Never assume a dark background.
+3. **Component Layering & Composition:**
+   - `pages/` assemble feature modules (`features/`).
+   - `features/` assemble reusable design-system primitives (`components/ui/`): `Button`, `IconButton`, `Input`, `Textarea`, `Modal`, `Drawer`, `Dropdown`, `Card`, `Badge`, `Skeleton`, `EmptyState`.
+   - If a visual pattern appears twice, extract it into a reusable component under `components/ui/` or `features/`.
+4. **State & Network Layer Discipline:**
+   - Components **never** call Axios directly.
+   - All network calls live in `src/lib/api/<domain>.api.js`.
+   - Zustand stores (`src/store/`) expose state and actions that call the API helpers, handle toasts, and update reactive state.
+5. **State Handling (The 4 UX States):**
+   - Every data-fetching screen must explicitly render:
+     1. **Loading State:** Using `Skeleton` or `Spinner` primitives.
+     2. **Empty State:** Using `EmptyState` primitive with icon, title, description, and primary call-to-action button.
+     3. **Error State:** Clear error message with retry trigger.
+     4. **Success State:** Dense, responsive, accessible presentation.
+
 ---
 
 ## 2. Anatomy of the "Golden Prompt"
@@ -90,58 +152,22 @@ Use these copy-paste ready prompt templates for executing the upcoming phases of
 
 ---
 
-### Step 6: Unified Collapsible Sidebar & Minimalist Chat Canvas
+### Step 6: Unified Collapsible Sidebar, Minimalist Chat Canvas & Project Workspaces — `[COMPLETED & MERGED TO DEV]`
 
-#### 🚀 Implementation Prompt
+> **Status:** Step 6 and the Project Workspaces architecture are fully implemented, verified, and merged into `dev`. All 114 tests are passing. **Do not re-execute or branch for Step 6.**
 
-```text
-We are ready to build Step 6: Unified Collapsible Sidebar & Minimalist Chat Canvas from docs/BUILD_GUIDE.md (and ADR-013 in docs/decisions.md).
-
-Please follow these exact requirements:
-1. Branch: Create and checkout `feature/sidebar-and-hero-ui` from `dev`.
-2. Architecture:
-   - Replace the duplicate nested chat sub-sidebar in `client/src/pages/Chat/` with a single unified responsive navigation sidebar in `client/src/layouts/AppLayout/`.
-   - Collapsible state: 64px icon rail (collapsed) and 260px expanded panel. Store collapse state in `uiStore` with localStorage persistence.
-   - Sidebar content: Brand header with collapse toggle, "+ New chat" primary action, "Search chats" live filter, primary nav links (Chat, Library, Prompts, Interview, Wallet, Settings, Admin [if admin]), recent chat history list with rename & delete popovers, and bottom user wallet badge card (avatar, tier, live credits).
-   - Minimalist Hero State: When in a new/empty chat, display the Gemini-inspired hero view ("Where should we start?"), glowing input bar, model selector dropdown (Flash/Pro), Web Speech API voice dictation button, file context attachment button, and starter prompt suggestion chips.
-   - Full-width conversation canvas when messages exist.
-3. Design System:
-   - Use SCSS modules and CSS variables from `src/styles/tokens/` and `src/styles/themes/`.
-   - Support both Dark (default) and Light mode.
-   - On screens < 768px (md breakpoint), convert the sidebar into a slide-over Drawer.
-4. Testing:
-   - Write Vitest tests for the collapsible sidebar behavior and the hero component.
-   - Ensure all existing tests pass (`npm test`).
-5. Execution:
-   - First outline your step-by-step plan and files to touch.
-   - Execute cleanly with no placeholder stubs or unrequested dependencies.
-   - Run `npm run lint` and `npm test` to verify.
-```
-
-#### 🔍 Verification Prompt
-
-```text
-Verify that Step 6 meets all acceptance criteria:
-1. Run `npm test` across server and client workspaces.
-2. Run `npm run lint` and confirm 0 errors and 0 warnings.
-3. Verify that the inner chat sub-sidebar in `ChatPage` has been completely removed and its features (New Chat, recents list, rename, delete) now reside exclusively in the AppLayout sidebar.
-4. Verify that clicking the collapse toggle smoothly transitions between 64px and 260px without layout distortion or text overflow.
-5. Verify that navigating to `/chat` with no active session renders the hero state with the glowing prompt bar and suggestion chips.
-6. Check both dark and light theme appearance.
-```
-
-#### ⚠️ What If It Breaks?
-
-- **Issue: Sidebar collapse causes text to wrap awkwardly or overflow.**
-  _Prompt:_ `"The collapsed sidebar at 64px is showing truncated text and breaking icon centering. Update Sidebar.module.scss to hide labels, badges, and recents when collapsed using `.collapsed`class with`overflow: hidden; opacity: 0; pointer-events: none;`and transition opacity and width smoothly using`var(--duration-base) var(--ease-standard)`."*
-- **Issue: Mobile drawer doesn't close on navigation.**
-  _Prompt:_ `"When clicking a link inside the mobile drawer on viewports < 768px, the drawer remains open. Add a route change listener in `AppLayout`or`Sidebar`that calls`closeMobileSidebar()`on`location.pathname` changes."*
-- **Issue: Web Speech API throws error in unsupported browsers (e.g. Firefox).**
-  _Prompt:_ `"The speech recognition button breaks or crashes in browsers lacking `window.SpeechRecognition`or`window.webkitSpeechRecognition`. Wrap speech initialization in a feature detection check. If unsupported, disable or gracefully hide the mic button with a helpful tooltip: 'Voice input not supported in this browser'."*
+#### Completed Deliverables:
+- Single responsive collapsible sidebar (64px / 260px) in `AppLayout` with localStorage persistence.
+- Direct "+ New chat", live chat filter, recents list with rename, pin, and delete actions.
+- ChatHero component ("Where should we start?") with glowing prompt bar, Web Speech API voice dictation, model picker (Flash/Pro), and starter chips.
+- ChatGPT-style **Project Workspaces**:
+  - Model: `Project` with custom instructions, color tags, and file knowledge sources.
+  - Runtime: Source file injection (up to 50k chars each) and custom instructions injection into Gemini agent system prompt.
+  - UI: Project Gallery (`/projects`), Project Workspace (`/projects/:id`), 2MB capacity tracking, and collapsible Projects section in sidebar.
 
 ---
 
-### Step 7: Prompt Vault & In-Chat Template Integration
+### Step 7: Prompt Vault & In-Chat Template Integration — `[NEXT ACTIVE STEP]`
 
 #### 🚀 Implementation Prompt
 

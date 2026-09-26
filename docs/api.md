@@ -274,14 +274,16 @@ Telemetry and metrics endpoint restricted to admin users.
 
 ---
 
-## Chat & Messaging (Step 3: Backend Chat)
+## Chat & Messaging (Step 3 & Step 6)
 
 ### GET `/api/chats`
 
-Retrieve all chat sessions belonging to the authenticated user, ordered by most recently updated.
+Retrieve chat sessions belonging to the authenticated user, ordered by most recently updated. Supports filtering by project.
 
 - **Auth:** Bearer Token
 - **Method:** `GET`
+- **Query Params:**
+  - `projectId` *(optional, string)*: Filter chats belonging to a specific Project Workspace.
 - **Response `200 OK`**:
 
 ```json
@@ -290,7 +292,9 @@ Retrieve all chat sessions belonging to the authenticated user, ordered by most 
     {
       "_id": "673f5678...",
       "userId": "673f1234...",
+      "projectId": "67401122...", // or null
       "title": "React Architecture Discussion",
+      "pinned": false,
       "createdAt": "2026-09-25T12:30:00.000Z",
       "updatedAt": "2026-09-25T12:35:00.000Z"
     }
@@ -300,7 +304,7 @@ Retrieve all chat sessions belonging to the authenticated user, ordered by most 
 
 ### POST `/api/chats`
 
-Create a new chat conversation.
+Create a new chat conversation, optionally associated with a Project Workspace.
 
 - **Auth:** Bearer Token
 - **Method:** `POST`
@@ -308,7 +312,8 @@ Create a new chat conversation.
 
 ```json
 {
-  "title": "My New Chat" // optional, defaults to "New Chat"
+  "title": "My New Chat", // optional, defaults to "New Chat"
+  "projectId": "67401122..." // optional project ObjectId
 }
 ```
 
@@ -319,7 +324,9 @@ Create a new chat conversation.
   "data": {
     "_id": "673f5678...",
     "userId": "673f1234...",
+    "projectId": "67401122...",
     "title": "My New Chat",
+    "pinned": false,
     "createdAt": "2026-09-25T12:30:00.000Z",
     "updatedAt": "2026-09-25T12:30:00.000Z"
   }
@@ -328,7 +335,7 @@ Create a new chat conversation.
 
 ### PATCH `/api/chats/:id`
 
-Rename an existing chat session owned by the authenticated user.
+Update an existing chat session (title, project association, or pin status).
 
 - **Auth:** Bearer Token
 - **Method:** `PATCH`
@@ -336,7 +343,24 @@ Rename an existing chat session owned by the authenticated user.
 
 ```json
 {
-  "title": "Updated Chat Title"
+  "title": "Updated Chat Title", // optional
+  "projectId": "67401122...", // optional (pass null to detach from project)
+  "pinned": true // optional
+}
+```
+
+- **Response `200 OK`**:
+
+```json
+{
+  "data": {
+    "_id": "673f5678...",
+    "userId": "673f1234...",
+    "projectId": "67401122...",
+    "title": "Updated Chat Title",
+    "pinned": true,
+    "updatedAt": "2026-09-25T12:40:00.000Z"
+  }
 }
 ```
 
@@ -694,3 +718,199 @@ Deletes a library item from MongoDB and purges its vector embedding from the vec
   }
 }
 ```
+
+---
+
+## Project Workspaces (Step 6 / Projects)
+
+### GET `/api/projects`
+
+Retrieve all project workspaces created by the authenticated user, complete with real-time associated chat counts.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Response `200 OK`**:
+
+```json
+{
+  "data": [
+    {
+      "_id": "67401122...",
+      "userId": "673f1234...",
+      "name": "AI Viva Preparation",
+      "description": "Viva prep for diploma capstone project",
+      "color": "#8b5cf6",
+      "customInstructions": "Act as an experienced MSBTE Viva Examiner...",
+      "sources": [
+        {
+          "_id": "67402233...",
+          "name": "PRD.md",
+          "size": 27411,
+          "mimeType": "text/markdown",
+          "createdAt": "2026-09-26T10:00:00.000Z"
+        }
+      ],
+      "chatCount": 3,
+      "createdAt": "2026-09-26T09:00:00.000Z",
+      "updatedAt": "2026-09-26T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+### POST `/api/projects`
+
+Create a new project workspace.
+
+- **Auth:** Bearer Token
+- **Method:** `POST`
+- **Request Body:**
+
+```json
+{
+  "name": "Full-Stack System Architecture",
+  "description": "Design docs and RFC discussions",
+  "color": "#10b981",
+  "customInstructions": "Always reply with architectural diagrams and clean modular code."
+}
+```
+
+- **Response `201 Created`**:
+
+```json
+{
+  "data": {
+    "_id": "67403344...",
+    "userId": "673f1234...",
+    "name": "Full-Stack System Architecture",
+    "description": "Design docs and RFC discussions",
+    "color": "#10b981",
+    "customInstructions": "Always reply with architectural diagrams and clean modular code.",
+    "sources": [],
+    "createdAt": "2026-09-26T12:00:00.000Z",
+    "updatedAt": "2026-09-26T12:00:00.000Z"
+  }
+}
+```
+
+### GET `/api/projects/:id`
+
+Retrieve details of a single project workspace, including its sources and associated chat sessions.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Response `200 OK`**:
+
+```json
+{
+  "data": {
+    "_id": "67403344...",
+    "userId": "673f1234...",
+    "name": "Full-Stack System Architecture",
+    "description": "Design docs and RFC discussions",
+    "color": "#10b981",
+    "customInstructions": "...",
+    "sources": [],
+    "chats": [
+      {
+        "_id": "67404455...",
+        "title": "Database Schema Discussion",
+        "pinned": true,
+        "updatedAt": "2026-09-26T12:15:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+### PATCH `/api/projects/:id`
+
+Update project name, description, color, or custom instructions.
+
+- **Auth:** Bearer Token
+- **Method:** `PATCH`
+- **Request Body:**
+
+```json
+{
+  "name": "Updated Project Name",
+  "customInstructions": "New persona instructions..."
+}
+```
+
+- **Response `200 OK`**:
+
+```json
+{
+  "data": {
+    "_id": "67403344...",
+    "name": "Updated Project Name",
+    "customInstructions": "New persona instructions...",
+    "updatedAt": "2026-09-26T12:30:00.000Z"
+  }
+}
+```
+
+### DELETE `/api/projects/:id`
+
+Delete a project workspace. Automatically unlinks (detaches) all associated chats (`projectId: null`) without deleting conversation history.
+
+- **Auth:** Bearer Token
+- **Method:** `DELETE`
+- **Response `200 OK`**:
+
+```json
+{
+  "data": {
+    "message": "Project deleted and associated chats unlinked"
+  }
+}
+```
+
+### POST `/api/projects/:id/sources`
+
+Add a local file source (Markdown, code, text, PDF, JSON) to the project knowledge base. Injects into chat context for all conversations in this project.
+
+- **Auth:** Bearer Token
+- **Method:** `POST`
+- **Request Body:**
+
+```json
+{
+  "name": "schema.prisma",
+  "content": "datasource db { provider = \"postgresql\" ... }",
+  "size": 1420,
+  "mimeType": "text/plain"
+}
+```
+
+- **Response `201 Created`**:
+
+```json
+{
+  "data": {
+    "_id": "67405566...",
+    "name": "schema.prisma",
+    "size": 1420,
+    "mimeType": "text/plain",
+    "createdAt": "2026-09-26T12:45:00.000Z"
+  }
+}
+```
+
+### DELETE `/api/projects/:id/sources/:sourceId`
+
+Remove a source file from the project workspace.
+
+- **Auth:** Bearer Token
+- **Method:** `DELETE`
+- **Response `200 OK`**:
+
+```json
+{
+  "data": {
+    "message": "Source deleted from project"
+  }
+}
+```
+

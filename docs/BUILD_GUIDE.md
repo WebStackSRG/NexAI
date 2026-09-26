@@ -488,14 +488,20 @@ VITE_RAZORPAY_KEY_ID=
 
 ---
 
-### Upcoming Build Steps
-
-**Step 6: Unified Collapsible Sidebar & Minimalist Chat Canvas** (`feature/sidebar-and-hero-ui`)
+**Step 6: Unified Collapsible Sidebar, Minimalist Chat Canvas & Project Workspaces** (`feature/sidebar-and-hero-ui`) — `[COMPLETED]`
 - Single collapsible sidebar (64px icon rail / 260px expanded panel) replacing the duplicate nested chat sub-sidebar in `ChatPage`.
-- Direct integration of `+ New chat`, `Search chats` filter, primary navigation items, and recent conversation history list (with rename and delete actions) inside the sidebar.
-- Gemini-inspired distraction-free chat canvas: "Where should we start?" hero state with glowing prompt bar, voice input (mic button using Web Speech API), file attachment trigger, and quick suggestion chips.
-- User profile footer card with avatar, name, tier, and live credit balance.
-- Done when: Sidebar smoothly collapses to 64px and expands to 260px; New Chat creates a session without extra sub-sidebars; hero state renders when chat is empty; voice dictation inputs text into composer; tests & lint pass.
+- Direct integration of `+ New chat`, `Search chats` live filter, primary navigation items, and recent conversation history list (with rename, pin, and delete actions) inside the sidebar.
+- Gemini-inspired distraction-free chat canvas: "Where should we start?" hero state with glowing prompt bar, voice input (mic button using Web Speech API), model selection dropdown (Flash/Pro), and quick starter suggestion chips.
+- ChatGPT-style **Project Workspaces**:
+  - Full CRUD routes (`/api/projects`), Mongoose `Project` model with custom instructions, color tags, and local source file knowledge grounding.
+  - Multi-source knowledge base injection into Gemini agent system instructions (up to 50k chars per source).
+  - Isolated project chat conversations (`Chat.projectId`), project gallery (`/projects`), and workspace canvas (`/projects/:id`) with 2MB capacity tracking.
+  - Collapsible Projects section in the sidebar with instant project switching, chat movement, and direct project-scoped chat initiation.
+- Done when: Sidebar smoothly collapses to 64px and expands to 260px; New Chat creates a session without extra sub-sidebars; hero state renders when chat is empty; voice dictation inputs text into composer; projects isolate instructions and sources; tests (114 passing) & lint (0 errors, 0 warnings) pass.
+
+---
+
+### Upcoming Build Steps
 
 **Step 7: Prompt Vault & In-Chat Template Integration** (`feature/prompt-vault`)
 - Full CRUD for prompt templates, real-time variable detection with `{{variable}}` syntax, variable fill modal, and tag filtering.

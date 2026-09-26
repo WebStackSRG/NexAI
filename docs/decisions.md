@@ -132,3 +132,16 @@ This log tracks architectural and design decisions made for the NexAI project, p
   3. **Comprehensive Scorecard Report:** Upon interview conclusion, Gemini evaluates candidate responses against an assessment rubric: Overall Score (0-100), rating, categorical breakdown (Technical Accuracy, Problem Solving, Communication, System Design), key strengths, and tailored study recommendations.
   4. **Automatic Library Archival:** The generated scorecard and transcript are automatically archived into the user's Library under the `interview` category for permanent access and study.
   5. **Credit Metering:** Every conversational turn and final evaluation report passes through `creditCheck` middleware and deducts credits atomically using real token usage: $\lceil \text{totalTokens} / 100 \rceil$.
+
+## ADR-016: Project Workspaces, Local Source File Context Injection, and Isolated Conversation Memory
+
+- **Date:** 2026-09-26
+- **Status:** Accepted
+- **Context:** Complex developer workflows (such as MSBTE capstone viva prep, repository architecture design, or full-stack feature planning) require grouping related conversations, enforcing persistent system instructions, and providing custom context files (code, markdown, specifications) without having to re-upload or re-explain context in every individual chat session.
+- **Decision:**
+  1. **Project Data Model:** Implemented `Project` model with `userId`, `name`, `description`, `color`, `customInstructions`, and embedded `sources: [{ name, content, size, mimeType, createdAt }]`.
+  2. **Chat Association & Memory Isolation:** Added `projectId` and `pinned` flags to `Chat` model. The `Chat` model indexes `{ userId: 1, projectId: 1, updatedAt: -1 }`. Chats can be associated with a project or moved between projects.
+  3. **Runtime Agent Context Injection:** In `chat.agent.js` and `chat.controller.js`, when a chat has a `projectId`, the agent automatically prepends the project's `customInstructions` to the system prompt and injects up to 50,000 characters per source file as ground truth reference context into Gemini's prompt stream.
+  4. **Frontend Workspaces UI:** Created `/projects` gallery and `/projects/:id` workspace pages with split-screen layout, project capacity progress bar (up to 2MB text capacity), source file uploader, source text viewer modal, and project settings modal.
+  5. **Unified Sidebar Integration:** Integrated a collapsible "Projects" section in the primary sidebar with quick creation, project switching, chat unlinking/moving, and direct chat creation within projects.
+

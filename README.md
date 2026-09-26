@@ -69,14 +69,20 @@ NexAI is a personal knowledge and developer productivity workspace designed with
   - Dense embeddings via Gemini embedding models (`text-embedding-004`)
   - Semantic vector search merged with MongoDB text-ranking fallback
   - Library UI with tag filtering, search bar, skeleton loading, empty states, edit and delete dialogs
-- [x] **Step 6: Unified Collapsible Sidebar & Minimalist Chat Canvas** (`feature/sidebar-and-hero-ui`)
+- [x] **Step 6: Unified Collapsible Sidebar, Minimalist Chat Canvas & Project Workspaces** (`feature/sidebar-and-hero-ui`)
   - Single responsive navigation sidebar (260px expanded / 64px compact icon rail) with localStorage persistence
-  - Direct integration of `+ New chat`, live chat title filter, recents list with rename and delete popovers
+  - Direct integration of `+ New chat`, live chat title filter, recents list with rename, pin, and delete actions
   - Role-gated primary navigation (Admin link strictly for `user.role === 'admin'`)
   - Gemini-inspired Hero state ("Where should we start?") with glowing floating prompt bar and starter suggestion chips
   - Web Speech API voice dictation with feature detection and pulsing animation
   - Model selection dropdown (Gemini 3.8 Flash / Gemini 3.1 Pro) and context file attachment trigger
   - Full-bleed edge-to-edge chat conversation canvas
+  - **ChatGPT-Style Project Workspaces:**
+    - Custom project instructions automatically prepended to Gemini system prompts
+    - Local source file uploads (PDF, Markdown, code, JSON) injected as grounded knowledge base context (up to 50k chars per file)
+    - Project Gallery (`/projects`) and workspace page (`/projects/:id`) with capacity tracker (2MB text quota)
+    - Sidebar projects collapsible drawer with direct project-scoped chat initiation and chat movement
+  - 114 tests passing across monorepo (60 backend, 54 frontend)
 - [ ] **Step 7: Prompt Vault & In-Chat Template Integration** (`feature/prompt-vault`)
 - [ ] **Step 8: Consolidated Library & Document Management** (`feature/consolidated-library`)
 - [ ] **Step 9: AI Interview Platform** (`feature/ai-interview`)

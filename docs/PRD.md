@@ -68,7 +68,7 @@ This is the single most important section of this document. Every feature is pla
 
 | Feature                                   | Detail                                                                                                                                                                                                                        |
 | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Unified Sidebar & Minimalist Canvas**   | Gemini-style single collapsible sidebar (64px rail / 260px expanded panel) with New Chat, chat search, recents history, hero prompt ("Where should we start?"), glowing input bar, voice dictation, and quick suggestions. |
+| **Unified Sidebar, Canvas & Projects**    | Gemini-style single collapsible sidebar (64px rail / 260px expanded panel) with New Chat, chat search, recents history, hero prompt ("Where should we start?"), glowing input bar, voice dictation, starter suggestions, and ChatGPT-style Project Workspaces (custom instructions, file knowledge base injection, memory isolation). |
 | **Prompt Vault & Chat Integration**       | Save prompts with `{{variable}}` placeholders; fill modal inserts into chat; direct "Save to Prompt Vault" action from chat messages; tags & search.                                                                          |
 | **Consolidated Library & Documents**      | Merge Documents, custom file uploads, and bookmarks into a tabbed Library (`All`, `Notes/Links`, `Documents`, `Files`, `Interviews`). Structured AI doc drafts with PDF export (`pdf-lib`), plus chat file input picker.     |
 | **AI Interview Platform**                 | Real-time interactive mock interview simulator (roles, viva prep, seniorities). Features animated voice ripple, live transcript, speech-to-text, and automated competency scorecard saved to Library.                        |
@@ -271,6 +271,19 @@ Key design decisions:
   createdAt, updatedAt
 }
 
+// projects (Project Workspaces & Grounded Knowledge)
+{
+  _id, userId,
+  name: String,
+  description: String,
+  color: String,
+  customInstructions: String,
+  sources: [{
+    _id, name, content, size, mimeType, createdAt
+  }],
+  createdAt, updatedAt
+}
+
 // prompts (Prompt Vault)
 {
   _id, userId,
@@ -281,7 +294,7 @@ Key design decisions:
 }
 
 // chats / messages
-{ _id, userId, title, isPinned: Boolean, createdAt, updatedAt }
+{ _id, userId, projectId, title, pinned: Boolean, createdAt, updatedAt }
 { _id, chatId, role: "user" | "assistant", content, tokensUsed, createdAt }
 
 // usageLogs (feeds Admin Dashboard)
