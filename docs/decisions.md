@@ -100,3 +100,35 @@ This log tracks architectural and design decisions made for the NexAI project, p
   2. **Link Content Extraction:** Implemented `linkExtractor.service.js` with `cheerio` to extract clean title, meta description, and article body text while stripping out scripts, styles, navigations, and advertisements.
   3. **Provider-Agnostic Vector Database Abstraction:** Implemented `vectorDb.service.js` exposing `upsert`, `query`, and `remove`. Supports Pinecone as the production index while providing a resilient in-memory cosine-similarity fallback for local development and test isolation without third-party credentials.
   4. **Semantic Vector Search with Hybrid Text Fallback:** `GET /api/library/search?q=` generates query embeddings via Gemini embedding models (`text-embedding-004`), queries the vector database filtered strictly by `userId`, and merges/ranks results with MongoDB `$text` search to ensure comprehensive coverage.
+
+## ADR-013: Unified Collapsible Sidebar and Minimalist Hero Chat Canvas
+
+- **Date:** 2026-09-26
+- **Status:** Accepted
+- **Context:** The initial desktop layout presented a global navigation sidebar alongside an inner nested chat sub-sidebar on `/chat`, consuming excessive horizontal screen space and fragmenting user navigation. Modern AI interfaces (Gemini, Claude) employ a single, unified, collapsible navigation rail.
+- **Decision:**
+  1. **Single Collapsible Rail:** Replace the duplicate double-sidebar with a single responsive navigation rail supporting two states: Collapsed (64px icon rail with tooltips) and Expanded (260px wide drawer with brand header, `+ New chat`, `Search chats` filter, navigation links, filterable Recents conversation history with pin/rename/delete actions, and a user wallet card).
+  2. **Minimalist Hero State:** In the chat workspace, empty or new conversations render an uncluttered hero headline ("Where should we start?"), a glowing floating prompt bar with model selection (`Flash` / `Pro`), voice dictation (Web Speech API), file attachment, and quick starter suggestion chips.
+  3. **Full-Width Message Thread:** Active chat conversations occupy the full workspace width for maximum readability.
+
+## ADR-014: Consolidated Knowledge Library Architecture
+
+- **Date:** 2026-09-26
+- **Status:** Accepted
+- **Context:** Maintaining separate disconnected pages for "Library" (links/notes) and "Documents" (AI structured drafts) causes feature fragmentation and user confusion about where generated content lives. Users also need a centralized place to store uploaded local files and view AI interview evaluation reports.
+- **Decision:**
+  1. **Unified Library Hub:** Consolidate Links, Notes, AI Generated Documents, Uploaded Custom Files, and Interview Reports into a single `/library` page backed by the polymorphic `LibraryItem` Mongoose schema (`type: "link" | "note" | "document" | "file" | "interview"`).
+  2. **Tabbed Content Filtering:** Provide instant tabbed filters: `All`, `Notes & Links`, `Documents`, `Files`, `Interviews`.
+  3. **Chat Context Attachment:** The chat composer includes an attachment trigger allowing users to seamlessly inject context either by selecting an existing item from their Library or uploading a new file from their device.
+
+## ADR-015: AI Interview Platform Architecture and Metered Evaluation Scorecards
+
+- **Date:** 2026-09-26
+- **Status:** Accepted
+- **Context:** Developers and diploma/engineering students preparing for viva examinations, technical screenings, and HR rounds lack an interactive, voice-enabled simulation environment that provides rigorous real-time questioning and actionable competency analytics.
+- **Decision:**
+  1. **Interactive Simulation Arena:** Build an `/interview` feature allowing users to configure target role (Full-Stack, React, Node.js, System Design, Capstone Viva), seniority, and topic. Gemini acts as an experienced interviewer conducting dynamic turn-by-turn dialogue with hints and follow-up probes.
+  2. **Voice Ripple Audio Visualizer & Transcript:** Implement an animated audio ripple/waveform reflecting speaking state for both the candidate and AI. Include Web Speech API speech-to-text input, optional text-to-speech playback, and a collapsible live transcript drawer.
+  3. **Comprehensive Scorecard Report:** Upon interview conclusion, Gemini evaluates candidate responses against an assessment rubric: Overall Score (0-100), rating, categorical breakdown (Technical Accuracy, Problem Solving, Communication, System Design), key strengths, and tailored study recommendations.
+  4. **Automatic Library Archival:** The generated scorecard and transcript are automatically archived into the user's Library under the `interview` category for permanent access and study.
+  5. **Credit Metering:** Every conversational turn and final evaluation report passes through `creditCheck` middleware and deducts credits atomically using real token usage: $\lceil \text{totalTokens} / 100 \rceil$.

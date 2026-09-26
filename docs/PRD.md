@@ -33,24 +33,25 @@ NexAI addresses both: a unified AI workspace (chat + library + documents + promp
 
 **One AI workspace, metered like a utility.**
 
-A single account and a single database power a few core surfaces:
+A single account and a single database power a unified, minimalist, and responsive workspace:
 
-- **Chat** — AI conversation with streaming responses, backed by a token-based credit ledger
-- **Library** — save links/notes, auto-summarized and semantically searchable
-- **Documents** — AI-drafted structured documents (resume/report/notes), exportable to PDF
-- **Prompt Vault** — reusable, variable-driven prompt templates
-- **Wallet/Billing** — credit balance, recharge, transaction history
-- **Admin Dashboard** (own role) — token consumption, model split, mock revenue, error logs
+- **AI Chat & Minimalist Canvas** — Distraction-free conversational interface with streaming responses, hero state ("Where should we start?"), glowing prompt bar with voice dictation and file attachment, backed by a token-based credit ledger.
+- **Unified Collapsible Navigation** — Gemini-style single collapsible sidebar (64px icon rail / 260px expanded panel) housing New Chat, Search, primary workspace navigation, filterable Recents chat history, and live user wallet card.
+- **Consolidated Library** — A single, searchable knowledge base uniting saved links, notes, AI-drafted documents (PDF exportable), uploaded custom files, and AI interview reports.
+- **AI Interview Platform** — Interactive mock technical & viva interview simulator with real-time voice ripple visualizer, live transcript, speech-to-text, and automated competency scorecard reports saved to the Library.
+- **Prompt Vault** — Reusable, variable-driven prompt templates with one-click saving from chat threads and variable fill injection.
+- **Wallet/Billing** — Credit balance, recharge tiers, Razorpay test mode payment verification, and transaction history.
+- **Admin Dashboard** (role-gated) — Real-time token consumption, model split, mock revenue, and error logs.
 
-Every AI action (chat message, document generation) consumes credits calculated from actual token usage returned by the model API — not a flat per-message charge — so the metering is real, not decorative.
+Every AI action (chat message, document drafting, interview turn, summary) consumes credits calculated from actual token usage returned by the model API — not a flat per-message charge — so the metering is real, not decorative.
 
 ---
 
 ## 3. Feature Scope by Phase
 
-This is the single most important section of this document. Every feature from v1 is placed into exactly one bucket.
+This is the single most important section of this document. Every feature is placed into exactly one bucket.
 
-### Phase 0 — Core MVP (must be fully working before anything else)
+### Phase 0 — Core MVP (Completed)
 
 | Feature                   | Detail                                                                                                                                                                       |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -63,14 +64,16 @@ This is the single most important section of this document. Every feature from v
 
 **Why this alone is defensible:** it is a working, streaming, metered AI chat product with a real personal knowledge store — already more than a "wrapper," and small enough to be fully stable before the viva.
 
-### Phase 1 — Differentiators (build after Phase 0 is stable)
+### Phase 1 — Differentiators & Workspace Evolution (Current & Upcoming)
 
-| Feature                      | Detail                                                                                                                                                                                                       |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Prompt Vault                 | Save prompts with `{{variable}}` placeholders; small form fills variables; inserts into chat as first message; tags + search                                                                                 |
-| AI Document Generation       | User asks for a document → Gemini drafts structured sections (heading + body) → live preview pane → inline edit → export to PDF (`pdf-lib`, pure JS, no headless browser) → auto-saved into a Documents list |
-| Unified Search               | One search bar across Library + Documents + Prompts (keyword + semantic)                                                                                                                                     |
-| Command Palette (Ctrl/Cmd+K) | Jump to any screen instantly — pure frontend, no extra backend cost                                                                                                                                          |
+| Feature                                   | Detail                                                                                                                                                                                                                        |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Unified Sidebar & Minimalist Canvas**   | Gemini-style single collapsible sidebar (64px rail / 260px expanded panel) with New Chat, chat search, recents history, hero prompt ("Where should we start?"), glowing input bar, voice dictation, and quick suggestions. |
+| **Prompt Vault & Chat Integration**       | Save prompts with `{{variable}}` placeholders; fill modal inserts into chat; direct "Save to Prompt Vault" action from chat messages; tags & search.                                                                          |
+| **Consolidated Library & Documents**      | Merge Documents, custom file uploads, and bookmarks into a tabbed Library (`All`, `Notes/Links`, `Documents`, `Files`, `Interviews`). Structured AI doc drafts with PDF export (`pdf-lib`), plus chat file input picker.     |
+| **AI Interview Platform**                 | Real-time interactive mock interview simulator (roles, viva prep, seniorities). Features animated voice ripple, live transcript, speech-to-text, and automated competency scorecard saved to Library.                        |
+| **Unified Search**                        | One search bar across Library, Documents, Prompts, and Chat History (keyword + semantic).                                                                                                                                    |
+| **Command Palette (Ctrl/Cmd+K)**          | Jump to any screen or trigger common actions instantly — pure frontend, zero backend latency.                                                                                                                                 |
 
 ### Phase 2 — SaaS / Business Layer (the "unique" layer for the examiner)
 
@@ -87,7 +90,7 @@ This phase is what turns "AI chat app" into "AI SaaS platform" in the examiner's
 
 | Feature                      | Detail                                                                                           |
 | ---------------------------- | ------------------------------------------------------------------------------------------------ |
-| Files & Document Analysis    | Upload PDF/Word → summarize / ask questions about it (Gemini multimodal, no separate OCR needed) |
+| AI Image Generation (Future) | Generate images via model API; automatically catalog and preserve generated assets in Library.   |
 | Developer Utilities (subset) | JSON formatter, regex tester, snippet manager with tags — pick 2–3, not the full list from v1    |
 | Learning tools (subset)      | Flashcard generator from a saved note/document — pick one, not all of Section G from v1          |
 
@@ -99,7 +102,7 @@ Stating these as "considered, deliberately deferred" is stronger than silently d
 - Pomodoro/focus tools, site blocklist — not related to the core AI-workspace problem
 - Secrets vault, password breach checker — a separate security-tool product, distracts from the AI theme
 - Link-rot cron crawler — background cron on Render's free tier risks memory/idle issues
-- Chat branching, shareable read-only chat links, voice input/output, multi-provider model switcher (Gemini/Llama/GPT together) — good v2/v3 ideas, not needed to prove the core thesis
+- Chat branching, shareable read-only chat links, multi-provider model switcher (Gemini/Llama/GPT together) — good v2/v3 ideas, not needed to prove the core thesis
 
 ---
 
@@ -222,22 +225,50 @@ Key design decisions:
   createdAt
 }
 
-// libraryItems
+// libraryItems (consolidated knowledge base: links, notes, generated documents, custom files, interview scorecards)
 {
   _id, userId,
-  type: "link" | "note",
-  url, title, summary, tags: [String],
-  vectorId,          // Pinecone/Chroma reference
-  createdAt
+  type: "link" | "note" | "document" | "file" | "interview",
+  title, summary,
+  url,               // for links
+  content,           // extracted text or note content
+  fileUrl,           // for uploaded files or generated PDFs
+  fileFormat,        // "pdf" | "md" | "txt" | "json"
+  sections,          // for structured documents: [{ heading, body }]
+  interviewData,     // for interview reports: { role, level, score, rating, scorecardId }
+  tags: [String],
+  vectorId,          // Pinecone/vector reference for semantic search
+  createdAt, updatedAt
 }
 
-// documents (AI-generated)
+// interviewSessions (AI Mock Interview Platform)
 {
   _id, userId,
-  title, category: "resume" | "report" | "notes" | "other",
-  sections: [{ heading, body }],
-  fileFormat: "pdf",
-  createdAt
+  role: String,              // e.g. "Full-Stack Engineer", "Frontend React", "Diploma Viva"
+  difficulty: "junior" | "mid" | "senior",
+  topic: String,             // e.g. "System Design & Node.js"
+  status: "in_progress" | "completed",
+  messages: [{
+    role: "assistant" | "user",
+    content: String,
+    tokensUsed: Number,
+    timestamp: Date
+  }],
+  scorecard: {
+    overallScore: Number,    // 0 to 100
+    rating: "Strong Hire" | "Hire" | "Needs Improvement" | "Unprepared",
+    categories: {
+      technicalAccuracy: Number,
+      problemSolving: Number,
+      communication: Number,
+      systemDesign: Number
+    },
+    strengths: [String],
+    improvements: [String],
+    recommendedTopics: [String]
+  },
+  totalTokensUsed: Number,
+  createdAt, updatedAt
 }
 
 // prompts (Prompt Vault)
@@ -250,11 +281,11 @@ Key design decisions:
 }
 
 // chats / messages
-{ _id, userId, title, createdAt, updatedAt }
+{ _id, userId, title, isPinned: Boolean, createdAt, updatedAt }
 { _id, chatId, role: "user" | "assistant", content, tokensUsed, createdAt }
 
 // usageLogs (feeds Admin Dashboard)
-{ _id, userId, model: "flash" | "pro", tokensUsed, creditsDeducted, createdAt }
+{ _id, userId, model: "flash" | "pro", feature: "chat" | "library" | "interview" | "document", tokensUsed, creditsDeducted, createdAt }
 ```
 
 ---
@@ -270,27 +301,35 @@ Key design decisions:
 5. A `usageLogs` entry is written for the Admin Dashboard.
 6. If `creditsRemaining` reaches 0, further requests are blocked with a "Recharge to continue" response.
 
-**B. Save to Library**
+**B. Save to Consolidated Library (Suggest → Review → Confirm)**
 
 1. User pastes a link or note.
 2. Backend fetches/extracts content → Gemini Flash generates summary + tags.
 3. Suggested summary/tags shown for one-tap confirm/edit — never applied silently.
 4. On confirm: embedding generated → upserted to vector DB → `libraryItems` doc saved.
 
-**C. AI Document Generation**
+**C. AI Document Generation & PDF Export**
 
-1. User requests a document (e.g. "write me a resume").
-2. Agent drafts structured sections (JSON: heading + body per section).
+1. User requests a document (e.g. "write me a project specification" or creates it in the Library).
+2. Gemini drafts structured sections (heading + body).
 3. Rendered in a preview pane; user edits inline.
-4. On export: `pdf-lib` renders the file → downloaded → saved to Documents.
+4. On export: `pdf-lib` renders the file → downloaded → saved into the Library under `document` type.
 
-**D. Prompt Vault use**
+**D. AI Interview Simulation & Scorecard Report**
 
-1. User opens the vault, picks a saved prompt.
-2. If it has `{{variables}}`, a small form collects values.
-3. Filled prompt is inserted into chat as the first message.
+1. Candidate selects target role, difficulty level, and focus topics.
+2. Live arena initializes: AI acts as lead interviewer, prompting technical questions.
+3. User responds via text or voice dictation (speech-to-text); interactive audio visualizer (voice ripples) reflects speech activity.
+4. Real-time collapsible transcript tracks the entire conversation.
+5. On conclusion: Gemini analyzes candidate responses against industry benchmarks, generating an analytical scorecard (0-100 rating, category breakdown, feedback).
+6. The completed scorecard is automatically archived into the user's Library under `interview` type.
 
-**E. Recharge (Razorpay Test Mode)**
+**E. Prompt Vault use & In-Chat Capture**
+
+1. User clicks "Save as Prompt" on any chat bubble to capture valuable prompts.
+2. Or opens the Prompt Vault, selects a template with `{{variables}}`, fills values via modal, and injects into chat.
+
+**F. Recharge (Razorpay Test Mode)**
 
 1. User picks a plan (e.g. ₹49 → 500 credits) on the Wallet page.
 2. Razorpay Test Mode checkout opens; test card/UPI completes payment.

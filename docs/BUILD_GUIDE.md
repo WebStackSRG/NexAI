@@ -48,37 +48,37 @@ Model names must come from env variables (`GEMINI_FLASH_MODEL`, `GEMINI_PRO_MODE
 │       │   ├── ProtectedRoute.jsx
 │       │   └── AdminRoute.jsx
 │       ├── layouts/
-│       │   ├── AppLayout/             # sidebar + topbar + outlet
+│       │   ├── AppLayout/             # unified collapsible sidebar (64px/260px) + topbar + outlet
 │       │   └── AuthLayout/
 │       ├── pages/
 │       │   ├── Auth/ (Login, Register)
-│       │   ├── Chat/
-│       │   ├── Library/
-│       │   ├── Documents/
+│       │   ├── Chat/                  # full-width hero & streaming conversation canvas
+│       │   ├── Library/               # consolidated hub: notes, links, docs, files, interviews
 │       │   ├── Prompts/
+│       │   ├── Interview/             # AI mock interview: setup, live arena, scorecard
 │       │   ├── Search/
 │       │   ├── Wallet/
 │       │   ├── Settings/
 │       │   ├── Admin/
 │       │   └── NotFound/
 │       ├── features/                  # feature-specific components
-│       │   ├── chat/ (MessageList, MessageBubble, Composer, ChatSidebar)
-│       │   ├── library/ (SaveItemForm, SuggestionReview, LibraryCard)
-│       │   ├── documents/ (DocGenerator, SectionEditor, DocPreview)
+│       │   ├── chat/ (MessageList, MessageBubble, Composer, VoiceInput, PromptHero)
+│       │   ├── library/ (SaveItemForm, SuggestionReview, LibraryCard, DocViewer, FileUploader)
 │       │   ├── prompts/ (PromptForm, VariableFillModal, PromptCard)
+│       │   ├── interview/ (InterviewSetup, InterviewArena, VoiceRipple, TranscriptDrawer, Scorecard)
 │       │   ├── wallet/ (PlanCard, TransactionTable, CreditBadge)
 │       │   ├── admin/ (StatCard, UsageChart, ModelSplitChart)
 │       │   └── command-palette/ (CommandPalette)
 │       ├── components/
 │       │   ├── ui/                    # design-system primitives (Section 5)
 │       │   └── common/                # PageHeader, SearchBar, ConfirmDialog, ErrorBoundary
-│       ├── store/                     # Zustand: auth, chat, library, documents, prompts, wallet, ui
+│       ├── store/                     # Zustand: auth, chat, library, prompts, interview, wallet, ui
 │       ├── lib/
-│       │   ├── api/                   # axios instance + one file per domain (chat.api.js, ...)
+│       │   ├── api/                   # axios instance + one file per domain (chat, library, interview...)
 │       │   ├── sse.js                 # fetch-based SSE stream reader
 │       │   ├── auth.js
 │       │   └── utils/                 # formatDate, extractVariables, fillTemplate, cn
-│       ├── hooks/                     # useDebounce, useHotkey, useTheme, useStream, useClickOutside
+│       ├── hooks/                     # useDebounce, useHotkey, useTheme, useStream, useSpeechRecognition
 │       ├── constants/                 # routes, plans, query keys
 │       └── styles/
 │           ├── tokens/ (_primitives.scss, _semantic.scss, _index.scss)
@@ -94,10 +94,11 @@ Model names must come from env variables (`GEMINI_FLASH_MODEL`, `GEMINI_PRO_MODE
 │       ├── server.js                  # starts http server
 │       ├── app.js                     # express app, middleware, routes
 │       ├── config/ (env.js [zod-validated env], db.js, gemini.js, pinecone.js, razorpay.js)
-│       ├── models/ (User, Transaction, LibraryItem, Document, Prompt, Chat, Message, UsageLog, ErrorLog)
+│       ├── models/ (User, Transaction, LibraryItem, Prompt, Chat, Message, InterviewSession, UsageLog, ErrorLog)
 │       ├── routes/ (index.js + one file per domain)
 │       ├── controllers/
 │       ├── services/
+│       ├── agents/ (prompts/ for interview, doc-gen, chat, library)
 │       │   ├── gemini.service.js      # generate, stream, embed
 │       │   ├── vectorDb.service.js    # upsert, query, delete (provider-agnostic interface)
 │       │   ├── credit.service.js      # tokensToCredits, assertBalance, deduct (atomic)
@@ -366,22 +367,26 @@ All routes are prefixed with `/api` and require auth unless marked public.
   - `event: error` → `{ "code", "message" }`
   - The first user message automatically sets the chat title (a short Flash call, also metered).
 
-**Library:**
+**Library (Consolidated Knowledge Hub):**
 
 - `POST /library/suggest` `{ type, url?, content? }` returns `{ title, summary, tags }` and does NOT save (creditCheck)
-- `POST /library` `{ type, url?, content?, title, summary, tags }` saves the confirmed item and embeds it
-- `GET /library?tag=&page=`, `PATCH /library/:id`, `DELETE /library/:id` (also removes the vector)
-- `GET /library/search?q=` runs a semantic search
+- `POST /library` `{ type, url?, content?, title, summary, tags, sections?, fileUrl? }` saves confirmed item (`link`, `note`, `document`, `file`, `interview`) and embeds it
+- `GET /library?type=&tag=&page=`, `PATCH /library/:id`, `DELETE /library/:id` (also removes the vector)
+- `GET /library/search?q=` runs a semantic search across all items
+- `POST /library/documents/generate` `{ prompt, category }` returns a structured draft that is not saved (creditCheck)
+- `GET /library/documents/:id/export.pdf` streams the PDF made by `pdf-lib`
 
-**Documents:**
+**AI Interview Platform:**
 
-- `POST /documents/generate` `{ prompt, category }` returns a draft that is not saved (creditCheck)
-- `POST /documents`, `GET /documents`, `GET /documents/:id`, `PATCH /documents/:id`, `DELETE /documents/:id`
-- `GET /documents/:id/export.pdf` streams the PDF made by `pdf-lib`. Exporting also saves the document if it is new.
+- `POST /interview/start` `{ role, difficulty, topic }` creates a session, drafts initial greeting and question (creditCheck)
+- `POST /interview/:id/respond` `{ content, model? }` returns an **SSE stream** with the interviewer's critique and next question (creditCheck)
+- `POST /interview/:id/conclude` evaluates the candidate's transcript, computes multi-criteria scorecard (overall score, strengths, areas for growth), deducts credits, and auto-saves the result into the Library
+- `GET /interview` lists past interview sessions for the logged-in user
+- `GET /interview/:id` returns specific session transcript and scorecard
 
 **Prompts:** `GET /prompts?q=&tag=`, `POST /prompts`, `PATCH /prompts/:id`, `DELETE /prompts/:id`. Variables are extracted on the server from `{{name}}` with the regex `/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g` (deduplicated).
 
-**Unified search:** `GET /search?q=` returns `{ library: [], documents: [], prompts: [] }`, merging Mongo text search and vector results, deduplicated and ranked.
+**Unified search:** `GET /search?q=` returns `{ library: [], prompts: [] }`, merging Mongo text search and vector results, deduplicated and ranked.
 
 **Wallet:**
 
@@ -400,9 +405,11 @@ All routes are prefixed with `/api` and require auth unless marked public.
 Follow PRD Section 7 exactly, plus:
 
 - `Message.tokensUsed`
-- `UsageLog.feature`
-- `LibraryItem.content` (the extracted text)
-- `Document.updatedAt`
+- `UsageLog.feature` (`chat` | `library` | `interview` | `document`)
+- `LibraryItem.type` (`link` | `note` | `document` | `file` | `interview`)
+- `LibraryItem.content` (extracted text, note markdown, or document sections)
+- `LibraryItem.interviewData` (session ID, role, score, rating)
+- `InterviewSession` (`userId`, `role`, `difficulty`, `topic`, `status`, `messages`, `scorecard`, `totalTokensUsed`)
 - `Transaction.orderId`
 - `Transaction.planId`
 - An `ErrorLog { route, method, status, message, stack?, userId?, createdAt }` collection (it feeds the admin error count)
@@ -444,66 +451,93 @@ VITE_GOOGLE_CLIENT_ID=
 VITE_RAZORPAY_KEY_ID=
 ```
 
-## 11. Code conventions
+## 11. Code conventions & Git workflow
 
 - JavaScript (ESM) on both sides. JSDoc on services and agents.
 - File names: `PascalCase.jsx` for components, `camelCase.js` for utilities, `name.service.js` / `name.controller.js` / `name.routes.js` / `Name.model.js` on the server.
 - Keep functions small (under about 40 lines where possible). No magic numbers: put them in constants or env.
 - ESLint + Prettier (2 spaces, single quotes, semicolons, trailing commas, 100 character lines).
 - Root `package.json` scripts: `dev` (runs client and server together), `lint`, `format`, `test`.
-- Git: branch from `dev` as `feature/<name>`, use Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`, `docs:`), and open one merge request per phase or feature into `dev`.
+- **Git Branching Lifecycle (Strictly Followed):**
+  1. Always branch from `dev`: `git checkout dev && git checkout -b feature/<name>`
+  2. Work in small, verifiable steps. Write complete runnable code (no stubs or TODOs).
+  3. Run linter and tests: `npm run lint` and `npm test`. Fix any regressions.
+  4. Commit with Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`, `docs:`).
+  5. Merge into `dev` branch: `git checkout dev && git merge --no-ff feature/<name>`
+  6. Verify `dev` branch compiles and tests pass.
+  7. Delete the feature branch: `git branch -d feature/<name>`.
+  8. `main` branch remains untouched until ready for production deployment.
 
 ## 12. Build order with acceptance criteria
 
-**Step 1: Scaffold and design system** (`feature/scaffold`)
-
+**Step 1: Scaffold and design system** (`feature/scaffold`) — `[COMPLETED]`
 - Monorepo, tooling, env validation, DB connection, `/api/health`, error handling, logging.
 - All tokens, both themes, base styles and every `components/ui` component, plus AppLayout, routing, the auth pages and the command palette shell.
-- Done when: the app runs with one command, the theme toggle works, every UI component renders in dark and light, and lint passes.
 
-**Step 2: Auth** (`feature/auth`)
-
+**Step 2: Auth** (`feature/auth`) — `[COMPLETED]`
 - Register, login, Google login, refresh, logout, `me`, protected and admin routes, `seedAdmin` script, 100 starter credits.
-- Done when: a user can register, log in, stay logged in after a page reload and log out, and a non-admin user gets 403 on `/admin`.
 
-**Step 3: Backend chat** (`feature/backend-chat`)
-
+**Step 3: Backend chat** (`feature/backend-chat`) — `[COMPLETED]`
 - Gemini streaming over SSE, chat and message persistence, creditCheck, atomic deduction, UsageLog.
-- Done when: a curl request streams tokens, the `done` event shows correct credits, and a balance of 0 returns 402.
 
-**Step 4: Chat UI** (`feature/chat-ui`)
+**Step 4: Chat UI** (`feature/chat-ui`) — `[COMPLETED]`
+- Streaming message view (markdown and code blocks with a copy button), composer (Enter to send, Shift+Enter for a new line), model picker, stop button, live CreditBadge, and "Recharge" call to action on 402.
 
-- Chat list, streaming message view (markdown and code blocks with a copy button), composer (Enter to send, Shift+Enter for a new line), model picker, stop button, live CreditBadge, and a "Recharge" call to action on 402.
-- Done when: tokens render smoothly and the credit badge updates without a page reload.
+**Step 5: Library Core** (`feature/library`) — `[COMPLETED]`
+- Link or note input, suggest step, review screen (edit title, summary, tags), vector embedding via `vectorDb.service.js`, hybrid search, and delete.
 
-**Step 5: Library** (`feature/library`)
+---
 
-- Link or note input, a suggest step, then a review screen (edit title, summary and tags), then save and embed. List with tag filter, semantic search, delete.
-- Done when: searching by meaning (not exact words) finds the right item.
+### Upcoming Build Steps
 
-**Step 6: Prompt Vault** (`feature/prompt-vault`)
+**Step 6: Unified Collapsible Sidebar & Minimalist Chat Canvas** (`feature/sidebar-and-hero-ui`)
+- Single collapsible sidebar (64px icon rail / 260px expanded panel) replacing the duplicate nested chat sub-sidebar in `ChatPage`.
+- Direct integration of `+ New chat`, `Search chats` filter, primary navigation items, and recent conversation history list (with rename and delete actions) inside the sidebar.
+- Gemini-inspired distraction-free chat canvas: "Where should we start?" hero state with glowing prompt bar, voice input (mic button using Web Speech API), file attachment trigger, and quick suggestion chips.
+- User profile footer card with avatar, name, tier, and live credit balance.
+- Done when: Sidebar smoothly collapses to 64px and expands to 260px; New Chat creates a session without extra sub-sidebars; hero state renders when chat is empty; voice dictation inputs text into composer; tests & lint pass.
 
-- CRUD, live variable detection while typing, variable fill modal, then a new chat starts with the filled prompt as its first message. Tags and search.
+**Step 7: Prompt Vault & In-Chat Template Integration** (`feature/prompt-vault`)
+- Full CRUD for prompt templates, real-time variable detection with `{{variable}}` syntax, variable fill modal, and tag filtering.
+- One-click "Save to Prompt Vault" action on chat messages.
+- Inserting a prompt directly into chat with pre-filled variables.
+- Done when: Users can save templates, fill variables in a modal, and start a new chat with the compiled prompt.
 
-**Step 7: Document generation** (`feature/doc-gen`)
+**Step 8: Consolidated Library & Document Management** (`feature/consolidated-library`)
+- Unify Documents and Library into one centralized knowledge hub with tabbed filtering: `All`, `Notes & Links`, `Documents`, `Files`, `Interviews`.
+- Structured AI document generator (resumes, project specs, reports) with split-pane live preview, inline editing, and client-side PDF export (`pdf-lib`).
+- Custom local file uploads (PDF/text/markdown) saved to the Library.
+- Chat composer attachment picker: select existing library items or upload local files as chat context.
+- Done when: Structured docs can be generated and exported to PDF; files can be uploaded and attached to chat prompts; all items appear in their respective Library tabs.
 
-- Generate a draft, then a split view (section editor next to a live preview), inline edit, reorder, add or remove sections, export to PDF (with proper text wrapping and page breaks in pdf-lib), and a documents list.
+**Step 9: AI Interview Platform** (`feature/ai-interview`)
+- Dedicated `/interview` route with Setup view (Role, Seniority, Viva / Capstone Defense, and Topic selection).
+- Live interactive simulation arena:
+  - Gemini acts as an experienced Technical Lead or Viva Examiner with turn-by-turn challenges and follow-ups.
+  - Interactive **Voice Ripple / Audio Visualizer** animation responding to speech activity for candidate and AI.
+  - Speech-to-Text (voice dictation) and Text-to-Speech audio support.
+  - Live collapsible transcript tray showing full turn history.
+- Performance Evaluation & Scorecard:
+  - Comprehensive report at conclusion: Overall Score (0-100), rating, category breakdown (Technical Accuracy, Problem Solving, Communication, System Design), key strengths, and areas to improve.
+  - Automatic archival of the scorecard and transcript into the **Library** under the `interview` category.
+  - Metered with `creditCheck` and atomic token deduction: $\lceil \text{totalTokens} / 100 \rceil$.
+- Done when: A complete mock interview runs from setup to evaluation, voice visualizer animates, transcript tracks turns, scorecard is saved in Library, and credit balance updates accurately.
 
-**Step 8: Unified search** (`feature/search`) with a `/search` page and results in the command palette.
+**Step 10: Unified Search & Command Palette** (`feature/search`)
+- Unified `/search` page and quick-access Command Palette (Ctrl+K).
+- Merges results across Library (notes, docs, files, interviews), Prompts, and Chat History using hybrid semantic vector and text matching.
+- Done when: Ctrl+K or `/search` quickly navigates to any item or screen.
 
-**Step 9: Wallet and billing** (`feature/wallet-billing`)
+**Step 11: Wallet & Billing** (`feature/wallet-billing`)
+- Plans, Razorpay Checkout integration in test mode, HMAC verification endpoint, raw body webhook handler, and idempotent transaction ledger.
+- Done when: A test card recharge adds credits exactly once, even if both webhook and verify arrive simultaneously.
 
-- Plans (for example ₹49 = 500 credits, ₹99 = 1200 credits), Razorpay Checkout in test mode, verify endpoint, webhook, idempotent transaction ledger, transaction history table.
-- Done when: a test card payment adds credits exactly once, even if both verify and the webhook fire.
+**Step 12: Admin Dashboard** (`feature/admin-dashboard`)
+- Role-gated `/admin` route with stat cards (tokens, mock revenue, active users), token consumption charts, Flash vs Pro model split, recent transactions, and error logs.
+- Done when: Admin users can monitor platform usage in real-time while non-admins are restricted (HTTP 403).
 
-**Step 10: Admin dashboard** (`feature/admin-dashboard`)
-
-- Stat cards, a token usage line chart, a Flash vs Pro pie chart, a recent transactions table and an errors table.
-
-**Step 11: Hardening**
-
-- Tests: credit service, variable extraction, webhook signature, auth flow, API integration tests with supertest.
-- Final README pass, deploy notes for Vercel and Render (including the cold-start note), and `docs/viva-prep.md`.
+**Step 13: Hardening & Viva Prep** (`feature/hardening`)
+- Integration tests with Supertest, end-to-end flow validation, deployment guides for Render/Vercel, and comprehensive viva defense preparation guide (`docs/viva-prep.md`).
 
 Phase 3 items (file analysis, developer utilities, flashcards) are built ONLY if explicitly requested after Step 11.
 
