@@ -538,6 +538,68 @@ Analyzes article content or user notes and generates an AI-suggested title, summ
 
 ---
 
+### POST `/api/library/documents/generate`
+
+Generates an AI-drafted structured document (resume, technical spec, analysis report, study notes) using Gemini Flash JSON mode. Returns a draft with structured sections (`title`, `category`, `summary`, `sections: [{ heading, body }]`) without auto-saving to the database (Suggest &rarr; Review &rarr; Confirm pattern).
+
+- **Auth:** Bearer Token (Credit Check required: `creditsRemaining > 0`)
+- **Rate-limit:** 30 requests / minute per IP
+- **Method:** `POST`
+- **Request Body:**
+
+```json
+{
+  "prompt": "Write a senior full-stack engineer resume with React, Node.js, and cloud systems",
+  "category": "resume"
+}
+```
+
+- **Response `200 OK`**:
+
+```json
+{
+  "data": {
+    "title": "Senior Full-Stack Software Engineer Resume",
+    "category": "resume",
+    "summary": "Experienced engineer with 5+ years building scalable distributed web applications.",
+    "sections": [
+      { "heading": "Professional Summary", "body": "Proven track record in high-concurrency systems..." },
+      { "heading": "Technical Skills", "body": "- **Frontend:** React 18, Vite, TypeScript\n- **Backend:** Node.js, Express, MongoDB" },
+      { "heading": "Work Experience", "body": "**Senior Engineer** @ Acme Corp (2022-Present)..." }
+    ],
+    "tokensUsed": 350,
+    "creditsDeducted": 4,
+    "creditsRemaining": 96
+  }
+}
+```
+
+- **Response `402 Payment Required` (when credit balance is 0):**
+
+```json
+{
+  "error": {
+    "code": "INSUFFICIENT_CREDITS",
+    "message": "Recharge to continue",
+    "details": null
+  }
+}
+```
+
+---
+
+### GET `/api/library/documents/:id/export.pdf`
+
+Generates and streams a styled, multi-page PDF document server-side using `pdf-lib` with automatic text wrapping, pagination, headers/footers, and page numbers.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Response `200 OK`**:
+  - `Content-Type: application/pdf`
+  - `Content-Disposition: attachment; filename="document_title.pdf"`
+  - Binary stream of styled PDF bytes.
+
+
 ### POST `/api/library`
 
 Saves a confirmed library item into MongoDB and generates dense vector embeddings stored in the vector database for semantic search.

@@ -1,30 +1,68 @@
 import { useState, useEffect } from 'react';
-import { Plus, Bookmark, RefreshCw, Sparkles } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import {
+  Plus,
+  Bookmark,
+  RefreshCw,
+  Sparkles,
+  BookOpen,
+  Paperclip,
+  Mic,
+  Upload,
+  Layers,
+} from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { SearchBar } from '@/components/common/SearchBar';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { LibraryCard, SaveItemModal, EditItemModal } from '@/features/library';
+import {
+  LibraryCard,
+  SaveItemModal,
+  EditItemModal,
+  DocGeneratorModal,
+  FileUploaderModal,
+  DocumentViewModal,
+} from '@/features/library';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useDebounce } from '@/hooks/useDebounce';
+import { ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils/cn';
 import styles from './LibraryPage.module.scss';
 
+const TABS = [
+  { id: 'all', label: 'All Items', icon: <Layers size={15} /> },
+  { id: 'notes_links', label: 'Notes & Links', icon: <Bookmark size={15} /> },
+  { id: 'documents', label: 'Documents', icon: <BookOpen size={15} /> },
+  { id: 'files', label: 'Files', icon: <Paperclip size={15} /> },
+  { id: 'interviews', label: 'Interviews', icon: <Mic size={15} /> },
+];
+
 export default function LibraryPage() {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlTab = searchParams.get('tab');
+
   const {
     items,
     tags,
     activeTag,
+    activeTab,
+    counts,
     isLoading,
     isSearching,
     error,
     fetchItems,
     searchItems,
     setActiveTag,
+    setActiveTab,
     openAddModal,
     openEditModal,
+    openDocGenModal,
+    openUploadModal,
+    openViewDocModal,
+    exportPdf,
     openDeleteDialog,
     closeDeleteDialog,
     confirmDeleteItem,
@@ -36,6 +74,13 @@ export default function LibraryPage() {
   const [localSearch, setLocalSearch] = useState('');
   const debouncedSearch = useDebounce(localSearch, 350);
 
+  // Sync tab with URL query parameter
+  useEffect(() => {
+    if (urlTab && TABS.some((t) => t.id === urlTab) && urlTab !== activeTab) {
+      setActiveTab(urlTab);
+    }
+  }, [urlTab, activeTab, setActiveTab]);
+
   // Initial load
   useEffect(() => {
     fetchItems();
@@ -46,6 +91,17 @@ export default function LibraryPage() {
     searchItems(debouncedSearch);
   }, [debouncedSearch, searchItems]);
 
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    setLocalSearch('');
+    if (tabId === 'all') {
+      searchParams.delete('tab');
+    } else {
+      searchParams.set('tab', tabId);
+    }
+    setSearchParams(searchParams, { replace: true });
+  };
+
   const handleClearSearch = () => {
     setLocalSearch('');
     searchItems('');
@@ -53,17 +109,146 @@ export default function LibraryPage() {
 
   const isSearchActive = Boolean(debouncedSearch.trim());
 
+  // Helper for empty state content based on active tab
+  const getEmptyStateDetails = () => {
+    if (isSearchActive) {
+      return {
+        title: `No items found matching "${debouncedSearch}"`,
+        description: 'Try different keywords or concepts. Semantic search matches meaning across summaries and content.',
+        action: (
+          <Button variant="secondary" onClick={handleClearSearch}>
+            Clear Search
+          </Button>
+        ),
+      };
+    }
+
+    if (activeTag) {
+      return {
+        title: `No items tagged #${activeTag}`,
+        description: 'Try selecting another tag or view all saved items.',
+        action: (
+          <Button variant="secondary" onClick={() => setActiveTag(null)}>
+            Show All Items
+          </Button>
+        ),
+      };
+    }
+
+    switch (activeTab) {
+      case 'documents':
+        return {
+          title: 'No structured documents yet',
+          description: 'Draft structured resumes, reports, and study notes with AI assistance and export them directly to PDF.',
+          action: (
+            <Button variant="primary" onClick={openDocGenModal} leftIcon={<Sparkles size={16} />}>
+              Create First Document
+            </Button>
+          ),
+        };
+      case 'files':
+        return {
+          title: 'No files uploaded',
+          description: 'Upload markdown notes, text files, JSON, CSV, or PDFs to your personal library.',
+          action: (
+            <Button variant="primary" onClick={openUploadModal} leftIcon={<Upload size={16} />}>
+              Upload a File
+            </Button>
+          ),
+        };
+      case 'interviews':
+        return {
+          title: 'No interview sessions archived',
+          description: 'Completed mock technical interviews and viva scorecards will automatically be archived here.',
+          action: (
+            <Button variant="primary" onClick={() => navigate(ROUTES.INTERVIEW)} leftIcon={<Mic size={16} />}>
+              Start Mock Interview
+            </Button>
+          ),
+        };
+      case 'notes_links':
+        return {
+          title: 'No notes or links saved',
+          description: 'Save articles, documentation, or personal notes with AI-generated summaries and auto-tags.',
+          action: (
+            <Button variant="primary" onClick={openAddModal} leftIcon={<Plus size={16} />}>
+              Add Note or Link
+            </Button>
+          ),
+        };
+      default:
+        return {
+          title: 'Your Knowledge Hub is empty',
+          description: 'Save bookmarks, notes, files, or generate structured documents with instant PDF export.',
+          action: (
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <Button variant="secondary" onClick={openDocGenModal} leftIcon={<Sparkles size={16} />}>
+                New Document
+              </Button>
+              <Button variant="primary" onClick={openAddModal} leftIcon={<Plus size={16} />}>
+                Add Note / Link
+              </Button>
+            </div>
+          ),
+        };
+    }
+  };
+
+  const emptyDetails = getEmptyStateDetails();
+
   return (
     <div className={styles.page}>
       <PageHeader
-        title="Personal Library"
-        description="Save links and notes with automated summaries, auto-tags, and semantic vector search."
+        title="Knowledge Hub & Library"
+        description="Unified personal repository for notes, bookmarks, custom files, AI-generated documents, and interview transcripts."
         actions={
-          <Button variant="primary" onClick={openAddModal} leftIcon={<Plus size={16} />}>
-            Add Item
-          </Button>
+          <div className={styles.headerActions}>
+            <Button
+              variant="secondary"
+              onClick={openUploadModal}
+              leftIcon={<Upload size={15} />}
+            >
+              Upload File
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={openDocGenModal}
+              leftIcon={<Sparkles size={15} />}
+            >
+              New Document
+            </Button>
+            <Button
+              variant="primary"
+              onClick={openAddModal}
+              leftIcon={<Plus size={16} />}
+            >
+              Add Note / Link
+            </Button>
+          </div>
         }
       />
+
+      {/* Tabbed Content Filtering */}
+      <div className={styles.tabNav} role="tablist">
+        {TABS.map((tab) => {
+          const count = counts?.[tab.id] ?? 0;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              role="tab"
+              aria-selected={isActive}
+              type="button"
+              className={cn(styles.tabBtn, isActive && styles.activeTab)}
+              onClick={() => handleTabChange(tab.id)}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+              {count > 0 && <span className={styles.tabCount}>{count}</span>}
+            </button>
+          );
+        })}
+      </div>
 
       <div className={styles.toolbar}>
         <div className={styles.searchWrapper}>
@@ -71,7 +256,7 @@ export default function LibraryPage() {
             value={localSearch}
             onChange={setLocalSearch}
             onClear={handleClearSearch}
-            placeholder="Search by meaning or keyword (e.g. 'state management' or 'docker')..."
+            placeholder="Search by meaning or keywords across notes, documents, and files..."
           />
         </div>
 
@@ -83,7 +268,7 @@ export default function LibraryPage() {
               className={cn(styles.tagFilterChip, activeTag === null && styles.active)}
               onClick={() => setActiveTag(null)}
             >
-              All Items
+              All Tags
             </button>
             {tags.map((tag) => (
               <button
@@ -149,35 +334,9 @@ export default function LibraryPage() {
         /* Empty State */
         <EmptyState
           icon={<Bookmark size={32} />}
-          title={
-            isSearchActive
-              ? `No items found matching "${debouncedSearch}"`
-              : activeTag
-                ? `No items tagged #${activeTag}`
-                : 'Your library is empty'
-          }
-          description={
-            isSearchActive
-              ? 'Try different keywords or concepts. Semantic search matches meaning across summaries and content.'
-              : activeTag
-                ? 'Try selecting another tag or view all saved items.'
-                : 'Save articles, documentation, or quick notes. Review AI-suggested summaries and tags before storing.'
-          }
-          action={
-            isSearchActive ? (
-              <Button variant="secondary" onClick={handleClearSearch}>
-                Clear Search
-              </Button>
-            ) : activeTag ? (
-              <Button variant="secondary" onClick={() => setActiveTag(null)}>
-                Show All Items
-              </Button>
-            ) : (
-              <Button variant="primary" onClick={openAddModal} leftIcon={<Plus size={16} />}>
-                Add Your First Item
-              </Button>
-            )
-          }
+          title={emptyDetails.title}
+          description={emptyDetails.description}
+          action={emptyDetails.action}
         />
       ) : (
         /* Items Grid */
@@ -190,28 +349,30 @@ export default function LibraryPage() {
               onTagClick={(tag) => setActiveTag(tag)}
               onEdit={openEditModal}
               onDelete={openDeleteDialog}
+              onViewDoc={openViewDocModal}
+              onExportPdf={exportPdf}
             />
           ))}
         </div>
       )}
 
-      {/* Add / Suggest Modal (Suggest -> Review -> Confirm) */}
+      {/* Modals */}
       <SaveItemModal />
-
-      {/* Edit Modal */}
       <EditItemModal />
+      <DocGeneratorModal />
+      <FileUploaderModal />
+      <DocumentViewModal />
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation */}
       <ConfirmDialog
         open={isConfirmDeleteOpen}
-        title="Delete Library Item"
-        description={`Are you sure you want to delete "${itemToDelete?.title || 'this item'}"? This will also remove it from semantic search.`}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        tone="danger"
-        loading={isDeleting}
+        onClose={closeDeleteDialog}
         onConfirm={confirmDeleteItem}
-        onCancel={closeDeleteDialog}
+        title="Delete Library Item"
+        description={`Are you sure you want to delete "${itemToDelete?.title}"? This cannot be undone.`}
+        confirmText={isDeleting ? 'Deleting...' : 'Delete Item'}
+        confirmVariant="danger"
+        isLoading={isDeleting}
       />
     </div>
   );

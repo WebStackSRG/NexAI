@@ -12,6 +12,8 @@ vi.mock('@/lib/api/library.api', () => ({
     createItem: vi.fn(),
     updateItem: vi.fn(),
     deleteItem: vi.fn(),
+    generateDocumentDraft: vi.fn(),
+    exportDocumentPdf: vi.fn(),
   },
 }));
 
@@ -23,13 +25,15 @@ vi.mock('./uiStore', () => ({
   },
 }));
 
-describe('libraryStore Zustand Store', () => {
+describe('libraryStore Zustand Store (Step 8)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useLibraryStore.setState({
       items: [],
       tags: [],
       activeTag: null,
+      activeTab: 'all',
+      counts: { all: 0, notes_links: 0, documents: 0, files: 0, interviews: 0 },
       searchQuery: '',
       isLoading: false,
       isSearching: false,
@@ -42,6 +46,13 @@ describe('libraryStore Zustand Store', () => {
       suggestError: null,
       suggestion: null,
       isSaving: false,
+      isDocGenModalOpen: false,
+      isGeneratingDoc: false,
+      docDraft: null,
+      isUploadModalOpen: false,
+      isViewDocModalOpen: false,
+      viewingDoc: null,
+      isExportingPdf: false,
       isEditModalOpen: false,
       editingItem: null,
       isUpdating: false,
@@ -60,96 +71,103 @@ describe('libraryStore Zustand Store', () => {
     });
   });
 
-  it('fetches library items and updates tags in store', async () => {
+  it('fetches library items and updates tags and counts in store', async () => {
     const mockItems = [
-      { _id: 'item-1', title: 'React Docs', tags: ['react', 'frontend'] },
-      { _id: 'item-2', title: 'Docker Guide', tags: ['docker', 'devops'] },
+      { _id: 'item-1', title: 'React Docs', type: 'note', tags: ['react', 'frontend'] },
+      { _id: 'item-2', title: 'Resume 2026', type: 'document', tags: ['resume'] },
     ];
     libraryApi.getItems.mockResolvedValueOnce({
       data: mockItems,
-      meta: { page: 1, total: 2, totalPages: 1, tags: ['devops', 'docker', 'frontend', 'react'] },
+      meta: {
+        page: 1,
+        total: 2,
+        totalPages: 1,
+        tags: ['frontend', 'react', 'resume'],
+        counts: { all: 2, notes_links: 1, documents: 1, files: 0, interviews: 0 },
+      },
     });
 
     const result = await useLibraryStore.getState().fetchItems();
 
     expect(result).toEqual(mockItems);
     expect(useLibraryStore.getState().items).toEqual(mockItems);
-    expect(useLibraryStore.getState().tags).toEqual(['devops', 'docker', 'frontend', 'react']);
+    expect(useLibraryStore.getState().tags).toEqual(['frontend', 'react', 'resume']);
+    expect(useLibraryStore.getState().counts.documents).toBe(1);
     expect(useLibraryStore.getState().isLoading).toBe(false);
   });
 
-  it('filters items by tag when setActiveTag is called', async () => {
+  it('filters items by tab when setActiveTab is called', async () => {
     libraryApi.getItems.mockResolvedValueOnce({
-      data: [{ _id: 'item-1', title: 'React Docs', tags: ['react'] }],
+      data: [{ _id: 'item-2', title: 'Resume 2026', type: 'document' }],
       meta: { page: 1, total: 1, totalPages: 1 },
     });
 
-    useLibraryStore.getState().setActiveTag('react');
+    useLibraryStore.getState().setActiveTab('documents');
 
-    expect(useLibraryStore.getState().activeTag).toBe('react');
-    expect(libraryApi.getItems).toHaveBeenCalledWith({ page: 1, limit: 24, tag: 'react' });
+    expect(useLibraryStore.getState().activeTab).toBe('documents');
+    expect(libraryApi.getItems).toHaveBeenCalledWith({ page: 1, limit: 24, tab: 'documents' });
   });
 
-  it('performs semantic search when search query is entered', async () => {
-    const searchMatches = [{ _id: 'item-1', title: 'Neural Networks Overview', tags: ['ai'] }];
-    libraryApi.searchItems.mockResolvedValueOnce({ data: searchMatches });
+  it('generates AI document draft and updates credits in authStore', async () => {
+    const mockDraft = {
+      title: 'Full-Stack Engineer Resume',
+      category: 'resume',
+      summary: 'Experienced developer specializing in React and Node.',
+      sections: [{ heading: 'Summary', body: '5 years experience' }],
+      tokensUsed: 300,
+      creditsDeducted: 3,
+      creditsRemaining: 97,
+    };
+    libraryApi.generateDocumentDraft.mockResolvedValueOnce({ data: mockDraft });
 
-    const result = await useLibraryStore.getState().searchItems('deep learning');
-
-    expect(result).toEqual(searchMatches);
-    expect(useLibraryStore.getState().items).toEqual(searchMatches);
-    expect(useLibraryStore.getState().searchQuery).toBe('deep learning');
-  });
-
-  it('suggests metadata, updates suggestion in store, and synchronizes credits to authStore', async () => {
-    libraryApi.suggestItem.mockResolvedValueOnce({
-      data: {
-        type: 'note',
-        title: 'Microservices with Node',
-        summary: 'Architecting distributed services with Express and RabbitMQ.',
-        tags: ['nodejs', 'microservices', 'backend'],
-        tokensUsed: 120,
-        creditsDeducted: 2,
-        creditsRemaining: 98,
-      },
+    const result = await useLibraryStore.getState().generateDocDraft({
+      prompt: 'Senior developer resume',
+      category: 'resume',
     });
 
-    const result = await useLibraryStore.getState().suggestItem({
-      type: 'note',
-      content: 'Distributed services in Node.js with message queues...',
-    });
-
-    expect(result.title).toBe('Microservices with Node');
-    expect(useLibraryStore.getState().suggestion).toEqual(result);
-    // Credit sync: authStore creditsRemaining updated without page reload!
-    expect(useAuthStore.getState().user.wallet.creditsRemaining).toBe(98);
+    expect(result).toEqual(mockDraft);
+    expect(useLibraryStore.getState().docDraft).toEqual(mockDraft);
+    expect(useAuthStore.getState().user.wallet.creditsRemaining).toBe(97);
   });
 
-  it('saves confirmed item, updates items array and tag list, and closes modal', async () => {
+  it('exports document PDF via libraryApi.exportDocumentPdf', async () => {
+    libraryApi.exportDocumentPdf.mockResolvedValueOnce(true);
+
+    const docItem = { _id: 'doc-123', title: 'My Architecture Spec' };
+    await useLibraryStore.getState().exportPdf(docItem);
+
+    expect(libraryApi.exportDocumentPdf).toHaveBeenCalledWith('doc-123', 'My Architecture Spec');
+  });
+
+  it('saves confirmed polymorphic item, updates items array and tab counts, and closes modal', async () => {
     const createdItem = {
-      _id: 'new-id',
-      type: 'note',
-      title: 'Confirmed Item',
-      summary: 'Confirmed summary',
-      tags: ['javascript', 'es6'],
+      _id: 'new-doc-id',
+      type: 'document',
+      title: 'Confirmed Doc',
+      category: 'spec',
+      summary: 'Confirmed spec summary',
+      sections: [{ heading: 'Architecture', body: 'Express and MongoDB' }],
+      tags: ['spec', 'architecture'],
     };
     libraryApi.createItem.mockResolvedValueOnce({ data: createdItem });
 
-    useLibraryStore.setState({ isAddModalOpen: true, suggestion: { title: 'Temp' } });
+    useLibraryStore.setState({ isDocGenModalOpen: true, docDraft: createdItem });
 
     const result = await useLibraryStore.getState().saveItem(createdItem);
 
     expect(result).toEqual(createdItem);
     expect(useLibraryStore.getState().items[0]).toEqual(createdItem);
-    expect(useLibraryStore.getState().tags).toContain('javascript');
-    expect(useLibraryStore.getState().isAddModalOpen).toBe(false);
-    expect(useLibraryStore.getState().suggestion).toBeNull();
+    expect(useLibraryStore.getState().tags).toContain('architecture');
+    expect(useLibraryStore.getState().isDocGenModalOpen).toBe(false);
+    expect(useLibraryStore.getState().docDraft).toBeNull();
+    expect(useLibraryStore.getState().counts.documents).toBe(1);
   });
 
-  it('deletes library item upon confirmation', async () => {
-    const itemToDelete = { _id: 'del-1', title: 'To Delete' };
+  it('deletes library item upon confirmation and decrements counts', async () => {
+    const itemToDelete = { _id: 'del-1', title: 'To Delete', type: 'document' };
     useLibraryStore.setState({
-      items: [itemToDelete, { _id: 'keep-1', title: 'Keep' }],
+      items: [itemToDelete, { _id: 'keep-1', title: 'Keep', type: 'note' }],
+      counts: { all: 2, notes_links: 1, documents: 1, files: 0, interviews: 0 },
       total: 2,
       itemToDelete,
       isConfirmDeleteOpen: true,
@@ -161,6 +179,7 @@ describe('libraryStore Zustand Store', () => {
 
     expect(useLibraryStore.getState().items).toHaveLength(1);
     expect(useLibraryStore.getState().items[0]._id).toBe('keep-1');
+    expect(useLibraryStore.getState().counts.documents).toBe(0);
     expect(useLibraryStore.getState().isConfirmDeleteOpen).toBe(false);
     expect(useLibraryStore.getState().itemToDelete).toBeNull();
   });

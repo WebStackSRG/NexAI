@@ -45,8 +45,8 @@ Every AI agent working on NexAI must strictly adhere to the project foundations 
 | **Step 5** | Personal Library, Vector Embeddings, Hybrid Search | `feature/library` | ✅ **COMPLETED** | 10 integration tests |
 | **Step 6** | Unified Sidebar, Chat Canvas & **Project Workspaces** | `feature/sidebar-and-hero-ui` | ✅ **COMPLETED & MERGED TO DEV** | 114 tests passing across monorepo |
 | **Step 7** | **Prompt Vault & In-Chat Template Integration** | `feature/prompt-vault` | ✅ **COMPLETED** | 137 tests passing across monorepo |
-| **Step 8** | Consolidated Library & Document Management | `feature/consolidated-library` | 🎯 **NEXT ACTIVE STEP** | Prerequisite for Step 9 |
-| **Step 9** | **AI Mock Interview Platform** | `feature/ai-interview` | ⏳ UPCOMING (Scheduled after Step 8) | Depends on Step 8 polymorphic schema |
+| **Step 8** | Consolidated Library & Document Management | `feature/consolidated-library` | ✅ **COMPLETED** | 147 tests passing across monorepo |
+| **Step 9** | **AI Mock Interview Platform** | `feature/ai-interview` | 🎯 **NEXT ACTIVE STEP** | Depends on Step 8 polymorphic schema |
 
 | **Step 10**| Unified Search & Command Palette (Ctrl+K) | `feature/search` | ⏳ UPCOMING | Hybrid index search |
 | **Step 11**| Wallet, Recharge & Razorpay Billing | `feature/wallet-billing` | ⏳ UPCOMING | Webhook idempotency |
@@ -215,7 +215,7 @@ Verify Step 7:
 
 ---
 
-### Step 8: Consolidated Library & Document Management — `[NEXT ACTIVE STEP]`
+### Step 8: Consolidated Library & Document Management — `[COMPLETED]`
 
 #### 🚀 Implementation Prompt
 
@@ -263,7 +263,7 @@ Verify Step 8:
 
 ---
 
-### Step 9: AI Mock Interview Platform
+### Step 9: AI Mock Interview Platform — `[NEXT ACTIVE STEP]`
 
 #### 🚀 Implementation Prompt
 

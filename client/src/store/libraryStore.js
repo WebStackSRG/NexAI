@@ -7,6 +7,14 @@ export const useLibraryStore = create((set, get) => ({
   items: [],
   tags: [],
   activeTag: null,
+  activeTab: 'all', // 'all' | 'notes_links' | 'documents' | 'files' | 'interviews'
+  counts: {
+    all: 0,
+    notes_links: 0,
+    documents: 0,
+    files: 0,
+    interviews: 0,
+  },
   searchQuery: '',
   isLoading: false,
   isSearching: false,
@@ -15,12 +23,27 @@ export const useLibraryStore = create((set, get) => ({
   totalPages: 1,
   total: 0,
 
-  // Add / Suggest modal state
+  // Add Note/Link / Suggest modal state
   isAddModalOpen: false,
   isSuggesting: false,
   suggestError: null,
   suggestion: null,
   isSaving: false,
+
+  // Document Generator modal state
+  isDocGenModalOpen: false,
+  isGeneratingDoc: false,
+  docGenError: null,
+  docDraft: null,
+
+  // File Uploader modal state
+  isUploadModalOpen: false,
+  isUploadingFile: false,
+
+  // Document View / Preview modal state
+  isViewDocModalOpen: false,
+  viewingDoc: null,
+  isExportingPdf: false,
 
   // Edit modal state
   isEditModalOpen: false,
@@ -33,14 +56,17 @@ export const useLibraryStore = create((set, get) => ({
   isDeleting: false,
 
   /**
-   * Fetches paginated library items, optionally filtering by active tag.
+   * Fetches paginated library items, optionally filtering by active tag and tab.
    */
-  fetchItems: async ({ tag = get().activeTag, page = 1 } = {}) => {
+  fetchItems: async ({ tag = get().activeTag, tab = get().activeTab, page = 1 } = {}) => {
     set({ isLoading: true, error: null });
     try {
       const params = { page, limit: 24 };
       if (tag) {
         params.tag = tag;
+      }
+      if (tab && tab !== 'all') {
+        params.tab = tab;
       }
       const response = await libraryApi.getItems(params);
       const items = response.data || [];
@@ -49,6 +75,7 @@ export const useLibraryStore = create((set, get) => ({
       set({
         items,
         tags: meta.tags || get().tags,
+        counts: meta.counts || get().counts,
         page: meta.page || 1,
         totalPages: meta.totalPages || 1,
         total: meta.total || items.length,
@@ -65,6 +92,14 @@ export const useLibraryStore = create((set, get) => ({
   },
 
   /**
+   * Changes active tab and fetches corresponding items.
+   */
+  setActiveTab: (tab) => {
+    set({ activeTab: tab, activeTag: null, searchQuery: '', page: 1 });
+    get().fetchItems({ tab, tag: null, page: 1 });
+  },
+
+  /**
    * Performs semantic search over library items.
    */
   searchItems: async (query) => {
@@ -72,12 +107,18 @@ export const useLibraryStore = create((set, get) => ({
     set({ searchQuery: trimmed });
 
     if (!trimmed) {
-      return get().fetchItems({ tag: get().activeTag });
+      return get().fetchItems({ tag: get().activeTag, tab: get().activeTab });
     }
 
     set({ isSearching: true, error: null });
     try {
-      const response = await libraryApi.searchItems(trimmed);
+      const tab = get().activeTab;
+      let type = undefined;
+      if (tab === 'documents') type = 'document';
+      else if (tab === 'files') type = 'file';
+      else if (tab === 'interviews') type = 'interview';
+
+      const response = await libraryApi.searchItems(trimmed, type);
       const items = response.data || [];
       set({ items, isSearching: false, error: null });
       return items;
@@ -94,12 +135,12 @@ export const useLibraryStore = create((set, get) => ({
    */
   setActiveTag: (tag) => {
     const newTag = get().activeTag === tag ? null : tag;
-    set({ activeTag: newTag, searchQuery: '' });
-    get().fetchItems({ tag: newTag, page: 1 });
+    set({ activeTag: newTag, searchQuery: '', page: 1 });
+    get().fetchItems({ tag: newTag, tab: get().activeTab, page: 1 });
   },
 
   /**
-   * Modal actions
+   * Add / Suggest modal controls
    */
   openAddModal: () => {
     set({
@@ -121,13 +162,10 @@ export const useLibraryStore = create((set, get) => ({
     });
   },
 
-  /**
-   * Generates AI suggestion (Suggest step in Suggest -> Review -> Confirm).
-   */
-  suggestItem: async ({ type, url, content }) => {
+  suggestItem: async ({ type, url, content, fileName }) => {
     set({ isSuggesting: true, suggestError: null });
     try {
-      const response = await libraryApi.suggestItem({ type, url, content });
+      const response = await libraryApi.suggestItem({ type, url, content, fileName });
       const data = response.data;
 
       // Update credit balance in live auth store
@@ -164,13 +202,23 @@ export const useLibraryStore = create((set, get) => ({
 
       set((state) => {
         const updatedTags = Array.from(new Set([...state.tags, ...(newItem.tags || [])])).sort();
+        const updatedCounts = { ...state.counts, all: state.counts.all + 1 };
+        if (newItem.type === 'document') updatedCounts.documents += 1;
+        else if (newItem.type === 'file') updatedCounts.files += 1;
+        else if (newItem.type === 'interview') updatedCounts.interviews += 1;
+        else updatedCounts.notes_links += 1;
+
         return {
           items: [newItem, ...state.items],
           tags: updatedTags,
+          counts: updatedCounts,
           total: state.total + 1,
           isSaving: false,
           isAddModalOpen: false,
+          isDocGenModalOpen: false,
+          isUploadModalOpen: false,
           suggestion: null,
+          docDraft: null,
         };
       });
 
@@ -181,6 +229,105 @@ export const useLibraryStore = create((set, get) => ({
       set({ isSaving: false });
       toast.error(message);
       throw err;
+    }
+  },
+
+  /**
+   * Document Generator actions
+   */
+  openDocGenModal: () => {
+    set({
+      isDocGenModalOpen: true,
+      isGeneratingDoc: false,
+      docGenError: null,
+      docDraft: null,
+    });
+  },
+
+  closeDocGenModal: () => {
+    set({
+      isDocGenModalOpen: false,
+      isGeneratingDoc: false,
+      docGenError: null,
+      docDraft: null,
+    });
+  },
+
+  generateDocDraft: async ({ prompt, category }) => {
+    set({ isGeneratingDoc: true, docGenError: null });
+    try {
+      const response = await libraryApi.generateDocumentDraft({ prompt, category });
+      const data = response.data;
+
+      // Update credit balance in live auth store
+      if (typeof data.creditsRemaining === 'number') {
+        useAuthStore.getState().updateCredits(data.creditsRemaining);
+      }
+
+      set({
+        docDraft: data,
+        isGeneratingDoc: false,
+        docGenError: null,
+      });
+      return data;
+    } catch (err) {
+      const message = err.message || 'Failed to generate document draft';
+      set({ isGeneratingDoc: false, docGenError: message });
+      if (err.code === 'INSUFFICIENT_CREDITS' || err.status === 402) {
+        toast.error('Insufficient credits. Please recharge your wallet.');
+      } else {
+        toast.error(message);
+      }
+      throw err;
+    }
+  },
+
+  updateDocDraft: (updater) => {
+    set((state) => ({
+      docDraft: typeof updater === 'function' ? updater(state.docDraft) : updater,
+    }));
+  },
+
+  /**
+   * File Uploader actions
+   */
+  openUploadModal: () => {
+    set({ isUploadModalOpen: true, isUploadingFile: false });
+  },
+
+  closeUploadModal: () => {
+    set({ isUploadModalOpen: false, isUploadingFile: false });
+  },
+
+  uploadFileItem: async (fileData) => {
+    return get().saveItem({
+      type: 'file',
+      ...fileData,
+    });
+  },
+
+  /**
+   * Document View & PDF Export actions
+   */
+  openViewDocModal: (item) => {
+    set({ isViewDocModalOpen: true, viewingDoc: item });
+  },
+
+  closeViewDocModal: () => {
+    set({ isViewDocModalOpen: false, viewingDoc: null });
+  },
+
+  exportPdf: async (item) => {
+    if (!item?._id) return;
+    set({ isExportingPdf: true });
+    try {
+      await libraryApi.exportDocumentPdf(item._id, item.title || 'document');
+      toast.success('PDF download started');
+    } catch (err) {
+      const message = err.message || 'Failed to export PDF';
+      toast.error(message);
+    } finally {
+      set({ isExportingPdf: false });
     }
   },
 
@@ -207,6 +354,7 @@ export const useLibraryStore = create((set, get) => ({
         return {
           items: updatedItems,
           tags: updatedTags,
+          viewingDoc: state.viewingDoc?._id === id ? updated : state.viewingDoc,
           isUpdating: false,
           isEditModalOpen: false,
           editingItem: null,
@@ -242,13 +390,29 @@ export const useLibraryStore = create((set, get) => ({
     try {
       await libraryApi.deleteItem(itemToDelete._id);
 
-      set((state) => ({
-        items: state.items.filter((it) => it._id !== itemToDelete._id),
-        total: Math.max(0, state.total - 1),
-        isDeleting: false,
-        isConfirmDeleteOpen: false,
-        itemToDelete: null,
-      }));
+      set((state) => {
+        const updatedCounts = { ...state.counts, all: Math.max(0, state.counts.all - 1) };
+        if (itemToDelete.type === 'document') {
+          updatedCounts.documents = Math.max(0, updatedCounts.documents - 1);
+        } else if (itemToDelete.type === 'file') {
+          updatedCounts.files = Math.max(0, updatedCounts.files - 1);
+        } else if (itemToDelete.type === 'interview') {
+          updatedCounts.interviews = Math.max(0, updatedCounts.interviews - 1);
+        } else {
+          updatedCounts.notes_links = Math.max(0, updatedCounts.notes_links - 1);
+        }
+
+        return {
+          items: state.items.filter((it) => it._id !== itemToDelete._id),
+          counts: updatedCounts,
+          total: Math.max(0, state.total - 1),
+          isDeleting: false,
+          isConfirmDeleteOpen: false,
+          itemToDelete: null,
+          isViewDocModalOpen: state.viewingDoc?._id === itemToDelete._id ? false : state.isViewDocModalOpen,
+          viewingDoc: state.viewingDoc?._id === itemToDelete._id ? null : state.viewingDoc,
+        };
+      });
 
       toast.success('Library item deleted');
     } catch (err) {

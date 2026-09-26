@@ -11,19 +11,20 @@ import {
   MicOff,
   Paperclip,
   FileText,
+  Bookmark,
   X,
   Terminal,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { IconButton } from '@/components/ui/IconButton';
 import { PromptPickerModal, VariableFillModal } from '@/features/prompts';
+import { AttachContextModal } from './AttachContextModal';
 import { useChatStore } from '@/store/chatStore';
 import { useAuthStore } from '@/store/authStore';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils/cn';
 import styles from './ChatInput.module.scss';
-
 
 export function ChatInput({ prefillValue, onClearPrefill }) {
   const navigate = useNavigate();
@@ -38,8 +39,9 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
   } = useChatStore();
 
   const [input, setInput] = useState('');
-  const [attachedFile, setAttachedFile] = useState(null);
+  const [attachedContext, setAttachedContext] = useState(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
   const [selectedPromptForVariables, setSelectedPromptForVariables] = useState(null);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -65,7 +67,6 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
 
   // Web Speech API Voice Dictation Hook
   const { isSupported: isVoiceSupported, isListening, toggleListening } = useSpeechRecognition({
-
     onResult: (transcription) => {
       setInput((prev) => (prev ? `${prev} ${transcription}` : transcription));
       if (textareaRef.current) {
@@ -103,17 +104,18 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
   const handleSubmit = async (e) => {
     e?.preventDefault();
     const trimmed = input.trim();
-    if ((!trimmed && !attachedFile) || isStreaming || insufficientCredits) {
+    if ((!trimmed && !attachedContext) || isStreaming || insufficientCredits) {
       return;
     }
 
     let messageToSend = trimmed;
-    if (attachedFile) {
-      messageToSend = `[Context File: ${attachedFile.name}]\n\n${trimmed}`;
+    if (attachedContext) {
+      const contextPrefix = `[Attached Context: ${attachedContext.name} (${attachedContext.type || 'file'})]\n${attachedContext.content ? attachedContext.content.slice(0, 4000) : ''}\n[End of Context]\n\n`;
+      messageToSend = `${contextPrefix}${trimmed}`;
     }
 
     setInput('');
-    setAttachedFile(null);
+    setAttachedContext(null);
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
@@ -130,7 +132,26 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      setAttachedFile(file);
+      if (
+        file.type.startsWith('text/') ||
+        file.name.match(/\.(md|txt|json|csv|js|ts|jsx|tsx|py|html|css|yaml|yml)$/i)
+      ) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setAttachedContext({
+            name: file.name,
+            type: 'file',
+            content: event.target.result || '',
+          });
+        };
+        reader.readAsText(file);
+      } else {
+        setAttachedContext({
+          name: file.name,
+          type: 'file',
+          content: `[File attachment: ${file.name}]`,
+        });
+      }
     }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -181,15 +202,22 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
               </button>
             </div>
 
-            {attachedFile && (
-              <div className={styles.fileBadge} title={attachedFile.name}>
-                <FileText size={12} />
-                <span className={styles.fileName}>{attachedFile.name}</span>
+            {attachedContext && (
+              <div className={styles.fileBadge} title={attachedContext.name}>
+                {attachedContext.type === 'document' ? (
+                  <Bookmark size={12} />
+                ) : (
+                  <FileText size={12} />
+                )}
+                <span className={styles.fileName}>
+                  {attachedContext.name}
+                  {attachedContext.category ? ` (${attachedContext.category})` : ''}
+                </span>
                 <button
                   type="button"
-                  onClick={() => setAttachedFile(null)}
+                  onClick={() => setAttachedContext(null)}
                   className={styles.removeFileBtn}
-                  aria-label="Remove attached file"
+                  aria-label="Remove attached context"
                 >
                   <X size={11} />
                 </button>
@@ -204,6 +232,7 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
               onChange={handleFileChange}
               style={{ display: 'none' }}
               aria-label="Attach file"
+              accept=".txt,.md,.markdown,.json,.csv,.pdf,.js,.ts,.py"
             />
             <IconButton
               type="button"
@@ -217,10 +246,10 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
             <IconButton
               type="button"
               icon={<Paperclip size={16} />}
-              label="Attach context file"
+              label="Attach context from file or library"
               variant="ghost"
               size="sm"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => setIsAttachModalOpen(true)}
               className={styles.toolBtn}
             />
             <IconButton
@@ -282,13 +311,21 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
                 label="Send message"
                 variant="primary"
                 size="md"
-                disabled={(!input.trim() && !attachedFile) || insufficientCredits}
+                disabled={(!input.trim() && !attachedContext) || insufficientCredits}
                 className={styles.sendButton}
               />
             )}
           </div>
         </div>
       </form>
+
+      {/* Attach Context from Library or Device Modal */}
+      <AttachContextModal
+        open={isAttachModalOpen}
+        onClose={() => setIsAttachModalOpen(false)}
+        onSelect={(item) => setAttachedContext(item)}
+        onUploadLocal={() => fileInputRef.current?.click()}
+      />
 
       {/* Prompt Selector Modal */}
       <PromptPickerModal
