@@ -29,7 +29,7 @@ describe('ProtectedRoute Guard', () => {
             }
           />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(screen.getByText('Login Page')).toBeInTheDocument();
@@ -56,7 +56,7 @@ describe('ProtectedRoute Guard', () => {
             }
           />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(screen.getByText('Protected Chat')).toBeInTheDocument();

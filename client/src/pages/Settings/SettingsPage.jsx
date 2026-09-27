@@ -45,7 +45,9 @@ export default function SettingsPage() {
         description="Manage your appearance, model preferences, and workspace defaults."
       />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', maxWidth: 640 }}>
+      <div
+        style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', maxWidth: 640 }}
+      >
         <Card padding="md">
           <Card.Header>
             <h3 style={{ fontSize: 'var(--text-md)' }}>Appearance</h3>
@@ -67,7 +69,11 @@ export default function SettingsPage() {
                   Switch between dark and light appearance modes
                 </div>
               </div>
-              <Switch checked={isDark} onChange={handleThemeChange} aria-label="Toggle dark theme" />
+              <Switch
+                checked={isDark}
+                onChange={handleThemeChange}
+                aria-label="Toggle dark theme"
+              />
             </div>
           </Card.Body>
         </Card>
@@ -119,13 +125,30 @@ export default function SettingsPage() {
           </Card.Header>
           <Card.Body>
             <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
-              Email: <strong style={{ color: 'var(--color-text-primary)' }}>{user?.email || 'N/A'}</strong>
+              Email:{' '}
+              <strong style={{ color: 'var(--color-text-primary)' }}>{user?.email || 'N/A'}</strong>
             </div>
-            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginTop: 'var(--space-2)' }}>
-              Role: <strong style={{ color: 'var(--color-text-primary)' }}>{user?.role || 'user'}</strong>
+            <div
+              style={{
+                fontSize: 'var(--text-sm)',
+                color: 'var(--color-text-secondary)',
+                marginTop: 'var(--space-2)',
+              }}
+            >
+              Role:{' '}
+              <strong style={{ color: 'var(--color-text-primary)' }}>{user?.role || 'user'}</strong>
             </div>
-            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginTop: 'var(--space-2)' }}>
-              Credits: <strong style={{ color: 'var(--color-accent)' }}>{user?.wallet?.creditsRemaining ?? 0}</strong>
+            <div
+              style={{
+                fontSize: 'var(--text-sm)',
+                color: 'var(--color-text-secondary)',
+                marginTop: 'var(--space-2)',
+              }}
+            >
+              Credits:{' '}
+              <strong style={{ color: 'var(--color-accent)' }}>
+                {user?.wallet?.creditsRemaining ?? 0}
+              </strong>
             </div>
           </Card.Body>
         </Card>

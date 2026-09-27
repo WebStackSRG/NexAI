@@ -22,11 +22,7 @@ export default function App() {
   );
 
   if (googleClientId) {
-    return (
-      <GoogleOAuthProvider clientId={googleClientId}>
-        {content}
-      </GoogleOAuthProvider>
-    );
+    return <GoogleOAuthProvider clientId={googleClientId}>{content}</GoogleOAuthProvider>;
   }
 
   return content;

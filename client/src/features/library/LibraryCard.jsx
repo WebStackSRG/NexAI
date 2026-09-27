@@ -1,0 +1,275 @@
+import PropTypes from 'prop-types';
+import {
+  FileText,
+  Globe,
+  BookOpen,
+  Paperclip,
+  Mic,
+  Pencil,
+  Trash2,
+  ExternalLink,
+  Eye,
+} from 'lucide-react';
+import { formatDate } from '@/lib/utils/formatDate';
+import { cn } from '@/lib/utils/cn';
+import styles from './LibraryCard.module.scss';
+
+function formatFileSize(bytes) {
+  if (!bytes || bytes <= 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
+
+export function LibraryCard({
+  item,
+  onCardClick,
+  onEdit,
+  onDelete,
+  onTagClick,
+  activeTag,
+}) {
+  const isNote = item.type === 'note';
+  const isLink = item.type === 'link';
+  const isDoc = item.type === 'document';
+  const isFile = item.type === 'file';
+  const isInterview = item.type === 'interview';
+
+  let hostname = '';
+  if (isLink && item.url) {
+    try {
+      hostname = new URL(item.url).hostname.replace(/^www\./, '');
+    } catch {
+      hostname = '';
+    }
+  }
+
+  const getTypeMeta = () => {
+    switch (item.type) {
+      case 'note':
+        return { label: 'Note', icon: <FileText size={12} />, class: styles.note };
+      case 'link':
+        return { label: 'Link', icon: <Globe size={12} />, class: styles.link };
+      case 'document':
+        return { label: 'Doc', icon: <BookOpen size={12} />, class: styles.document };
+      case 'file':
+        return { label: 'File', icon: <Paperclip size={12} />, class: styles.file };
+      case 'interview':
+        return { label: 'Interview', icon: <Mic size={12} />, class: styles.interview };
+      default:
+        return { label: 'Note', icon: <FileText size={12} />, class: styles.note };
+    }
+  };
+
+  const typeMeta = getTypeMeta();
+
+  // Word count for notes
+  const noteWordCount =
+    isNote && item.content ? item.content.trim().split(/\s+/).filter(Boolean).length : 0;
+
+  const previewExcerpt =
+    item.summary ||
+    (isNote && item.content ? item.content : '') ||
+    (isDoc && Array.isArray(item.sections) && item.sections[0]
+      ? `${item.sections[0].heading}: ${item.sections[0].body}`
+      : 'Click to view full details...');
+
+  const handleCardClick = () => {
+    onCardClick?.(item);
+  };
+
+  const handleTagClick = (e, tag) => {
+    e.stopPropagation();
+    onTagClick?.(tag);
+  };
+
+  const handleEditClick = (e) => {
+    e.stopPropagation();
+    onEdit?.(item);
+  };
+
+  const handleDeleteClick = (e) => {
+    e.stopPropagation();
+    onDelete?.(item);
+  };
+
+  const handleExternalLink = (e) => {
+    e.stopPropagation();
+  };
+
+  return (
+    <div
+      className={styles.cardWrapper}
+      onClick={handleCardClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleCardClick();
+        }
+      }}
+      aria-label={`View details for ${item.title}`}
+    >
+      {/* Minimal Top Bar with inline metadata & hover ghost actions */}
+      <div className={styles.topBar}>
+        <div className={styles.metaLeft}>
+          <span className={cn(styles.typePill, typeMeta.class)}>
+            {typeMeta.icon}
+            <span>{typeMeta.label}</span>
+          </span>
+          <span className={styles.dotSeparator}>•</span>
+          <span className={styles.dateText}>{formatDate(item.createdAt)}</span>
+          {isNote && noteWordCount > 0 && (
+            <>
+              <span className={styles.dotSeparator}>•</span>
+              <span className={styles.auxMeta}>{noteWordCount} words</span>
+            </>
+          )}
+          {isDoc && (
+            <>
+              {item.category && (
+                <>
+                  <span className={styles.dotSeparator}>•</span>
+                  <span className={styles.auxMeta}>{item.category}</span>
+                </>
+              )}
+              {Array.isArray(item.sections) && (
+                <>
+                  <span className={styles.dotSeparator}>•</span>
+                  <span className={styles.auxMeta}>
+                    {item.sections.length} {item.sections.length === 1 ? 'sec' : 'secs'}
+                  </span>
+                </>
+              )}
+            </>
+          )}
+          {isLink && hostname && (
+            <>
+              <span className={styles.dotSeparator}>•</span>
+              <span className={styles.auxMeta}>{hostname}</span>
+            </>
+          )}
+          {isFile && item.fileName && (
+            <>
+              <span className={styles.dotSeparator}>•</span>
+              <span className={styles.auxMeta}>
+                {item.size > 0 ? formatFileSize(item.size) : 'File'}
+              </span>
+            </>
+          )}
+          {isInterview && item.scorecard?.overallScore !== undefined && (
+            <>
+              <span className={styles.dotSeparator}>•</span>
+              <span className={styles.scoreMeta}>
+                Score: {item.scorecard.overallScore}/100
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Hover / Quick Ghost Action Bar */}
+        <div className={styles.hoverActions}>
+          <button
+            type="button"
+            className={styles.actionIconBtn}
+            onClick={handleCardClick}
+            title="Open Details"
+            aria-label="Open details"
+          >
+            <Eye size={13} />
+          </button>
+
+          {isLink && item.url && (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.actionIconBtn}
+              onClick={handleExternalLink}
+              title="Open external link"
+              aria-label="Open external link"
+            >
+              <ExternalLink size={13} />
+            </a>
+          )}
+
+          <button
+            type="button"
+            className={styles.actionIconBtn}
+            onClick={handleEditClick}
+            title="Edit item"
+            aria-label="Edit item"
+          >
+            <Pencil size={13} />
+          </button>
+
+          <button
+            type="button"
+            className={cn(styles.actionIconBtn, styles.danger)}
+            onClick={handleDeleteClick}
+            title="Delete item"
+            aria-label="Delete item"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <h3 className={styles.title} title={item.title}>
+        {item.title}
+      </h3>
+
+      <p className={styles.previewText}>{previewExcerpt}</p>
+
+      {/* Minimalist Tags List (no divider line or heavy borders) */}
+      {Array.isArray(item.tags) && item.tags.length > 0 && (
+        <div className={styles.bottomBar}>
+          <div className={styles.tagsList}>
+            {item.tags.slice(0, 3).map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                className={cn(styles.tagChip, activeTag === tag && styles.activeTag)}
+                onClick={(e) => handleTagClick(e, tag)}
+                title={`Filter by #${tag}`}
+              >
+                #{tag}
+              </button>
+            ))}
+            {item.tags.length > 3 && (
+              <span className={styles.tagOverflowCount}>
+                +{item.tags.length - 3}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+LibraryCard.propTypes = {
+  item: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    title: PropTypes.string.isRequired,
+    type: PropTypes.string.isRequired,
+    summary: PropTypes.string,
+    content: PropTypes.string,
+    tags: PropTypes.arrayOf(PropTypes.string),
+    url: PropTypes.string,
+    category: PropTypes.string,
+    sections: PropTypes.array,
+    fileName: PropTypes.string,
+    size: PropTypes.number,
+    scorecard: PropTypes.object,
+    createdAt: PropTypes.string,
+  }).isRequired,
+  onCardClick: PropTypes.func,
+  onEdit: PropTypes.func,
+  onDelete: PropTypes.func,
+  onTagClick: PropTypes.func,
+  activeTag: PropTypes.string,
+};

@@ -1,0 +1,339 @@
+@use '@/styles/abstracts' as *;
+
+.scorecardContainer {
+  width: 100%;
+  max-width: 1050px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.heroCard {
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.heroTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.roleHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.badgeRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.sessionTitle {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.sessionTopic {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.scoreBadgeBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.scoreCircle {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  width: 90px;
+  height: 90px;
+  border-radius: var(--radius-full);
+  border: 3px solid currentColor;
+  background-color: var(--color-bg-elevated);
+  box-shadow: var(--shadow-md);
+  padding-top: 22px;
+}
+
+.scoreNum {
+  font-size: 2.25rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.scoreTotal {
+  font-size: 0.875rem;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.ratingBadge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 600;
+}
+
+// Color classes
+.scoreSuccess {
+  color: var(--color-success);
+  border-color: var(--color-success);
+  background-color: color-mix(in srgb, var(--color-success) 12%, var(--color-bg-surface));
+}
+
+.scoreAccent {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background-color: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-surface));
+}
+
+.scoreWarning {
+  color: var(--color-warning);
+  border-color: var(--color-warning);
+  background-color: color-mix(in srgb, var(--color-warning) 12%, var(--color-bg-surface));
+}
+
+.scoreDanger {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background-color: color-mix(in srgb, var(--color-danger) 12%, var(--color-bg-surface));
+}
+
+.actionToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-4);
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.leftActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.libraryBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.copyBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.newInterviewBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+// Metrics Grid
+.metricsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+
+  @include up(md) {
+    grid-template-columns: 1.1fr 1fr;
+  }
+}
+
+.sectionCard {
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.categoriesList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.catItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.catHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+}
+
+.catLabel {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.catScore {
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.progressBarBg {
+  width: 100%;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-bg-hover);
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.summaryText {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  white-space: pre-wrap;
+}
+
+.recommendedBox {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.recommendedTitle {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.topicTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+// Strengths & Improvements Grid
+.feedbackGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+
+  @include up(md) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.feedbackCard {
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.feedbackHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.successIcon {
+  color: var(--color-success);
+}
+
+.warningIcon {
+  color: var(--color-warning);
+}
+
+.feedbackTitle {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.feedbackList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.feedbackItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.bulletCheck {
+  color: var(--color-success);
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.bulletWarning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background-color: color-mix(in srgb, var(--color-warning) 20%, transparent);
+  color: var(--color-warning);
+  font-weight: 700;
+  font-size: 0.6875rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.loadingCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  text-align: center;
+}

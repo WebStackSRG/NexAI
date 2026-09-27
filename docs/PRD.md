@@ -1,4 +1,5 @@
 # NexAI — AI-Powered Personal & Developer Workspace (SaaS Edition)
+
 ### Capstone PRD — Diploma Final Year (MSBTE K-Scheme) — Consolidated v2
 
 ---
@@ -9,8 +10,8 @@ v1 was an 18-module feature list (Sections A–R) covering chat, library, docume
 
 v2 keeps the same core product idea but does two things differently:
 
-1. **Trims scope into phases** — a small, fully-working Core MVP first, differentiators second, "nice to have" third, and a clearly marked Future Scope list that is explicitly *not* built for the viva.
-2. **Adds a SaaS/Business layer** — credit-based usage metering, a test-mode payment flow, and an admin analytics dashboard. This reframes the project from "another AI chat wrapper" to "a cost-controlled AI SaaS platform," which directly answers the examiner's hardest question: *"ChatGPT/Gemini/Claude already exist — what's new here?"*
+1. **Trims scope into phases** — a small, fully-working Core MVP first, differentiators second, "nice to have" third, and a clearly marked Future Scope list that is explicitly _not_ built for the viva.
+2. **Adds a SaaS/Business layer** — credit-based usage metering, a test-mode payment flow, and an admin analytics dashboard. This reframes the project from "another AI chat wrapper" to "a cost-controlled AI SaaS platform," which directly answers the examiner's hardest question: _"ChatGPT/Gemini/Claude already exist — what's new here?"_
 
 ---
 
@@ -32,63 +33,66 @@ NexAI addresses both: a unified AI workspace (chat + library + documents + promp
 
 **One AI workspace, metered like a utility.**
 
-A single account and a single database power a few core surfaces:
+A single account and a single database power a unified, minimalist, and responsive workspace:
 
-- **Chat** — AI conversation with streaming responses, backed by a token-based credit ledger
-- **Library** — save links/notes, auto-summarized and semantically searchable
-- **Documents** — AI-drafted structured documents (resume/report/notes), exportable to PDF
-- **Prompt Vault** — reusable, variable-driven prompt templates
-- **Wallet/Billing** — credit balance, recharge, transaction history
-- **Admin Dashboard** (own role) — token consumption, model split, mock revenue, error logs
+- **AI Chat & Minimalist Canvas** — Distraction-free conversational interface with streaming responses, hero state ("Where should we start?"), glowing prompt bar with voice dictation and file attachment, backed by a token-based credit ledger.
+- **Unified Collapsible Navigation** — Gemini-style single collapsible sidebar (64px icon rail / 260px expanded panel) housing New Chat, Search, primary workspace navigation, filterable Recents chat history, and live user wallet card.
+- **Consolidated Library** — A single, searchable knowledge base uniting saved links, notes, AI-drafted documents (PDF exportable), uploaded custom files, and AI interview reports.
+- **AI Interview Platform** — Interactive mock technical & viva interview simulator with real-time voice ripple visualizer, live transcript, speech-to-text, and automated competency scorecard reports saved to the Library.
+- **Prompt Vault** — Reusable, variable-driven prompt templates with one-click saving from chat threads and variable fill injection.
+- **Wallet/Billing** — Credit balance, recharge tiers, Razorpay test mode payment verification, and transaction history.
+- **Admin Dashboard** (role-gated) — Real-time token consumption, model split, mock revenue, and error logs.
 
-Every AI action (chat message, document generation) consumes credits calculated from actual token usage returned by the model API — not a flat per-message charge — so the metering is real, not decorative.
+Every AI action (chat message, document drafting, interview turn, summary) consumes credits calculated from actual token usage returned by the model API — not a flat per-message charge — so the metering is real, not decorative.
 
 ---
 
 ## 3. Feature Scope by Phase
 
-This is the single most important section of this document. Every feature from v1 is placed into exactly one bucket.
+This is the single most important section of this document. Every feature is placed into exactly one bucket.
 
-### Phase 0 — Core MVP (must be fully working before anything else)
+### Phase 0 — Core MVP (Completed)
 
-| Feature | Detail |
-|---|---|
-| AI Chat | Gemini Flash, streaming response, chat history stored per user |
-| Credit Ledger | `creditsRemaining` on user; deducted per message based on real token usage (input + output tokens from API response, converted via a simple rule e.g. 100 tokens = 1 credit) |
-| Auth | Google OAuth or email/password + JWT |
-| Personal Library | Save a link or note → Gemini Flash auto-summary + auto-tags → stored in MongoDB |
-| Semantic Search (Library) | Embeddings via Gemini embedding model → stored in a free-tier vector DB (Pinecone Starter or Chroma self-hosted) → search by meaning, not just keyword |
-| Basic Settings | Theme (dark default), default model, credits display |
+| Feature                   | Detail                                                                                                                                                                       |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AI Chat                   | Gemini Flash, streaming response, chat history stored per user                                                                                                               |
+| Credit Ledger             | `creditsRemaining` on user; deducted per message based on real token usage (input + output tokens from API response, converted via a simple rule e.g. 100 tokens = 1 credit) |
+| Auth                      | Google OAuth or email/password + JWT                                                                                                                                         |
+| Personal Library          | Save a link or note → Gemini Flash auto-summary + auto-tags → stored in MongoDB                                                                                              |
+| Semantic Search (Library) | Embeddings via Gemini embedding model → stored in a free-tier vector DB (Pinecone Starter or Chroma self-hosted) → search by meaning, not just keyword                       |
+| Basic Settings            | Theme (dark default), default model, credits display                                                                                                                         |
 
 **Why this alone is defensible:** it is a working, streaming, metered AI chat product with a real personal knowledge store — already more than a "wrapper," and small enough to be fully stable before the viva.
 
-### Phase 1 — Differentiators (build after Phase 0 is stable)
+### Phase 1 — Differentiators & Workspace Evolution (Current & Upcoming)
 
-| Feature | Detail |
-|---|---|
-| Prompt Vault | Save prompts with `{{variable}}` placeholders; small form fills variables; inserts into chat as first message; tags + search |
-| AI Document Generation | User asks for a document → Gemini drafts structured sections (heading + body) → live preview pane → inline edit → export to PDF (`pdf-lib`, pure JS, no headless browser) → auto-saved into a Documents list |
-| Unified Search | One search bar across Library + Documents + Prompts (keyword + semantic) |
-| Command Palette (Ctrl/Cmd+K) | Jump to any screen instantly — pure frontend, no extra backend cost |
+| Feature                                   | Detail                                                                                                                                                                                                                        |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Unified Sidebar, Canvas & Projects**    | Gemini-style single collapsible sidebar (64px rail / 260px expanded panel) with New Chat, chat search, recents history, hero prompt ("Where should we start?"), glowing input bar, voice dictation, starter suggestions, and ChatGPT-style Project Workspaces (custom instructions, file knowledge base injection, memory isolation). |
+| **Prompt Vault & Chat Integration**       | Save prompts with `{{variable}}` placeholders; fill modal inserts into chat; direct "Save to Prompt Vault" action from chat messages; tags & search.                                                                          |
+| **Consolidated Library & Documents**      | Merge Documents, custom file uploads, and bookmarks into a tabbed Library (`All`, `Notes/Links`, `Documents`, `Files`, `Interviews`). Structured AI doc drafts with PDF export (`pdf-lib`), plus chat file input picker.     |
+| **AI Interview Platform**                 | Real-time interactive mock interview simulator (roles, viva prep, seniorities). Features animated voice ripple, live transcript, speech-to-text, and automated competency scorecard saved to Library.                        |
+| **Unified Search**                        | One search bar across Library, Documents, Prompts, and Chat History (keyword + semantic).                                                                                                                                    |
+| **Command Palette (Ctrl/Cmd+K)**          | Jump to any screen or trigger common actions instantly — pure frontend, zero backend latency.                                                                                                                                 |
 
 ### Phase 2 — SaaS / Business Layer (the "unique" layer for the examiner)
 
-| Feature | Detail |
-|---|---|
-| Wallet & Recharge Page | Shows credit balance, tier (`free` / `pro_monthly`), recharge options (e.g. ₹49 → 500 credits) |
-| Payment Integration | **Razorpay Test Mode** — no real KYC or money needed for demo; test card/UPI completes a mock transaction; webhook updates `wallet.creditsRemaining` in MongoDB |
-| Transaction Ledger | Every recharge stored as its own document (amount, credits added, payment ID, status, timestamp) |
-| Admin Dashboard | Separate `/admin` route (role-gated). Shows: total tokens consumed, Gemini Flash vs Pro usage split (chart), mock revenue total, recent transactions, basic error/latency log count |
+| Feature                | Detail                                                                                                                                                                              |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Wallet & Recharge Page | Shows credit balance, tier (`free` / `pro_monthly`), recharge options (e.g. ₹49 → 500 credits)                                                                                      |
+| Payment Integration    | **Razorpay Test Mode** — no real KYC or money needed for demo; test card/UPI completes a mock transaction; webhook updates `wallet.creditsRemaining` in MongoDB                     |
+| Transaction Ledger     | Every recharge stored as its own document (amount, credits added, payment ID, status, timestamp)                                                                                    |
+| Admin Dashboard        | Separate `/admin` route (role-gated). Shows: total tokens consumed, Gemini Flash vs Pro usage split (chart), mock revenue total, recent transactions, basic error/latency log count |
 
 This phase is what turns "AI chat app" into "AI SaaS platform" in the examiner's eyes — the token ledger + webhook + admin charts are concrete, demoable engineering, not just a slide claim.
 
 ### Phase 3 — Depth (only if Phase 0–2 are solid and time remains)
 
-| Feature | Detail |
-|---|---|
-| Files & Document Analysis | Upload PDF/Word → summarize / ask questions about it (Gemini multimodal, no separate OCR needed) |
-| Developer Utilities (subset) | JSON formatter, regex tester, snippet manager with tags — pick 2–3, not the full list from v1 |
-| Learning tools (subset) | Flashcard generator from a saved note/document — pick one, not all of Section G from v1 |
+| Feature                      | Detail                                                                                           |
+| ---------------------------- | ------------------------------------------------------------------------------------------------ |
+| AI Image Generation (Future) | Generate images via model API; automatically catalog and preserve generated assets in Library.   |
+| Developer Utilities (subset) | JSON formatter, regex tester, snippet manager with tags — pick 2–3, not the full list from v1    |
+| Learning tools (subset)      | Flashcard generator from a saved note/document — pick one, not all of Section G from v1          |
 
 ### Future Scope — explicitly NOT built (say this out loud in the report/viva)
 
@@ -98,7 +102,7 @@ Stating these as "considered, deliberately deferred" is stronger than silently d
 - Pomodoro/focus tools, site blocklist — not related to the core AI-workspace problem
 - Secrets vault, password breach checker — a separate security-tool product, distracts from the AI theme
 - Link-rot cron crawler — background cron on Render's free tier risks memory/idle issues
-- Chat branching, shareable read-only chat links, voice input/output, multi-provider model switcher (Gemini/Llama/GPT together) — good v2/v3 ideas, not needed to prove the core thesis
+- Chat branching, shareable read-only chat links, multi-provider model switcher (Gemini/Llama/GPT together) — good v2/v3 ideas, not needed to prove the core thesis
 
 ---
 
@@ -118,20 +122,20 @@ Stating these as "considered, deliberately deferred" is stronger than silently d
 
 ## 5. Tech Stack (100% Free-Tier)
 
-| Layer | Choice | Free-tier notes |
-|---|---|---|
-| Frontend | React + Vite, SCSS modules, Zustand | $0 |
-| Backend | Node.js + Express | Render free web service (cold start ~30–60s after idle — mention proactively in viva) |
-| LLM | Gemini 1.5 Flash (default) + Gemini 1.5 Pro (complex tasks) | Existing free/low-cost API key; usage tracked per call for credit deduction |
-| Embeddings | Gemini embedding model | Same key |
-| Vector DB | Pinecone Starter (free) or ChromaDB (self-hosted) | Enough for single-user demo dataset |
-| Database | MongoDB Atlas M0 | 512 MB, free forever |
-| Auth | Google OAuth + JWT | $0 |
-| PDF generation | `pdf-lib` (pure JS) | Chosen over Puppeteer — headless Chrome is too memory-heavy for Render's free tier |
-| Payments | Razorpay **Test Mode** | No KYC needed for demo; real webhook flow, fake money |
-| Charts (Admin) | Recharts or Chart.js | $0 |
-| Hosting — frontend | Vercel Hobby | $0 |
-| Hosting — backend | Render free web service | Known cold-start trade-off |
+| Layer              | Choice                                                      | Free-tier notes                                                                       |
+| ------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Frontend           | React + Vite, SCSS modules, Zustand                         | $0                                                                                    |
+| Backend            | Node.js + Express                                           | Render free web service (cold start ~30–60s after idle — mention proactively in viva) |
+| LLM                | Gemini 1.5 Flash (default) + Gemini 1.5 Pro (complex tasks) | Existing free/low-cost API key; usage tracked per call for credit deduction           |
+| Embeddings         | Gemini embedding model                                      | Same key                                                                              |
+| Vector DB          | Pinecone Starter (free) or ChromaDB (self-hosted)           | Enough for single-user demo dataset                                                   |
+| Database           | MongoDB Atlas M0                                            | 512 MB, free forever                                                                  |
+| Auth               | Google OAuth + JWT                                          | $0                                                                                    |
+| PDF generation     | `pdf-lib` (pure JS)                                         | Chosen over Puppeteer — headless Chrome is too memory-heavy for Render's free tier    |
+| Payments           | Razorpay **Test Mode**                                      | No KYC needed for demo; real webhook flow, fake money                                 |
+| Charts (Admin)     | Recharts or Chart.js                                        | $0                                                                                    |
+| Hosting — frontend | Vercel Hobby                                                | $0                                                                                    |
+| Hosting — backend  | Render free web service                                     | Known cold-start trade-off                                                            |
 
 Only real cost risk in the entire stack: Gemini image generation, if ever added — kept out of scope for now (Future Scope), exactly to avoid this.
 
@@ -186,6 +190,7 @@ Only real cost risk in the entire stack: Gemini image generation, if ever added 
 ```
 
 Key design decisions:
+
 - All AI calls go through the backend — the Gemini key never touches the client.
 - The Credit Middleware sits between the request and the agent layer — every AI call is metered at the source, not estimated afterward.
 - Any agent action that changes stored data (save to library, auto-tag) follows **suggest → review → confirm** — nothing is silently written.
@@ -220,22 +225,63 @@ Key design decisions:
   createdAt
 }
 
-// libraryItems
+// libraryItems (consolidated knowledge base: links, notes, generated documents, custom files, interview scorecards)
 {
   _id, userId,
-  type: "link" | "note",
-  url, title, summary, tags: [String],
-  vectorId,          // Pinecone/Chroma reference
-  createdAt
+  type: "link" | "note" | "document" | "file" | "interview",
+  title, summary,
+  url,               // for links
+  content,           // extracted text or note content
+  fileUrl,           // for uploaded files or generated PDFs
+  fileFormat,        // "pdf" | "md" | "txt" | "json"
+  sections,          // for structured documents: [{ heading, body }]
+  interviewData,     // for interview reports: { role, level, score, rating, scorecardId }
+  tags: [String],
+  vectorId,          // Pinecone/vector reference for semantic search
+  createdAt, updatedAt
 }
 
-// documents (AI-generated)
+// interviewSessions (AI Mock Interview Platform)
 {
   _id, userId,
-  title, category: "resume" | "report" | "notes" | "other",
-  sections: [{ heading, body }],
-  fileFormat: "pdf",
-  createdAt
+  role: String,              // e.g. "Full-Stack Engineer", "Frontend React", "Diploma Viva"
+  difficulty: "junior" | "mid" | "senior",
+  topic: String,             // e.g. "System Design & Node.js"
+  status: "in_progress" | "completed",
+  messages: [{
+    role: "assistant" | "user",
+    content: String,
+    tokensUsed: Number,
+    timestamp: Date
+  }],
+  scorecard: {
+    overallScore: Number,    // 0 to 100
+    rating: "Strong Hire" | "Hire" | "Needs Improvement" | "Unprepared",
+    categories: {
+      technicalAccuracy: Number,
+      problemSolving: Number,
+      communication: Number,
+      systemDesign: Number
+    },
+    strengths: [String],
+    improvements: [String],
+    recommendedTopics: [String]
+  },
+  totalTokensUsed: Number,
+  createdAt, updatedAt
+}
+
+// projects (Project Workspaces & Grounded Knowledge)
+{
+  _id, userId,
+  name: String,
+  description: String,
+  color: String,
+  customInstructions: String,
+  sources: [{
+    _id, name, content, size, mimeType, createdAt
+  }],
+  createdAt, updatedAt
 }
 
 // prompts (Prompt Vault)
@@ -248,11 +294,11 @@ Key design decisions:
 }
 
 // chats / messages
-{ _id, userId, title, createdAt, updatedAt }
+{ _id, userId, projectId, title, pinned: Boolean, createdAt, updatedAt }
 { _id, chatId, role: "user" | "assistant", content, tokensUsed, createdAt }
 
 // usageLogs (feeds Admin Dashboard)
-{ _id, userId, model: "flash" | "pro", tokensUsed, creditsDeducted, createdAt }
+{ _id, userId, model: "flash" | "pro", feature: "chat" | "library" | "interview" | "document", tokensUsed, creditsDeducted, createdAt }
 ```
 
 ---
@@ -260,6 +306,7 @@ Key design decisions:
 ## 8. Key Data Flows
 
 **A. Chat message with credit deduction**
+
 1. User sends a message → backend calls Gemini Flash/Pro with streaming enabled.
 2. Response streams back to the client in real time.
 3. On completion, the API response's `usage.total_tokens` is read.
@@ -267,24 +314,36 @@ Key design decisions:
 5. A `usageLogs` entry is written for the Admin Dashboard.
 6. If `creditsRemaining` reaches 0, further requests are blocked with a "Recharge to continue" response.
 
-**B. Save to Library**
+**B. Save to Consolidated Library (Suggest → Review → Confirm)**
+
 1. User pastes a link or note.
 2. Backend fetches/extracts content → Gemini Flash generates summary + tags.
 3. Suggested summary/tags shown for one-tap confirm/edit — never applied silently.
 4. On confirm: embedding generated → upserted to vector DB → `libraryItems` doc saved.
 
-**C. AI Document Generation**
-1. User requests a document (e.g. "write me a resume").
-2. Agent drafts structured sections (JSON: heading + body per section).
+**C. AI Document Generation & PDF Export**
+
+1. User requests a document (e.g. "write me a project specification" or creates it in the Library).
+2. Gemini drafts structured sections (heading + body).
 3. Rendered in a preview pane; user edits inline.
-4. On export: `pdf-lib` renders the file → downloaded → saved to Documents.
+4. On export: `pdf-lib` renders the file → downloaded → saved into the Library under `document` type.
 
-**D. Prompt Vault use**
-1. User opens the vault, picks a saved prompt.
-2. If it has `{{variables}}`, a small form collects values.
-3. Filled prompt is inserted into chat as the first message.
+**D. AI Interview Simulation & Scorecard Report**
 
-**E. Recharge (Razorpay Test Mode)**
+1. Candidate selects target role, difficulty level, and focus topics.
+2. Live arena initializes: AI acts as lead interviewer, prompting technical questions.
+3. User responds via text or voice dictation (speech-to-text); interactive audio visualizer (voice ripples) reflects speech activity.
+4. Real-time collapsible transcript tracks the entire conversation.
+5. On conclusion: Gemini analyzes candidate responses against industry benchmarks, generating an analytical scorecard (0-100 rating, category breakdown, feedback).
+6. The completed scorecard is automatically archived into the user's Library under `interview` type.
+
+**E. Prompt Vault use & In-Chat Capture**
+
+1. User clicks "Save as Prompt" on any chat bubble to capture valuable prompts.
+2. Or opens the Prompt Vault, selects a template with `{{variables}}`, fills values via modal, and injects into chat.
+
+**F. Recharge (Razorpay Test Mode)**
+
 1. User picks a plan (e.g. ₹49 → 500 credits) on the Wallet page.
 2. Razorpay Test Mode checkout opens; test card/UPI completes payment.
 3. Razorpay webhook hits the backend → backend verifies signature → updates `wallet.creditsRemaining` and writes a `transactions` entry.
@@ -328,14 +387,14 @@ nexai/
 
 ## 10. Free-Tier Reality Check
 
-| Service | Free limit | Practical impact |
-|---|---|---|
-| MongoDB Atlas M0 | 512 MB, free forever | Enough for thousands of records across all collections |
-| Pinecone Starter / Chroma | 2 GB / self-hosted | Comfortably covers a single-user demo dataset |
-| Render free web service | 750 instance-hrs/mo, ~30–60s cold start after idle | Mention proactively in viva as a known trade-off |
-| Vercel Hobby | Generous static hosting | $0 |
-| Razorpay Test Mode | Unlimited test transactions | No real money, no KYC needed for demo |
-| Gemini API | Existing key | Text generation + embeddings already covered |
+| Service                   | Free limit                                         | Practical impact                                       |
+| ------------------------- | -------------------------------------------------- | ------------------------------------------------------ |
+| MongoDB Atlas M0          | 512 MB, free forever                               | Enough for thousands of records across all collections |
+| Pinecone Starter / Chroma | 2 GB / self-hosted                                 | Comfortably covers a single-user demo dataset          |
+| Render free web service   | 750 instance-hrs/mo, ~30–60s cold start after idle | Mention proactively in viva as a known trade-off       |
+| Vercel Hobby              | Generous static hosting                            | $0                                                     |
+| Razorpay Test Mode        | Unlimited test transactions                        | No real money, no KYC needed for demo                  |
+| Gemini API                | Existing key                                       | Text generation + embeddings already covered           |
 
 Everything in this scope runs at $0 beyond the Gemini key already available.
 

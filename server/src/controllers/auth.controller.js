@@ -1,9 +1,6 @@
 import * as authService from '../services/auth.service.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import {
-  REFRESH_COOKIE_NAME,
-  getRefreshCookieOptions,
-} from '../utils/token.js';
+import { REFRESH_COOKIE_NAME, getRefreshCookieOptions } from '../utils/token.js';
 
 export const register = asyncHandler(async (req, res) => {
   const { user, accessToken, refreshToken } = await authService.register(req.body);

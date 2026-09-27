@@ -24,6 +24,23 @@ export const useAuthStore = create((set) => ({
   clearError: () => set({ error: null }),
 
   /**
+   * Update credits in wallet without full re-fetch
+   * @param {number} creditsRemaining
+   */
+  updateCredits: (creditsRemaining) =>
+    set((state) => ({
+      user: state.user
+        ? {
+            ...state.user,
+            wallet: {
+              ...(state.user.wallet || {}),
+              creditsRemaining,
+            },
+          }
+        : null,
+    })),
+
+  /**
    * Check authentication on app mount using the httpOnly refresh cookie
    */
   checkAuth: async () => {

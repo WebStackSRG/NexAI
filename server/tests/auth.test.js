@@ -79,9 +79,7 @@ describe('Auth API Integration Tests', () => {
     });
 
     it('should login successfully and return access token', async () => {
-      const res = await request(app)
-        .post('/api/auth/login')
-        .send({ email: testEmail, password });
+      const res = await request(app).post('/api/auth/login').send({ email: testEmail, password });
 
       expect(res.status).toBe(200);
       expect(res.body.data.user.email).toBe(testEmail);

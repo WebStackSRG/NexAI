@@ -10,7 +10,7 @@ router.patch(
   '/me/settings',
   auth,
   validate({ body: updateSettingsSchema }),
-  userController.updateSettings
+  userController.updateSettings,
 );
 
 export default router;

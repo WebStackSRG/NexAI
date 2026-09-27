@@ -4,7 +4,9 @@ import { env } from '../config/env.js';
 import { User } from '../models/User.js';
 
 async function seedAdmin() {
-  const email = (env.ADMIN_EMAIL || process.env.ADMIN_EMAIL || 'admin@nexai.local').toLowerCase().trim();
+  const email = (env.ADMIN_EMAIL || process.env.ADMIN_EMAIL || 'admin@nexai.local')
+    .toLowerCase()
+    .trim();
   const password = env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || 'Admin@123456';
 
   console.log(`\n🌱 Seeding Admin User: ${email}...`);
