@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import {
   Sparkles,
@@ -6,10 +6,15 @@ import {
   ChevronRight,
   Clock,
   Zap,
+  Play,
+  Plus,
+  X,
+  Check,
+  Edit3,
+  Layers,
   Cpu,
   GraduationCap,
-  Layers,
-  Play,
+  Code2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -21,36 +26,53 @@ import { cn } from '@/lib/utils/cn';
 import styles from './InterviewSetup.module.scss';
 
 const ROLE_PRESETS = [
-  { id: 'Full-Stack Engineer', label: 'Full-Stack Engineer', icon: <Layers size={15} /> },
-  { id: 'Frontend React', label: 'Frontend React', icon: <Zap size={15} /> },
-  { id: 'Node.js Backend', label: 'Node.js Backend', icon: <Cpu size={15} /> },
-  { id: 'System Design Architect', label: 'System Design', icon: <Sparkles size={15} /> },
-  { id: 'MSBTE Capstone Viva', label: 'MSBTE Capstone Viva', icon: <GraduationCap size={15} /> },
+  { id: 'Full-Stack Engineer', label: 'Full-Stack Engineer', icon: <Layers size={16} /> },
+  { id: 'Frontend React', label: 'Frontend React', icon: <Zap size={16} /> },
+  { id: 'Node.js Backend', label: 'Node.js Backend', icon: <Cpu size={16} /> },
+  { id: 'System Design Architect', label: 'System Design', icon: <Sparkles size={16} /> },
+  { id: 'MSBTE Capstone Viva', label: 'MSBTE Capstone Viva', icon: <GraduationCap size={16} /> },
 ];
 
-const DIFFICULTY_LEVELS = [
+const SENIORITY_LEVELS = [
   {
     id: 'junior',
     label: 'Junior / Student',
-    desc: 'Core fundamentals, language mechanics, mental models & syntax',
+    tag: 'Fundamentals',
+    icon: <GraduationCap size={16} />,
+    desc: 'Language syntax, core mechanics & basic mental models',
   },
   {
     id: 'mid',
     label: 'Mid-Level',
-    desc: 'System trade-offs, error handling, state synchronization & APIs',
+    tag: 'Architecture',
+    icon: <Layers size={16} />,
+    desc: 'System trade-offs, state synchronization & REST/WebSocket APIs',
   },
   {
     id: 'senior',
     label: 'Senior / Lead',
-    desc: 'Scalability, distributed architecture, latency vs throughput & resilience',
+    tag: 'High Rigor',
+    icon: <Cpu size={16} />,
+    desc: 'Scalability, distributed systems, latency vs throughput & resilience',
   },
 ];
 
-const TOPIC_SUGGESTIONS = [
-  'MERN Stack Architecture & REST/WebSocket APIs',
-  'React 19 Hooks, Fiber & Performance Optimization',
-  'Microservices, Distributed Caching & Database Indexing',
-  'MSBTE Capstone Viva Defense & System Justification',
+const CURATED_TECH_TAGS = [
+  'React 19',
+  'Next.js',
+  'Node.js',
+  'TypeScript',
+  'Docker',
+  'PostgreSQL',
+  'System Design',
+  'Microservices',
+];
+
+const QUICK_TEMPLATES = [
+  { label: 'MERN APIs', full: 'MERN Stack Architecture & REST/WebSocket APIs' },
+  { label: 'React 19 Hooks', full: 'React 19 Hooks, Fiber & Performance Optimization' },
+  { label: 'Microservices', full: 'Microservices, Distributed Caching & Database Indexing' },
+  { label: 'MSBTE Defense', full: 'MSBTE Capstone Viva Defense & System Justification' },
 ];
 
 export function InterviewSetup({
@@ -67,73 +89,206 @@ export function InterviewSetup({
   sessions = [],
   onSelectSession,
 }) {
-  const [customRoleMode, setCustomRoleMode] = useState(
-    !ROLE_PRESETS.some((p) => p.id === role),
-  );
+  const configColRef = useRef(null);
+  const [configHeight, setConfigHeight] = useState(null);
 
-  const handlePresetRole = (presetId) => {
+  // Custom role state
+  const isPresetRole = ROLE_PRESETS.some((p) => p.id === role);
+  const [customRoleMode, setCustomRoleMode] = useState(!isPresetRole && Boolean(role));
+
+  // Custom persona state
+  const [showCustomPersona, setShowCustomPersona] = useState(false);
+  const [customPersonaText, setCustomPersonaText] = useState('');
+
+  // Custom tech tags
+  const [customTags, setCustomTags] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nexai_custom_interview_tags');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [showAddTag, setShowAddTag] = useState(false);
+  const [newTagInput, setNewTagInput] = useState('');
+
+  // Synchronize height of the recent simulations card with the config card
+  useEffect(() => {
+    if (!configColRef.current) return;
+    const updateHeight = () => {
+      if (configColRef.current) {
+        setConfigHeight(Math.round(configColRef.current.offsetHeight));
+      }
+    };
+    updateHeight();
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(updateHeight);
+      observer.observe(configColRef.current);
+      return () => observer.disconnect();
+    }
+  }, []);
+
+  const handleSelectPreset = (presetId) => {
     setCustomRoleMode(false);
     onRoleChange(presetId);
   };
 
-  const handleCustomRoleToggle = () => {
+  const handleCustomRoleClick = () => {
     setCustomRoleMode(true);
-    if (ROLE_PRESETS.some((p) => p.id === role)) {
+    if (isPresetRole) {
       onRoleChange('');
     }
+  };
+
+  const handleToggleTag = (tag) => {
+    if (!topic.trim()) {
+      onTopicChange(tag);
+      return;
+    }
+    const parts = topic.split(',').map((p) => p.trim()).filter(Boolean);
+    const index = parts.findIndex((p) => p.toLowerCase() === tag.toLowerCase());
+    if (index >= 0) {
+      parts.splice(index, 1);
+      onTopicChange(parts.join(', '));
+    } else {
+      parts.push(tag);
+      onTopicChange(parts.join(', '));
+    }
+  };
+
+  const handleAddCustomTag = (e) => {
+    if (e) e.preventDefault();
+    const trimmed = newTagInput.trim();
+    if (!trimmed) return;
+
+    if (
+      !CURATED_TECH_TAGS.some((t) => t.toLowerCase() === trimmed.toLowerCase()) &&
+      !customTags.some((t) => t.toLowerCase() === trimmed.toLowerCase())
+    ) {
+      const updated = [...customTags, trimmed];
+      setCustomTags(updated);
+      try {
+        localStorage.setItem('nexai_custom_interview_tags', JSON.stringify(updated));
+      } catch {
+        // ignore storage errors
+      }
+    }
+
+    handleToggleTag(trimmed);
+    setNewTagInput('');
+    setShowAddTag(false);
+  };
+
+  const handleRemoveCustomTag = (e, tagToRemove) => {
+    e.stopPropagation();
+    const updated = customTags.filter((t) => t !== tagToRemove);
+    setCustomTags(updated);
+    try {
+      localStorage.setItem('nexai_custom_interview_tags', JSON.stringify(updated));
+    } catch {
+      // ignore storage errors
+    }
+
+    const parts = topic.split(',').map((p) => p.trim()).filter(Boolean);
+    const remaining = parts.filter((p) => p.toLowerCase() !== tagToRemove.toLowerCase());
+    onTopicChange(remaining.join(', '));
+  };
+
+  const isTagActive = (tag) => {
+    if (!topic) return false;
+    const lowerTopic = topic.toLowerCase();
+    const lowerTag = tag.toLowerCase();
+    return (
+      lowerTopic.split(',').some((p) => p.trim() === lowerTag) || lowerTopic === lowerTag
+    );
   };
 
   return (
     <div className={styles.setupContainer}>
       <div className={styles.mainGrid}>
         {/* Left Column: Setup Config Form */}
-        <div className={styles.configColumn}>
+        <div className={styles.configColumn} ref={configColRef}>
           <Card className={styles.setupCard} padding="lg">
+            {/* Header */}
             <div className={styles.headerArea}>
               <div className={styles.badgeWrapper}>
-                <Badge variant="accent" size="md">
-                  <Sparkles size={13} />
-                  Interactive Simulation
+                <Badge variant="accent" size="sm">
+                  <Sparkles size={12} />
+                  AI Mock Simulation
                 </Badge>
               </div>
-              <h2 className={styles.title}>Configure Mock Interview</h2>
+              <h2 className={styles.title}>Configure Technical Screening</h2>
               <p className={styles.subtitle}>
-                Simulate high-stakes technical screening and academic viva defense with a senior AI interviewer.
+                Follow the 4 steps below to set up your AI interviewer, target role, and technical depth.
               </p>
             </div>
 
-            {/* Target Role Selection */}
+            {/* STEP 1: Target Role & Persona */}
             <div className={styles.formSection}>
-              <label className={styles.sectionLabel}>1. Target Role & Persona</label>
-              <div className={styles.presetGrid}>
-                {ROLE_PRESETS.map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    className={cn(
-                      styles.presetBtn,
-                      !customRoleMode && role === preset.id && styles.active,
-                    )}
-                    onClick={() => handlePresetRole(preset.id)}
-                  >
-                    <span className={styles.presetIcon}>{preset.icon}</span>
-                    <span className={styles.presetLabel}>{preset.label}</span>
-                  </button>
-                ))}
+              <div className={styles.stepHeader}>
+                <div className={styles.stepNumberBadge}>1</div>
+                <div className={styles.stepHeaderText}>
+                  <label className={styles.stepTitle}>Target Role & Persona</label>
+                  <span className={styles.stepSubtitle}>
+                    Select a core track or create a custom role
+                  </span>
+                </div>
+              </div>
+
+              <div className={styles.cardGrid}>
+                {ROLE_PRESETS.map((preset) => {
+                  const isSelected = !customRoleMode && role === preset.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={cn(styles.selectionCard, isSelected && styles.selected)}
+                      onClick={() => handleSelectPreset(preset.id)}
+                    >
+                      <div className={styles.cardLeft}>
+                        <div className={styles.cardIcon}>{preset.icon}</div>
+                        <span className={styles.cardLabel}>{preset.label}</span>
+                      </div>
+                      {isSelected && (
+                        <div className={styles.checkIndicator}>
+                          <Check size={12} />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+
+                {/* Custom Role Card */}
                 <button
                   type="button"
-                  className={cn(styles.presetBtn, customRoleMode && styles.active)}
-                  onClick={handleCustomRoleToggle}
+                  className={cn(
+                    styles.selectionCard,
+                    styles.customRoleCard,
+                    customRoleMode && styles.selected,
+                  )}
+                  onClick={handleCustomRoleClick}
                 >
-                  <span className={styles.presetIcon}>✏️</span>
-                  <span className={styles.presetLabel}>Custom Role</span>
+                  <div className={styles.cardLeft}>
+                    <div className={styles.cardIcon}>
+                      <Plus size={16} />
+                    </div>
+                    <span className={styles.cardLabel}>Custom Role</span>
+                  </div>
+                  {customRoleMode && (
+                    <div className={styles.checkIndicator}>
+                      <Check size={12} />
+                    </div>
+                  )}
                 </button>
               </div>
 
+              {/* Custom Role Input Field */}
               {customRoleMode && (
-                <div className={styles.customInputWrapper}>
+                <div className={styles.customInputSlideDown}>
+                  <label className={styles.inputMiniLabel}>Custom Position Title:</label>
                   <Input
-                    placeholder="Enter custom role (e.g. Flutter Mobile Dev, DevOps Lead)"
+                    placeholder="e.g. Flutter Mobile Dev, DevOps Lead, AI Researcher..."
                     value={role}
                     onChange={(e) => onRoleChange(e.target.value)}
                     autoFocus
@@ -142,99 +297,279 @@ export function InterviewSetup({
               )}
             </div>
 
-            {/* Difficulty Level Selection */}
+            {/* STEP 2: Seniority Level */}
             <div className={styles.formSection}>
-              <label className={styles.sectionLabel}>2. Seniority Level</label>
-              <div className={styles.difficultyGrid}>
-                {DIFFICULTY_LEVELS.map((level) => (
-                  <button
-                    key={level.id}
-                    type="button"
-                    className={cn(
-                      styles.difficultyBtn,
-                      difficulty === level.id && styles.active,
+              <div className={styles.stepHeader}>
+                <div className={styles.stepNumberBadge}>2</div>
+                <div className={styles.stepHeaderText}>
+                  <div className={styles.stepHeaderRow}>
+                    <label className={styles.stepTitle}>Seniority & Evaluator Rigor</label>
+                    {!showCustomPersona && (
+                      <button
+                        type="button"
+                        className={styles.subtleTextBtn}
+                        onClick={() => setShowCustomPersona(true)}
+                      >
+                        <Edit3 size={11} />
+                        Add Persona Note
+                      </button>
                     )}
-                    onClick={() => onDifficultyChange(level.id)}
-                  >
-                    <div className={styles.difficultyHeader}>
-                      <span className={styles.difficultyName}>{level.label}</span>
-                      {difficulty === level.id && (
-                        <span className={styles.activeCheck}>✓</span>
-                      )}
-                    </div>
-                    <span className={styles.difficultyDesc}>{level.desc}</span>
-                  </button>
-                ))}
+                  </div>
+                  <span className={styles.stepSubtitle}>
+                    Calibrates interviewer strictness, trade-off depth, and viva rigor
+                  </span>
+                </div>
               </div>
+
+              {/* 3 Seniority Cards */}
+              <div className={styles.seniorityGrid}>
+                {SENIORITY_LEVELS.map((lvl) => {
+                  const isSelected = difficulty === lvl.id;
+                  return (
+                    <button
+                      key={lvl.id}
+                      type="button"
+                      className={cn(styles.seniorityCard, isSelected && styles.selected)}
+                      onClick={() => onDifficultyChange(lvl.id)}
+                    >
+                      <div className={styles.seniorityTop}>
+                        <div className={styles.seniorityTitleGroup}>
+                          <span className={styles.seniorityIcon}>{lvl.icon}</span>
+                          <span className={styles.seniorityName}>{lvl.label}</span>
+                        </div>
+                        {isSelected ? (
+                          <div className={styles.checkIndicator}>
+                            <Check size={12} />
+                          </div>
+                        ) : (
+                          <span className={styles.seniorityTag}>{lvl.tag}</span>
+                        )}
+                      </div>
+                      <p className={styles.seniorityDescription}>{lvl.desc}</p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Optional Custom Persona / Title Input */}
+              {showCustomPersona && (
+                <div className={styles.customInputSlideDown}>
+                  <div className={styles.customPersonaHeader}>
+                    <label className={styles.inputMiniLabel}>Specialized Persona / YOE (Optional):</label>
+                    <button
+                      type="button"
+                      className={styles.cancelTextBtn}
+                      onClick={() => {
+                        setCustomPersonaText('');
+                        setShowCustomPersona(false);
+                      }}
+                    >
+                      <X size={12} /> Remove
+                    </button>
+                  </div>
+                  <Input
+                    placeholder="e.g. Staff Architect with 8+ YOE, Engineering Intern, External Reviewer"
+                    value={customPersonaText}
+                    onChange={(e) => setCustomPersonaText(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
 
-            {/* Focus Topic Input & Suggestions */}
+            {/* STEP 3: Focus Topic & Tech Stack */}
             <div className={styles.formSection}>
-              <label className={styles.sectionLabel}>3. Focus Topic / Tech Stack</label>
-              <Input
-                placeholder="e.g. Distributed Database Sharding, React Virtual DOM, Next.js App Router"
-                value={topic}
-                onChange={(e) => onTopicChange(e.target.value)}
-              />
+              <div className={styles.stepHeader}>
+                <div className={styles.stepNumberBadge}>3</div>
+                <div className={styles.stepHeaderText}>
+                  <label className={styles.stepTitle}>Focus Topic & Tech Stack</label>
+                  <span className={styles.stepSubtitle}>
+                    Define the core frameworks, libraries, or architectural concepts
+                  </span>
+                </div>
+              </div>
 
-              <div className={styles.suggestionsContainer}>
-                <span className={styles.suggestionTitle}>Suggestions:</span>
-                <div className={styles.topicChips}>
-                  {TOPIC_SUGGESTIONS.map((sug) => (
+              {/* Main Topic Input */}
+              <div className={styles.topicInputWrapper}>
+                <Input
+                  placeholder="e.g. Distributed Database Sharding, React 19 Fiber, Next.js App Router"
+                  value={topic}
+                  onChange={(e) => onTopicChange(e.target.value)}
+                />
+              </div>
+
+              {/* Tech Stack Interactive Tags */}
+              <div className={styles.tagGroupWrapper}>
+                <div className={styles.groupHeader}>
+                  <Code2 size={13} className={styles.groupHeaderIcon} />
+                  <span>Click to add/remove technologies from your topic:</span>
+                </div>
+                <div className={styles.interactiveTags}>
+                  {CURATED_TECH_TAGS.map((tech) => {
+                    const active = isTagActive(tech);
+                    return (
+                      <button
+                        key={tech}
+                        type="button"
+                        className={cn(styles.toggleTag, active && styles.activeTag)}
+                        onClick={() => handleToggleTag(tech)}
+                      >
+                        {active ? <Check size={11} /> : <Plus size={11} />}
+                        <span>{tech}</span>
+                      </button>
+                    );
+                  })}
+
+                  {/* Custom Added Tags */}
+                  {customTags.map((cTag) => {
+                    const active = isTagActive(cTag);
+                    return (
+                      <div
+                        key={cTag}
+                        className={cn(styles.toggleTag, styles.customToggleTag, active && styles.activeTag)}
+                        onClick={() => handleToggleTag(cTag)}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        {active ? <Check size={11} /> : <Plus size={11} />}
+                        <span>{cTag}</span>
+                        <button
+                          type="button"
+                          className={styles.deleteTagBtn}
+                          onClick={(e) => handleRemoveCustomTag(e, cTag)}
+                          title="Delete tag"
+                        >
+                          <X size={10} />
+                        </button>
+                      </div>
+                    );
+                  })}
+
+                  {/* Add Tag Form */}
+                  {showAddTag ? (
+                    <form onSubmit={handleAddCustomTag} className={styles.miniTagForm}>
+                      <input
+                        type="text"
+                        placeholder="Tag name..."
+                        className={styles.miniTagInput}
+                        value={newTagInput}
+                        onChange={(e) => setNewTagInput(e.target.value)}
+                        autoFocus
+                      />
+                      <button type="submit" className={styles.miniConfirmBtn} title="Save tag">
+                        <Check size={11} />
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.miniCancelBtn}
+                        onClick={() => setShowAddTag(false)}
+                        title="Cancel"
+                      >
+                        <X size={11} />
+                      </button>
+                    </form>
+                  ) : (
                     <button
-                      key={sug}
                       type="button"
-                      className={cn(
-                        styles.topicChip,
-                        topic === sug && styles.activeChip,
-                      )}
-                      onClick={() => onTopicChange(sug)}
+                      className={styles.addNewTagBtn}
+                      onClick={() => setShowAddTag(true)}
                     >
-                      {sug}
+                      <Plus size={11} />
+                      <span>Custom Tech</span>
                     </button>
-                  ))}
+                  )}
+                </div>
+              </div>
+
+              {/* Pre-built scenario templates */}
+              <div className={styles.templatesWrapper}>
+                <span className={styles.templatesHeader}>Quick Scenarios:</span>
+                <div className={styles.templatePills}>
+                  {QUICK_TEMPLATES.map((tmpl) => {
+                    const isSelected = topic === tmpl.full;
+                    return (
+                      <button
+                        key={tmpl.label}
+                        type="button"
+                        className={cn(styles.templatePill, isSelected && styles.activeTemplate)}
+                        onClick={() => onTopicChange(tmpl.full)}
+                      >
+                        {tmpl.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
 
-            {/* Model Tier Selector */}
+            {/* STEP 4: AI Model Selection */}
             <div className={styles.formSection}>
-              <label className={styles.sectionLabel}>4. AI Interviewer Model</label>
+              <div className={styles.stepHeader}>
+                <div className={styles.stepNumberBadge}>4</div>
+                <div className={styles.stepHeaderText}>
+                  <label className={styles.stepTitle}>AI Interviewer Model</label>
+                  <span className={styles.stepSubtitle}>
+                    Select speech speed vs multi-turn analytical depth
+                  </span>
+                </div>
+              </div>
+
               <div className={styles.modelRow}>
                 <button
                   type="button"
-                  className={cn(
-                    styles.modelOption,
-                    selectedModel === 'flash' && styles.active,
-                  )}
+                  className={cn(styles.modelCard, selectedModel === 'flash' && styles.selected)}
                   onClick={() => onModelChange('flash')}
                 >
-                  <Zap size={16} />
-                  <div>
-                    <span className={styles.modelTitle}>Gemini Flash (Recommended)</span>
+                  <div className={styles.modelIcon}>
+                    <Zap size={16} />
+                  </div>
+                  <div className={styles.modelContent}>
+                    <div className={styles.modelTop}>
+                      <span className={styles.modelTitle}>Gemini Flash</span>
+                      <span className={styles.modelBadge}>Fastest</span>
+                    </div>
                     <span className={styles.modelSub}>Ultra-fast real-time speech responses</span>
                   </div>
+                  {selectedModel === 'flash' && (
+                    <div className={styles.checkIndicator}>
+                      <Check size={12} />
+                    </div>
+                  )}
                 </button>
 
                 <button
                   type="button"
-                  className={cn(
-                    styles.modelOption,
-                    selectedModel === 'pro' && styles.active,
-                  )}
+                  className={cn(styles.modelCard, selectedModel === 'pro' && styles.selected)}
                   onClick={() => onModelChange('pro')}
                 >
-                  <Sparkles size={16} />
-                  <div>
-                    <span className={styles.modelTitle}>Gemini Pro</span>
-                    <span className={styles.modelSub}>Deep multi-turn architectural viva probing</span>
+                  <div className={styles.modelIcon}>
+                    <Sparkles size={16} />
                   </div>
+                  <div className={styles.modelContent}>
+                    <div className={styles.modelTop}>
+                      <span className={styles.modelTitle}>Gemini Pro</span>
+                      <span className={styles.modelBadgePro}>Deep Viva</span>
+                    </div>
+                    <span className={styles.modelSub}>Deep multi-turn architectural probing</span>
+                  </div>
+                  {selectedModel === 'pro' && (
+                    <div className={styles.checkIndicator}>
+                      <Check size={12} />
+                    </div>
+                  )}
                 </button>
               </div>
             </div>
 
-            {/* Start CTA */}
+            {/* Ready to Start Summary Bar & CTA */}
             <div className={styles.ctaRow}>
+              <div className={styles.summaryBar}>
+                <span className={styles.summaryPrefix}>Selected Configuration:</span>
+                <span className={styles.summaryValue}>
+                  {role || 'Select Role'} · {difficulty.toUpperCase()} ·{' '}
+                  {selectedModel === 'flash' ? 'Flash Model' : 'Pro Model'}
+                </span>
+              </div>
+
               <Button
                 variant="primary"
                 size="lg"
@@ -242,7 +577,7 @@ export function InterviewSetup({
                 onClick={onStart}
                 disabled={!role.trim() || !topic.trim() || isStarting}
                 loading={isStarting}
-                leftIcon={<Play size={18} />}
+                leftIcon={<Play size={16} />}
               >
                 Enter Simulation Arena
               </Button>
@@ -256,7 +591,15 @@ export function InterviewSetup({
 
         {/* Right Column: History & Past Sessions */}
         <div className={styles.historyColumn}>
-          <Card className={styles.historyCard} padding="lg">
+          <Card
+            className={styles.historyCard}
+            padding="lg"
+            style={
+              configHeight && typeof window !== 'undefined' && window.innerWidth >= 1024
+                ? { height: `${configHeight}px`, maxHeight: `${configHeight}px` }
+                : undefined
+            }
+          >
             <div className={styles.historyHeader}>
               <h3 className={styles.historyTitle}>
                 <Clock size={16} />
