@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { TagInput } from '@/components/ui/TagInput';
 import { Button } from '@/components/ui/Button';
+import { NoteEditor } from './NoteEditor';
 import { useLibraryStore } from '@/store/libraryStore';
 import styles from './EditItemModal.module.scss';
 
@@ -13,6 +14,7 @@ export function EditItemModal() {
 
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
+  const [content, setContent] = useState('');
   const [tags, setTags] = useState([]);
   const [error, setError] = useState('');
 
@@ -20,6 +22,7 @@ export function EditItemModal() {
     if (editingItem) {
       setTitle(editingItem.title || '');
       setSummary(editingItem.summary || '');
+      setContent(editingItem.content || '');
       setTags(editingItem.tags || []);
       setError('');
     }
@@ -37,6 +40,7 @@ export function EditItemModal() {
       await updateItem(editingItem._id, {
         title: title.trim(),
         summary: summary.trim(),
+        content: editingItem.type === 'note' ? content : undefined,
         tags,
       });
     } catch {
@@ -59,12 +63,23 @@ export function EditItemModal() {
           />
         </div>
 
+        {editingItem.type === 'note' && (
+          <div className={styles.field}>
+            <span className={styles.label}>Note Content (Interactive Markdown)</span>
+            <NoteEditor
+              value={content}
+              onChange={setContent}
+              minHeight={200}
+            />
+          </div>
+        )}
+
         <div className={styles.field}>
           <Textarea
             label="Summary"
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
-            rows={4}
+            rows={3}
           />
         </div>
 

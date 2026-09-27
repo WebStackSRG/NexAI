@@ -11,6 +11,10 @@
   right: 0;
   z-index: var(--z-dropdown);
   min-width: 190px;
+  max-height: min(360px, calc(100vh - 120px));
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
   background-color: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -22,6 +26,15 @@
   flex-direction: column;
   gap: 2px;
   animation: dropdownIn var(--duration-fast) var(--ease-standard);
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--color-border);
+    border-radius: var(--radius-full);
+  }
 
   &.align-left {
     right: auto;

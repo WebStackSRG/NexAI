@@ -7,3 +7,5 @@ export { DocGeneratorModal } from './DocGeneratorModal';
 export { FileUploaderModal } from './FileUploaderModal';
 export { DocumentViewModal } from './DocumentViewModal';
 export { InterviewViewModal } from './InterviewViewModal';
+export { ItemDetailModal } from './ItemDetailModal';
+export { NoteEditor } from './NoteEditor';

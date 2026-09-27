@@ -54,6 +54,10 @@ export const useLibraryStore = create((set, get) => ({
   editingItem: null,
   isUpdating: false,
 
+  // Item Detail View Modal state (comprehensive viewer for notes, links, docs, files, interviews)
+  isViewItemModalOpen: false,
+  viewingItem: null,
+
   // Delete dialog state
   isConfirmDeleteOpen: false,
   itemToDelete: null,
@@ -329,6 +333,17 @@ export const useLibraryStore = create((set, get) => ({
     set({ isViewInterviewModalOpen: false, viewingInterview: null });
   },
 
+  /**
+   * Item Detail View Modal actions (unified viewer)
+   */
+  openViewItemModal: (item) => {
+    set({ isViewItemModalOpen: true, viewingItem: item });
+  },
+
+  closeViewItemModal: () => {
+    set({ isViewItemModalOpen: false, viewingItem: null });
+  },
+
   exportPdf: async (item) => {
     if (!item?._id) return;
     set({ isExportingPdf: true });
@@ -367,6 +382,7 @@ export const useLibraryStore = create((set, get) => ({
           items: updatedItems,
           tags: updatedTags,
           viewingDoc: state.viewingDoc?._id === id ? updated : state.viewingDoc,
+          viewingItem: state.viewingItem?._id === id ? updated : state.viewingItem,
           isUpdating: false,
           isEditModalOpen: false,
           editingItem: null,
@@ -423,6 +439,8 @@ export const useLibraryStore = create((set, get) => ({
           itemToDelete: null,
           isViewDocModalOpen: state.viewingDoc?._id === itemToDelete._id ? false : state.isViewDocModalOpen,
           viewingDoc: state.viewingDoc?._id === itemToDelete._id ? null : state.viewingDoc,
+          isViewItemModalOpen: state.viewingItem?._id === itemToDelete._id ? false : state.isViewItemModalOpen,
+          viewingItem: state.viewingItem?._id === itemToDelete._id ? null : state.viewingItem,
         };
       });
 
