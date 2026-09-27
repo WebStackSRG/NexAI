@@ -121,6 +121,14 @@ export function Sidebar({ onItemClick, isMobile = false }) {
   // Secondary items for ChatGPT-style floating "... More" popover
   const moreNavDropdownItems = [
     {
+      label: 'Search',
+      icon: <Search size={16} />,
+      onClick: () => {
+        navigate(ROUTES.SEARCH);
+        onItemClick?.();
+      },
+    },
+    {
       label: 'Wallet',
       icon: <Wallet size={16} />,
       onClick: () => {

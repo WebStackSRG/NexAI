@@ -6,18 +6,16 @@ export const interviewApi = {
    * @param {{ role: string, difficulty: 'junior' | 'mid' | 'senior', topic: string, model?: 'flash' | 'pro', isSimulation?: boolean }} data
    */
   startInterview(data) {
-    const headers = data?.isSimulation ? { 'x-simulation': 'true' } : {};
-    return apiClient.post('/interview/start', data, { headers });
+    return apiClient.post('/interview/start', data);
   },
 
   /**
    * Conclude an interview session, generate scorecard, and auto-archive to library
    * @param {string} id
-   * @param {{ model?: 'flash' | 'pro', isSimulation?: boolean }} [data]
+   * @param {{ model?: 'flash' | 'pro' }} [data]
    */
   concludeInterview(id, data = {}) {
-    const headers = data?.isSimulation ? { 'x-simulation': 'true' } : {};
-    return apiClient.post(`/interview/${id}/conclude`, data, { headers });
+    return apiClient.post(`/interview/${id}/conclude`, data);
   },
 
   /**

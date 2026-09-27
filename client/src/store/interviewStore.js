@@ -68,16 +68,16 @@ export const useInterviewStore = create((set, get) => ({
     set((state) => ({ transcriptOpen: !state.transcriptOpen }));
   },
 
-  // Fetch list of interviews
+  // Fetch list of past interviews
   fetchSessions: async () => {
     set({ isLoadingSessions: true });
     try {
       const res = await interviewApi.getInterviews();
-      const sessions = res.data?.interviews || [];
+      const payload = res?.data || res || {};
+      const sessions = payload.interviews || res?.interviews || [];
       set({ sessions, isLoadingSessions: false });
     } catch {
       set({ isLoadingSessions: false });
-      toast.error('Failed to load past interview sessions');
     }
   },
 
@@ -86,7 +86,8 @@ export const useInterviewStore = create((set, get) => ({
     set({ isStarting: true, error: null });
     try {
       const res = await interviewApi.getInterviewById(id);
-      const session = res.data?.interview;
+      const payload = res?.data || res || {};
+      const session = payload.interview || res?.interview;
       if (!session) throw new Error('Session not found');
 
       set({
@@ -104,13 +105,12 @@ export const useInterviewStore = create((set, get) => ({
     }
   },
 
-  // Start new interview
+  // Start new interview with live Gemini AI
   startInterview: async (config = {}) => {
-    const role = config.role || get().role;
-    const difficulty = config.difficulty || get().difficulty;
-    const topic = config.topic || get().topic;
-    const model = config.model || get().selectedModel;
-    const isSimulation = Boolean(config.isSimulation);
+    const role = (config.role || get().role || 'Full-Stack Engineer').trim();
+    const difficulty = config.difficulty || get().difficulty || 'mid';
+    const topic = (config.topic || get().topic || 'MERN Stack Architecture & REST/WebSocket APIs').trim();
+    const model = config.model || get().selectedModel || 'flash';
 
     set({
       isStarting: true,
@@ -126,10 +126,15 @@ export const useInterviewStore = create((set, get) => ({
         difficulty,
         topic,
         model,
-        isSimulation,
       });
 
-      const { session, creditsRemaining } = res.data;
+      const payload = res?.data || res || {};
+      const session = payload.session || res?.session;
+      const creditsRemaining = payload.creditsRemaining ?? res?.creditsRemaining;
+
+      if (!session) {
+        throw new Error('No session returned from server');
+      }
 
       if (typeof creditsRemaining === 'number') {
         useAuthStore.getState().updateCredits(creditsRemaining);
@@ -168,7 +173,7 @@ export const useInterviewStore = create((set, get) => ({
     }
   },
 
-  // Send candidate answer and stream interviewer response
+  // Send candidate answer and stream live Gemini interviewer response
   sendResponse: async (content) => {
     const trimmed = (content || '').trim();
     const session = get().currentSession;
@@ -208,7 +213,6 @@ export const useInterviewStore = create((set, get) => ({
         interviewId: session._id,
         content: trimmed,
         model,
-        isSimulation: Boolean(session.isSimulation),
         signal: abortController.signal,
         onToken: (text) => {
           set((state) => {
@@ -338,7 +342,7 @@ export const useInterviewStore = create((set, get) => ({
     }
   },
 
-  // Conclude session, generate evaluation scorecard, and auto-archive
+  // Conclude session, generate AI evaluation scorecard, and auto-archive
   concludeInterview: async () => {
     const session = get().currentSession;
     if (!session) return;
@@ -354,9 +358,15 @@ export const useInterviewStore = create((set, get) => ({
       const model = get().selectedModel;
       const res = await interviewApi.concludeInterview(session._id, {
         model,
-        isSimulation: Boolean(session.isSimulation),
       });
-      const { session: updatedSession, libraryItem, creditsRemaining } = res.data;
+      const payload = res?.data || res || {};
+      const updatedSession = payload.session || res?.session;
+      const libraryItem = payload.libraryItem || res?.libraryItem;
+      const creditsRemaining = payload.creditsRemaining ?? res?.creditsRemaining;
+
+      if (!updatedSession) {
+        throw new Error('No updated session data received');
+      }
 
       if (typeof creditsRemaining === 'number') {
         useAuthStore.getState().updateCredits(creditsRemaining);
@@ -370,7 +380,7 @@ export const useInterviewStore = create((set, get) => ({
       });
 
       toast.success('Interview concluded! Scorecard generated & saved to Library.');
-      get().fetchSessions();
+      get().fetchSessions().catch(() => {});
     } catch (err) {
       const is402 = err.response?.status === 402 || err.code === 'INSUFFICIENT_CREDITS';
       const cleanMessage = sanitizeErrorMessage(

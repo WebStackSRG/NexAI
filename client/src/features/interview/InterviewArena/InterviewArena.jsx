@@ -204,11 +204,6 @@ export function InterviewArena({
             <Badge variant="accent" size="sm" className={styles.diffBadge}>
               {session?.difficulty}
             </Badge>
-            {session?.isSimulation && (
-              <Badge variant="warning" size="sm">
-                🎮 Demo Simulation
-              </Badge>
-            )}
           </div>
           <p className={styles.topicSubtitle} title={session?.topic}>
             {session?.topic}
@@ -238,8 +233,8 @@ export function InterviewArena({
             loading={isConcluding}
             disabled={isStreaming || isConcluding}
             className={styles.concludeBtn}
+            leftIcon={<Award size={15} />}
           >
-            <Award size={15} />
             Conclude & Evaluate
           </Button>
         </div>
@@ -421,8 +416,8 @@ export function InterviewArena({
                       size="md"
                       onClick={onStopStreaming}
                       className={styles.stopBtn}
+                      leftIcon={<Square size={14} />}
                     >
-                      <Square size={14} />
                       Stop
                     </Button>
                   ) : (
@@ -432,8 +427,8 @@ export function InterviewArena({
                       size="md"
                       disabled={!responseText.trim() || isStreaming}
                       className={styles.sendBtn}
+                      leftIcon={<Send size={15} />}
                     >
-                      <Send size={15} />
                       Submit Answer
                     </Button>
                   )}
