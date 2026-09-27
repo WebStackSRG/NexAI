@@ -46,11 +46,10 @@ Every AI agent working on NexAI must strictly adhere to the project foundations 
 | **Step 6** | Unified Sidebar, Chat Canvas & **Project Workspaces** | `feature/sidebar-and-hero-ui` | ✅ **COMPLETED & MERGED TO DEV** | 114 tests passing across monorepo |
 | **Step 7** | **Prompt Vault & In-Chat Template Integration** | `feature/prompt-vault` | ✅ **COMPLETED** | 137 tests passing across monorepo |
 | **Step 8** | Consolidated Library & Document Management | `feature/consolidated-library` | ✅ **COMPLETED** | 147 tests passing across monorepo |
-| **Step 9** | **AI Mock Interview Platform** | `feature/ai-interview` | 🎯 **NEXT ACTIVE STEP** | Depends on Step 8 polymorphic schema |
-
-| **Step 10**| Unified Search & Command Palette (Ctrl+K) | `feature/search` | ⏳ UPCOMING | Hybrid index search |
-| **Step 11**| Wallet, Recharge & Razorpay Billing | `feature/wallet-billing` | ⏳ UPCOMING | Webhook idempotency |
-| **Step 12**| Admin Analytics Dashboard | `feature/admin-dashboard` | ⏳ UPCOMING | Role-gated Recharts |
+| **Step 9** | **AI Mock Interview Platform** | `feature/ai-interview` | ✅ **COMPLETED & MERGED TO DEV** | 10 integration tests & UI |
+| **Step 10**| **Unified Search & Command Palette (Ctrl+K)** | `feature/search` | ✅ **COMPLETED & MERGED TO DEV** | 10 integration + 9 client tests |
+| **Step 11**| **Wallet, Recharge & Razorpay Billing** | `feature/wallet-billing` | ✅ **COMPLETED & MERGED TO DEV** | 9 integration + 4 client tests |
+| **Step 12**| **Admin Analytics Dashboard** | `feature/admin-dashboard` | 🎯 **NEXT ACTIVE STEP** | Role-gated Recharts analytics |
 | **Step 13**| Hardening, Supertest E2E Suite & Viva Defense Guide | `feature/hardening` | ⏳ UPCOMING | Production release gate |
 
 ---
