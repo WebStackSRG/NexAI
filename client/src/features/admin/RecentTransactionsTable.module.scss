@@ -1,0 +1,117 @@
+@use '@/styles/abstracts' as *;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-5);
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  gap: var(--space-4);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.subtitle {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  @include custom-scrollbar;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: var(--text-xs);
+
+  th {
+    padding: var(--space-3) var(--space-4);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  td {
+    padding: var(--space-3) var(--space-4);
+    color: var(--color-text-primary);
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    transition: background-color var(--duration-fast) var(--ease-standard);
+
+    &:hover {
+      background-color: var(--color-bg-elevated);
+    }
+  }
+}
+
+.empty {
+  text-align: center;
+  padding: var(--space-8) !important;
+  color: var(--color-text-muted);
+}
+
+.dateCell {
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+}
+
+.userCell {
+  font-weight: var(--weight-medium);
+}
+
+.orderCell {
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.amountCell {
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+}
+
+.creditsCell {
+  font-weight: var(--weight-semibold);
+  color: var(--color-accent);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--space-2);
+}
+
+.pageInfo {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.pageActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
