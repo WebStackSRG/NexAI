@@ -44,35 +44,53 @@
   gap: var(--space-3);
 }
 
+.searchRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
 .searchWrapper {
-  width: 100%;
+  flex: 1;
+  min-width: 260px;
 }
 
 .searchInput {
   max-width: 480px;
 }
 
-.filtersWrapper {
+.quickFilters {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.categoriesRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.categoryPills {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-2);
 }
 
-.filterGroupLabel {
-  font-size: var(--text-xs);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-text-tertiary);
-  margin-right: var(--space-1);
+.activeTagChip {
+  display: flex;
+  align-items: center;
 }
 
 .filterPill {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  padding: 6px 12px;
+  padding: 6px 14px;
   background-color: var(--color-bg-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);

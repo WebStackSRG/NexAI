@@ -120,4 +120,14 @@ describe('PromptsPage Component', () => {
       }),
     );
   });
+
+  it('opens PromptDetailModal when a prompt card is clicked', () => {
+    render(<PromptsPage />);
+
+    const card = screen.getByRole('button', { name: /View details for prompt: Senior Code Reviewer/i });
+    fireEvent.click(card);
+
+    expect(screen.getByText('Prompt Template')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Copy Template/i })).toBeInTheDocument();
+  });
 });
