@@ -1616,6 +1616,164 @@ Public webhook endpoint for asynchronous payment notifications from Razorpay ser
 }
 ```
 
+---
+
+## 9. Admin Analytics & Telemetry (Step 12)
+
+All admin endpoints require an authenticated JWT bearer token and `role: 'admin'` on the user account. Non-admin users receive `403 FORBIDDEN`.
+
+### GET `/api/admin/stats`
+
+Returns aggregated platform KPI metrics including tokens consumed, revenue, active accounts, and telemetry.
+
+- **Auth:** Bearer Token (`role: 'admin'`)
+- **Method:** `GET`
+- **Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "message": "Admin authorization verified",
+    "totalTokens": 145020,
+    "totalCreditsDeducted": 1452,
+    "activeUsers": 48,
+    "totalRevenue": 4990,
+    "totalCreditsAdded": 5000,
+    "successfulTransactions": 10,
+    "totalErrors": 2,
+    "usageCallCount": 35
+  }
+}
+```
+
+---
+
+### GET `/api/admin/usage`
+
+Returns daily token consumption time-series and Flash vs Pro model distribution split.
+
+- **Auth:** Bearer Token (`role: 'admin'`)
+- **Method:** `GET`
+- **Query Parameters:**
+  - `range` (optional, default `'7d'`): `'7d'` | `'30d'`
+- **Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "range": "7d",
+    "timeSeries": [
+      {
+        "date": "2026-09-21",
+        "totalTokens": 12500,
+        "flashTokens": 10000,
+        "proTokens": 2500,
+        "requestCount": 8
+      }
+    ],
+    "modelSplit": [
+      {
+        "name": "Gemini Flash",
+        "model": "flash",
+        "tokens": 100000,
+        "count": 45,
+        "percentage": 80
+      },
+      {
+        "name": "Gemini Pro",
+        "model": "pro",
+        "tokens": 25000,
+        "count": 10,
+        "percentage": 20
+      }
+    ],
+    "featureSplit": [
+      { "feature": "chat", "tokens": 80000, "count": 30 },
+      { "feature": "interview", "tokens": 30000, "count": 15 },
+      { "feature": "docgen", "tokens": 15000, "count": 10 }
+    ]
+  }
+}
+```
+
+---
+
+### GET `/api/admin/transactions`
+
+Returns a paginated list of all platform recharges and Razorpay top-ups.
+
+- **Auth:** Bearer Token (`role: 'admin'`)
+- **Method:** `GET`
+- **Query Parameters:**
+  - `page` (optional, default `1`)
+  - `limit` (optional, default `20`)
+- **Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "transactions": [
+      {
+        "_id": "67401122aabbccddeeff0011",
+        "userId": {
+          "_id": "67401122aabbccddeeff0001",
+          "email": "user@example.com",
+          "role": "user"
+        },
+        "amountINR": 499,
+        "creditsAdded": 500,
+        "paymentGateway": "razorpay_test",
+        "orderId": "order_NX12345678",
+        "paymentId": "pay_NX87654321",
+        "status": "success",
+        "createdAt": "2026-09-27T10:00:00.000Z"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 1
+  }
+}
+```
+
+---
+
+### GET `/api/admin/errors`
+
+Returns a paginated list from the `ErrorLog` collection for operational monitoring.
+
+- **Auth:** Bearer Token (`role: 'admin'`)
+- **Method:** `GET`
+- **Query Parameters:**
+  - `page` (optional, default `1`)
+  - `limit` (optional, default `20`)
+- **Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "errors": [
+      {
+        "_id": "67401122aabbccddeeff0099",
+        "route": "/api/chat",
+        "method": "POST",
+        "status": 500,
+        "message": "AI generation service timeout",
+        "stack": "Error: AI generation service timeout\n    at gemini.service.js:42:11",
+        "userId": "67401122aabbccddeeff0001",
+        "createdAt": "2026-09-27T12:00:00.000Z"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 1
+  }
+}
+```
+
+
 
 
 

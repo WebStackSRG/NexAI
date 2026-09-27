@@ -551,11 +551,13 @@ VITE_RAZORPAY_KEY_ID=
 
 ---
 
-### Upcoming Build Steps
-
-**Step 12: Admin Dashboard** (`feature/admin-dashboard`)
+**Step 12: Admin Dashboard** (`feature/admin-dashboard`) — `[COMPLETED]`
 - Role-gated `/admin` route with stat cards (tokens, mock revenue, active users), token consumption charts, Flash vs Pro model split, recent transactions, and error logs.
-- Done when: Admin users can monitor platform usage in real-time while non-admins are restricted (HTTP 403).
+- Done when: Admin users can monitor platform usage in real-time while non-admins are restricted (HTTP 403); all 219 unit and integration tests pass with 0 lint errors.
+
+---
+
+### Upcoming Build Steps
 
 **Step 13: Hardening & Viva Prep** (`feature/hardening`)
 - Integration tests with Supertest, end-to-end flow validation, deployment guides for Render/Vercel, and comprehensive viva defense preparation guide (`docs/viva-prep.md`).
