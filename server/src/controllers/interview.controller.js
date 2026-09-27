@@ -71,6 +71,11 @@ export const startInterview = asyncHandler(async (req, res) => {
   });
 
   res.status(201).json({
+    data: {
+      session,
+      creditsDeducted,
+      creditsRemaining,
+    },
     session,
     creditsDeducted,
     creditsRemaining,
@@ -292,6 +297,12 @@ export const concludeInterview = asyncHandler(async (req, res) => {
     }).sort({ createdAt: -1 });
 
     return res.json({
+      data: {
+        session,
+        libraryItem: existingLibItem,
+        creditsDeducted: 0,
+        creditsRemaining: req.user.wallet?.creditsRemaining ?? 0,
+      },
       session,
       libraryItem: existingLibItem,
       creditsDeducted: 0,
@@ -395,6 +406,12 @@ export const concludeInterview = asyncHandler(async (req, res) => {
   });
 
   res.json({
+    data: {
+      session,
+      libraryItem,
+      creditsDeducted,
+      creditsRemaining,
+    },
     session,
     libraryItem,
     creditsDeducted,
@@ -411,6 +428,9 @@ export const getInterviews = asyncHandler(async (req, res) => {
   const sessions = await InterviewSession.find({ userId }).sort({ createdAt: -1 });
 
   res.json({
+    data: {
+      interviews: sessions,
+    },
     interviews: sessions,
   });
 });
@@ -429,6 +449,9 @@ export const getInterviewById = asyncHandler(async (req, res) => {
   }
 
   res.json({
+    data: {
+      interview: session,
+    },
     interview: session,
   });
 });

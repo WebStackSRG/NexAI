@@ -246,7 +246,6 @@ export async function streamInterviewResponse({
   interviewId,
   content,
   model,
-  isSimulation,
   signal,
   onToken,
   onDone,
@@ -262,14 +261,11 @@ export async function streamInterviewResponse({
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
-  if (isSimulation) {
-    headers['x-simulation'] = 'true';
-  }
 
   const response = await fetch(url, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ content, model, isSimulation: Boolean(isSimulation) }),
+    body: JSON.stringify({ content, model }),
     signal,
     credentials: 'include',
   });

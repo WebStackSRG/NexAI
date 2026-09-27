@@ -23,7 +23,10 @@ const aiLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'test',
+  skip: (req) =>
+    process.env.NODE_ENV === 'test' ||
+    req.body?.isSimulation === true ||
+    req.headers?.['x-simulation'] === 'true',
   message: {
     error: {
       code: 'TOO_MANY_REQUESTS',

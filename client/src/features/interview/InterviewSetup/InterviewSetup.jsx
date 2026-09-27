@@ -63,7 +63,6 @@ export function InterviewSetup({
   onTopicChange,
   onModelChange,
   onStart,
-  onStartSimulation,
   isStarting = false,
   sessions = [],
   onSelectSession,
@@ -243,24 +242,13 @@ export function InterviewSetup({
                 onClick={onStart}
                 disabled={!role.trim() || !topic.trim() || isStarting}
                 loading={isStarting}
+                leftIcon={<Play size={18} />}
               >
-                <Play size={18} />
                 Enter Simulation Arena
               </Button>
 
-              <Button
-                variant="secondary"
-                size="md"
-                className={styles.simulationBtn}
-                onClick={onStartSimulation}
-                disabled={!role.trim() || !topic.trim() || isStarting}
-                loading={isStarting}
-              >
-                🎮 Launch Demo Simulation (No Credits Required)
-              </Button>
-
               <span className={styles.meteringNotice}>
-                ⚡ Live mode: metered with credits (~1-2 credits/turn) · Simulation mode: free instant testing
+                ⚡ Real-time AI interviewer metered with credits (~1-2 credits/turn)
               </span>
             </div>
           </Card>
@@ -346,7 +334,6 @@ InterviewSetup.propTypes = {
   onTopicChange: PropTypes.func.isRequired,
   onModelChange: PropTypes.func.isRequired,
   onStart: PropTypes.func.isRequired,
-  onStartSimulation: PropTypes.func,
   isStarting: PropTypes.bool,
   sessions: PropTypes.array,
   onSelectSession: PropTypes.func.isRequired,

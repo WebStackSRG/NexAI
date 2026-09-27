@@ -23,8 +23,8 @@ import { ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils/cn';
 import styles from './CommandPalette.module.scss';
 
-export function CommandPalette() {
-  const [open, setOpen] = useState(false);
+export function CommandPalette({ defaultOpen = false } = {}) {
+  const [open, setOpen] = useState(defaultOpen);
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [searchResults, setSearchResults] = useState({ library: [], prompts: [], chats: [] });
@@ -249,7 +249,7 @@ export function CommandPalette() {
   // Ensure active element is scrolled into view
   useEffect(() => {
     if (itemRefs.current[selectedIndex]) {
-      itemRefs.current[selectedIndex].scrollIntoView({
+      itemRefs.current[selectedIndex]?.scrollIntoView?.({
         block: 'nearest',
         behavior: 'smooth',
       });
