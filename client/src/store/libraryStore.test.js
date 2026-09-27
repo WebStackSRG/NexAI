@@ -52,6 +52,8 @@ describe('libraryStore Zustand Store (Step 8)', () => {
       isUploadModalOpen: false,
       isViewDocModalOpen: false,
       viewingDoc: null,
+      isViewItemModalOpen: false,
+      viewingItem: null,
       isExportingPdf: false,
       isEditModalOpen: false,
       editingItem: null,
@@ -183,4 +185,39 @@ describe('libraryStore Zustand Store (Step 8)', () => {
     expect(useLibraryStore.getState().isConfirmDeleteOpen).toBe(false);
     expect(useLibraryStore.getState().itemToDelete).toBeNull();
   });
+
+  it('opens and closes item detail view modal', () => {
+    const mockNote = { _id: 'note-1', title: 'Interactive Note', type: 'note', content: '# Hello' };
+    useLibraryStore.getState().openViewItemModal(mockNote);
+
+    expect(useLibraryStore.getState().isViewItemModalOpen).toBe(true);
+    expect(useLibraryStore.getState().viewingItem).toEqual(mockNote);
+
+    useLibraryStore.getState().closeViewItemModal();
+
+    expect(useLibraryStore.getState().isViewItemModalOpen).toBe(false);
+    expect(useLibraryStore.getState().viewingItem).toBeNull();
+  });
+
+  it('updates library item including note content and updates viewingItem', async () => {
+    const originalItem = { _id: 'note-1', title: 'Note 1', type: 'note', content: 'draft' };
+    const updatedItem = { _id: 'note-1', title: 'Note 1 Final', type: 'note', content: 'final body' };
+
+    useLibraryStore.setState({
+      items: [originalItem],
+      viewingItem: originalItem,
+    });
+
+    libraryApi.updateItem.mockResolvedValueOnce({ data: updatedItem });
+
+    const result = await useLibraryStore.getState().updateItem('note-1', {
+      title: 'Note 1 Final',
+      content: 'final body',
+    });
+
+    expect(result).toEqual(updatedItem);
+    expect(useLibraryStore.getState().items[0]).toEqual(updatedItem);
+    expect(useLibraryStore.getState().viewingItem).toEqual(updatedItem);
+  });
 });
+

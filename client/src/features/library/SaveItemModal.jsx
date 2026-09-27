@@ -24,7 +24,10 @@ export function SaveItemModal() {
   const handleSuggest = async (payload) => {
     try {
       const result = await suggestItem(payload);
-      setStepSuggestion(result);
+      setStepSuggestion({
+        ...result,
+        content: payload.content || result?.content,
+      });
     } catch {
       // Handled in store toast / error state
     }
@@ -63,7 +66,13 @@ export function SaveItemModal() {
           isSaving={isSaving}
         />
       ) : (
-        <SaveItemForm onSuggest={handleSuggest} isSuggesting={isSuggesting} error={suggestError} />
+        <SaveItemForm
+          onSuggest={handleSuggest}
+          onDirectSave={handleSave}
+          isSuggesting={isSuggesting}
+          isSaving={isSaving}
+          error={suggestError}
+        />
       )}
     </Modal>
   );

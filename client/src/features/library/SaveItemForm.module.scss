@@ -61,6 +61,12 @@
   line-height: var(--leading-normal);
 }
 
+.buttonRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .loadingBox {
   display: flex;
   flex-direction: column;

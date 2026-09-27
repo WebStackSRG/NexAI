@@ -1,0 +1,193 @@
+@use '@/styles/abstracts' as *;
+
+.editorContainer {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-surface);
+  overflow: hidden;
+  transition: border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+
+  &:focus-within {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 1px var(--color-accent);
+  }
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-bg-elevated);
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.modeTabs {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.modeTab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 4px 10px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-muted);
+  border: none;
+  background: transparent;
+  border-radius: calc(var(--radius-sm) - 2px);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-standard);
+
+  &:hover {
+    color: var(--color-text-primary);
+  }
+
+  &.active {
+    background-color: var(--color-bg-elevated);
+    color: var(--color-accent);
+    font-weight: var(--weight-semibold);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.toolbarGroup {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.divider {
+  width: 1px;
+  height: 18px;
+  background-color: var(--color-border);
+  margin: 0 var(--space-1);
+}
+
+.toolBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-standard);
+  font-size: var(--text-xs);
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+    color: var(--color-text-primary);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &.active {
+    background-color: color-mix(in srgb, var(--color-accent) 15%, transparent);
+    color: var(--color-accent);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.editorArea {
+  position: relative;
+  width: 100%;
+  min-height: 220px;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 220px;
+  padding: var(--space-3);
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  resize: vertical;
+  tab-size: 2;
+
+  &::placeholder {
+    color: var(--color-text-muted);
+    font-family: var(--font-sans);
+  }
+
+  @include custom-scrollbar;
+}
+
+.previewArea {
+  padding: var(--space-4);
+  min-height: 220px;
+  max-height: 500px;
+  overflow-y: auto;
+  background-color: var(--color-bg-surface);
+  line-height: var(--leading-relaxed);
+
+  @include custom-scrollbar;
+}
+
+.emptyPreview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 180px;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-style: italic;
+}
+
+.statusBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-1) var(--space-3);
+  background-color: var(--color-bg-elevated);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.statGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.statItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hintText {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}

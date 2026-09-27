@@ -10,11 +10,14 @@ import {
   Mic,
   Upload,
   Layers,
+  ChevronDown,
+  X,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { SearchBar } from '@/components/common/SearchBar';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Button } from '@/components/ui/Button';
+import { Dropdown } from '@/components/ui/Dropdown';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import {
@@ -25,11 +28,13 @@ import {
   FileUploaderModal,
   DocumentViewModal,
   InterviewViewModal,
+  ItemDetailModal,
 } from '@/features/library';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils/cn';
+import { FilterPopover } from './FilterPopover';
 import styles from './LibraryPage.module.scss';
 
 const TABS = [
@@ -64,6 +69,7 @@ export default function LibraryPage() {
     openUploadModal,
     openViewDocModal,
     openViewInterviewModal,
+    openViewItemModal,
     exportPdf,
     openDeleteDialog,
     closeDeleteDialog,
@@ -198,6 +204,29 @@ export default function LibraryPage() {
 
   const emptyDetails = getEmptyStateDetails();
 
+  const actionDropdownItems = [
+    {
+      icon: <Plus size={15} />,
+      label: 'Note or Link',
+      onClick: openAddModal,
+    },
+    {
+      icon: <Sparkles size={15} />,
+      label: 'New AI Document',
+      onClick: openDocGenModal,
+    },
+    {
+      icon: <Upload size={15} />,
+      label: 'Upload File',
+      onClick: openUploadModal,
+    },
+    {
+      icon: <Mic size={15} />,
+      label: 'Start Mock Interview',
+      onClick: () => navigate(ROUTES.INTERVIEW),
+    },
+  ];
+
   return (
     <div className={styles.page}>
       <PageHeader
@@ -205,27 +234,21 @@ export default function LibraryPage() {
         description="Unified personal repository for notes, bookmarks, custom files, AI-generated documents, and interview transcripts."
         actions={
           <div className={styles.headerActions}>
-            <Button
-              variant="secondary"
-              onClick={openUploadModal}
-              leftIcon={<Upload size={15} />}
-            >
-              Upload File
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={openDocGenModal}
-              leftIcon={<Sparkles size={15} />}
-            >
-              New Document
-            </Button>
-            <Button
-              variant="primary"
-              onClick={openAddModal}
-              leftIcon={<Plus size={16} />}
-            >
-              Add Note / Link
-            </Button>
+            <Dropdown
+              align="right"
+              trigger={
+                <Button
+                  variant="primary"
+                  leftIcon={<Plus size={16} />}
+                  rightIcon={<ChevronDown size={14} />}
+                  aria-label="Add new item"
+                  title="Add new item"
+                >
+                  Add
+                </Button>
+              }
+              items={actionDropdownItems}
+            />
           </div>
         }
       />
@@ -253,35 +276,41 @@ export default function LibraryPage() {
       </div>
 
       <div className={styles.toolbar}>
-        <div className={styles.searchWrapper}>
-          <SearchBar
-            value={localSearch}
-            onChange={setLocalSearch}
-            onClear={handleClearSearch}
-            placeholder="Search by meaning or keywords across notes, documents, and files..."
-          />
+        <div className={styles.searchRow}>
+          <div className={styles.searchWrapper}>
+            <SearchBar
+              value={localSearch}
+              onChange={setLocalSearch}
+              onClear={handleClearSearch}
+              placeholder="Search by meaning or keywords across notes, documents, and files..."
+            />
+          </div>
+
+          {tags && tags.length > 0 && (
+            <FilterPopover
+              tags={tags}
+              activeTag={activeTag}
+              onSelectTag={setActiveTag}
+            />
+          )}
         </div>
 
-        {tags && tags.length > 0 && (
-          <div className={styles.tagFilterBar}>
-            <span className={styles.tagFilterLabel}>Filter:</span>
-            <button
-              type="button"
-              className={cn(styles.tagFilterChip, activeTag === null && styles.active)}
-              onClick={() => setActiveTag(null)}
-            >
-              All Tags
-            </button>
-            {tags.map((tag) => (
+        {/* Clean active tag indicator chip */}
+        {activeTag && (
+          <div className={styles.activeFilterRow}>
+            <span className={styles.activeFilterLabel}>Active Filter:</span>
+            <span className={styles.activeTagBadge}>
+              #{activeTag}
               <button
-                key={tag}
                 type="button"
-                className={cn(styles.tagFilterChip, activeTag === tag && styles.active)}
-                onClick={() => setActiveTag(tag)}
+                className={styles.activeTagRemoveBtn}
+                onClick={() => setActiveTag(null)}
+                aria-label="Remove filter"
+                title="Remove filter"
               >
-                #{tag}
+                <X size={12} />
               </button>
-            ))}
+            </span>
           </div>
         )}
 
@@ -348,6 +377,7 @@ export default function LibraryPage() {
               key={item._id}
               item={item}
               activeTag={activeTag}
+              onCardClick={openViewItemModal}
               onTagClick={(tag) => setActiveTag(tag)}
               onEdit={openEditModal}
               onDelete={openDeleteDialog}
@@ -366,6 +396,7 @@ export default function LibraryPage() {
       <FileUploaderModal />
       <DocumentViewModal />
       <InterviewViewModal />
+      <ItemDetailModal />
 
       {/* Delete Confirmation */}
       <ConfirmDialog

@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { Globe, FileText, Sparkles } from 'lucide-react';
+import PropTypes from 'prop-types';
+import { Globe, FileText, Sparkles, Check } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
-import { Textarea } from '@/components/ui/Textarea';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
+import { NoteEditor } from './NoteEditor';
 import { cn } from '@/lib/utils/cn';
 import styles from './SaveItemForm.module.scss';
 
-export function SaveItemForm({ onSuggest, isSuggesting, error }) {
+export function SaveItemForm({ onSuggest, onDirectSave, isSuggesting, isSaving, error }) {
   const [type, setType] = useState('link');
   const [url, setUrl] = useState('');
   const [noteContent, setNoteContent] = useState('');
@@ -53,6 +54,31 @@ export function SaveItemForm({ onSuggest, isSuggesting, error }) {
         suggestedTitle: noteTitleHint.trim(),
       });
     }
+  };
+
+  const handleDirectSaveNote = (e) => {
+    e.preventDefault();
+    setValidationError('');
+
+    const trimmed = noteContent.trim();
+    if (!trimmed) {
+      setValidationError('Please enter note content');
+      return;
+    }
+
+    // Auto title if not specified
+    const title =
+      noteTitleHint.trim() ||
+      trimmed.split('\n')[0].replace(/^#+\s*/, '').slice(0, 50) ||
+      'Untitled Note';
+
+    onDirectSave?.({
+      type: 'note',
+      title,
+      content: trimmed,
+      summary: trimmed.slice(0, 150) + (trimmed.length > 150 ? '...' : ''),
+      tags: [],
+    });
   };
 
   if (isSuggesting) {
@@ -120,34 +146,61 @@ export function SaveItemForm({ onSuggest, isSuggesting, error }) {
           <div className={styles.hint}>
             NexAI will fetch the article content and auto-generate title, summary, and tags.
           </div>
+          <Button type="submit" variant="primary" fullWidth leftIcon={<Sparkles size={16} />}>
+            Suggest Title & Tags
+          </Button>
         </div>
       ) : (
         <div className={styles.inputGroup}>
           <Input
-            label="Title Hint (Optional)"
+            label="Note Title (Optional)"
             type="text"
             value={noteTitleHint}
             onChange={(e) => setNoteTitleHint(e.target.value)}
-            placeholder="e.g. Docker commands cheat sheet"
+            placeholder="e.g. Architecture decisions, API cheatsheet..."
           />
-          <Textarea
-            label="Note or Snippet Content"
-            value={noteContent}
-            onChange={(e) => setNoteContent(e.target.value)}
-            placeholder="Paste your notes, thoughts, code snippets, or documentation..."
-            rows={5}
-            autoFocus
-          />
-          <div className={styles.hint}>
-            NexAI will analyze your text to create structured metadata and make it semantically
-            searchable.
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span className={styles.label}>Note Content (Interactive Markdown)</span>
+            <NoteEditor
+              value={noteContent}
+              onChange={setNoteContent}
+              placeholder="Write your note with rich markdown formatting, code snippets, lists, and quotes..."
+              minHeight={200}
+              autoFocus
+            />
+          </div>
+
+          <div className={styles.buttonRow}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleDirectSaveNote}
+              loading={isSaving}
+              leftIcon={<Check size={16} />}
+              style={{ flex: 1 }}
+            >
+              Save Directly
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              leftIcon={<Sparkles size={16} />}
+              style={{ flex: 1.2 }}
+            >
+              AI Suggest & Tags
+            </Button>
           </div>
         </div>
       )}
-
-      <Button type="submit" variant="primary" fullWidth leftIcon={<Sparkles size={16} />}>
-        Suggest Title & Tags
-      </Button>
     </form>
   );
 }
+
+SaveItemForm.propTypes = {
+  onSuggest: PropTypes.func.isRequired,
+  onDirectSave: PropTypes.func,
+  isSuggesting: PropTypes.bool,
+  isSaving: PropTypes.bool,
+  error: PropTypes.string,
+};
