@@ -101,7 +101,21 @@ NexAI is a personal knowledge and developer productivity workspace designed with
   - Automatic archival of completed scorecard and transcript into the Library under `type: 'interview'`
   - Metered with `creditCheck` and atomic token deduction ($\lceil \text{totalTokens} / 100 \rceil$)
   - 167 tests passing across monorepo (89 backend, 78 frontend)
-- [ ] **Step 10: Unified Search & Command Palette** (`feature/search`)
-- [ ] **Step 11: Wallet & Billing** (`feature/wallet-billing`)
-- [ ] **Step 12: Admin Dashboard** (`feature/admin-dashboard`)
-- [ ] **Step 13: Hardening & Viva Prep** (`feature/hardening`)
+- [x] **Step 10: Unified Search & Command Palette** (`feature/search`)
+  - Dedicated `/search` route and global Command Palette (`Ctrl+K`)
+  - Deep hybrid multi-collection search across Library, Prompts, and Chats
+  - Scoped to authenticated user with category tab breakdowns and recent query memory
+- [x] **Step 11: Wallet & Billing** (`feature/wallet-billing`)
+  - Razorpay Test Mode integration with dynamic checkout script loading
+  - Cryptographic HMAC SHA-256 signature verification and atomic idempotency locks
+  - Real-time wallet credit additions, transaction history ledger, and instant test recharge
+- [x] **Step 12: Admin Dashboard** (`feature/admin-dashboard`)
+  - Role-gated `/admin` portal with `requireRole('admin')` server middleware
+  - Aggregated platform KPIs: active users, total tokens, revenue, and error metrics
+  - Time-series charts, Gemini Flash vs Pro split, and live transaction/error tables
+- [x] **Step 13: Hardening & Viva Prep** (`feature/hardening`)
+  - Complete 8-stage Supertest End-to-End user journey test suite (`server/tests/e2e.journey.test.js`)
+  - Zero lint errors, production build verified, and CSS warnings resolved
+  - Comprehensive diploma/capstone viva defense guide (`docs/viva-prep.md`)
+  - 227 tests passing across monorepo (127 backend, 100 frontend)
+

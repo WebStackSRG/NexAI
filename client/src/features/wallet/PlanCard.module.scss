@@ -2,7 +2,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  justifyContent: space-between;
+  justify-content: space-between;
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
   background-color: var(--color-bg-surface);
@@ -40,7 +40,7 @@
 .titleRow {
   display: flex;
   align-items: center;
-  justifyContent: space-between;
+  justify-content: space-between;
   gap: var(--space-2);
   margin-bottom: var(--space-1);
 }

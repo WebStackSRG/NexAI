@@ -186,3 +186,31 @@ This log tracks architectural and design decisions made for the NexAI project, p
   4. **Razorpay Test Mode Integration:** Built `client/src/features/wallet/` (`PlanCard`, `TransactionTable`) and `WalletPage.jsx` supporting dynamic script injection (`https://checkout.razorpay.com/v1/checkout.js`), test-card checkout flows, and a zero-friction "⚡ Instant Test Mode Recharge" action for automated grading and offline demo environments.
 
 
+
+## ADR-020: Role-Gated Admin Analytics Dashboard & Aggregation Pipeline
+
+- **Date:** 2026-09-27
+- **Status:** Accepted
+- **Context:** Platform administrators require comprehensive visibility into platform KPIs, token consumption trends, model utilization split (Flash vs Pro), revenue metrics, and error rates, while preventing non-admin users from viewing sensitive administrative data.
+- **Decision:**
+  1. **Strict RBAC & Route Protection:** Implemented `requireRole('admin')` middleware on server (`/api/admin/*`) and `AdminRoute.jsx` on client, returning HTTP 403 Forbidden to non-admin users and automatically redirecting unauthenticated users.
+  2. **High-Performance Aggregations:** Aggregated platform statistics via MongoDB aggregation pipelines (`UsageLog.aggregate`, `Transaction.aggregate`) for daily time-series analysis, model breakdown, and recent transaction audit logs.
+  3. **Data Visualization:** Built an admin portal with interactive charts and KPI metric cards using semantic design tokens and accessible data tables.
+
+## ADR-021: Hardening, Supertest End-to-End User Journey Suite & Viva Defense Guide
+
+- **Date:** 2026-09-27
+- **Status:** Accepted
+- **Context:** Prior to final capstone defense and production release, the monorepo required end-to-end integration validation across interconnected domains, code cleanliness verification (zero console logs, clean build output), and a comprehensive technical defense preparation guide.
+- **Decision:**
+  1. **Supertest E2E Journey Suite (`server/tests/e2e.journey.test.js`):** Engineered a multi-step user lifecycle test verifying the complete user progression in sequence:
+     - User registration & starter credit provisioning (`POST /api/auth/register`)
+     - Wallet balance verification (`GET /api/wallet`)
+     - AI Chat creation and SSE streaming response with atomic credit deduction (`POST /api/chats`, `POST /api/chats/:id/messages`)
+     - Suggest -> Review -> Confirm Library workflow (`POST /api/library/suggest`, `POST /api/library`)
+     - AI Mock Interview lifecycle (`POST /api/interview/start` -> `POST /api/interview/:id/respond` -> `POST /api/interview/:id/conclude` with scorecard & auto-archival)
+     - Wallet recharge order creation and cryptographic HMAC SHA-256 verification (`POST /api/wallet/orders`, `POST /api/wallet/verify`)
+     - Admin verification of platform KPIs and completed transactions (`GET /api/admin/stats`, `GET /api/admin/transactions`)
+     - Credit exhaustion gate (HTTP 402 `INSUFFICIENT_CREDITS`)
+  2. **Code Cleanliness & Build Polish:** Fixed CSS property syntax warnings in `client/src/features/wallet/PlanCard.module.scss`, verified zero debug `console.log` in production runtime code, and ensured complete parity in `.env.example` configurations.
+  3. **Viva Defense Guide (`docs/viva-prep.md`):** Authored an in-depth viva examination defense guide detailing system architecture diagrams, RAG pipeline mechanics, the 5 core moats explaining why NexAI is not an AI wrapper, and model answers for the top 10 toughest capstone defense questions.
