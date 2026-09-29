@@ -6,19 +6,17 @@ import {
   CheckCircle2,
   AlertTriangle,
   RefreshCw,
+  Crown,
   ShieldAlert,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { Skeleton } from '@/components/ui/Skeleton';
 import {
   PlanCard,
   TransactionTable,
-  TestCredentialsCard,
-  TokenEconomicsCard,
-  UpiQrModal,
+  RazorpayPaymentModal,
 } from '@/features/wallet';
 import { useAuthStore } from '@/store/authStore';
 import { useWalletStore } from '@/store/walletStore';
@@ -32,23 +30,19 @@ export default function WalletPage() {
     plans,
     transactions,
     pagination,
-    isLoadingWallet,
-    isLoadingPlans,
     isLoadingTransactions,
     isProcessingCheckout,
-    checkoutPlanId,
     error,
     clearError,
     fetchWallet,
     fetchPlans,
     fetchTransactions,
-    checkout,
     simulateTestRecharge,
   } = useWalletStore();
 
   const [notification, setNotification] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [qrModalPlan, setQrModalPlan] = useState(null);
+  const [activeCheckoutPlan, setActiveCheckoutPlan] = useState(null);
 
   const loadAllData = useCallback(async () => {
     await Promise.all([fetchWallet(), fetchPlans(), fetchTransactions(1)]);
@@ -66,39 +60,50 @@ export default function WalletPage() {
   };
 
   const creditsRemaining =
-    wallet?.creditsRemaining ?? user?.wallet?.creditsRemaining ?? 100;
+    wallet?.creditsRemaining ?? user?.wallet?.creditsRemaining ?? 0;
   const currentTier = wallet?.tier || user?.wallet?.tier || 'free';
   const totalTokens =
     wallet?.totalTokensConsumed ?? user?.wallet?.totalTokensConsumed ?? 0;
 
+  const isPro = currentTier === 'pro_monthly';
+
   const handlePaymentSuccess = (result) => {
     const creditsAdded = result.transaction?.creditsAdded || 'credits';
     setNotification(
-      `Payment verified successfully! Added ${creditsAdded.toLocaleString()} credits to your wallet.`,
+      `Payment verified! +${creditsAdded.toLocaleString()} credits added to your wallet.`,
     );
     setTimeout(() => setNotification(null), 7000);
   };
 
-  const handlePaymentError = (_err) => {
-    // Error is already stored in walletStore, but keep notification clear
-    setNotification(null);
+  const handleOpenCheckout = (plan) => {
+    setActiveCheckoutPlan(plan);
   };
 
-  const handleCheckout = (plan) => {
-    setQrModalPlan(plan);
+  const handleModalPayment = async (plan) => {
+    return new Promise((resolve, reject) => {
+      simulateTestRecharge({
+        plan,
+        onPaymentSuccess: (result) => {
+          handlePaymentSuccess(result);
+          resolve(result);
+        },
+        onPaymentError: (err) => {
+          reject(err);
+        },
+      });
+    });
   };
 
-  const handleSimulate = (plan) => {
+  const handleDirectSimulate = (plan) => {
     simulateTestRecharge({
       plan,
       onPaymentSuccess: handlePaymentSuccess,
-      onPaymentError: handlePaymentError,
     });
   };
 
   return (
     <div className={styles.container}>
-      {/* Page Header with Live Balance Sync */}
+      {/* Header */}
       <PageHeader
         title="Wallet &amp; Billing"
         description="Utility-metered credit ledger backed by real AI token usage."
@@ -114,14 +119,14 @@ export default function WalletPage() {
             }
             loading={isRefreshing}
             onClick={handleManualSync}
-            title="Fetch latest balance from server"
+            title="Sync balance from server"
           >
             Sync Balance
           </Button>
         }
       />
 
-      {/* Global Error Banner with Retry (Rule 13) */}
+      {/* Global Error Banner */}
       {error && (
         <div className={styles.errorBanner} role="alert">
           <div className={styles.bannerContent}>
@@ -129,11 +134,7 @@ export default function WalletPage() {
             <span>{error}</span>
           </div>
           <div className={styles.bannerActions}>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleManualSync}
-            >
+            <Button variant="secondary" size="sm" onClick={handleManualSync}>
               Retry
             </Button>
             <button
@@ -166,7 +167,7 @@ export default function WalletPage() {
         </div>
       )}
 
-      {/* Low / Zero Balance Gatekeeping Warnings */}
+      {/* Zero Balance / Low Balance Banner */}
       {creditsRemaining === 0 ? (
         <div className={styles.exhaustedBanner}>
           <ShieldAlert size={20} />
@@ -181,141 +182,101 @@ export default function WalletPage() {
           <AlertTriangle size={18} />
           <div>
             <strong>Low Balance Warning:</strong> You have only {creditsRemaining} credits
-            remaining (~{(creditsRemaining * 100).toLocaleString()} tokens). Top up to ensure
-            uninterrupted multi-turn conversations and mock interviews.
+            remaining. Top up below to avoid conversation interruption.
           </div>
         </div>
       ) : null}
 
-      {/* Metrics Row with Skeletons */}
-      <div className={styles.statsGrid}>
-        <Card padding="md">
-          {isLoadingWallet && !wallet ? (
-            <div className={styles.skeletonStat}>
-              <Skeleton style={{ height: 16, width: '40%' }} />
-              <Skeleton style={{ height: 36, width: '60%', margin: '8px 0' }} />
-              <Skeleton style={{ height: 12, width: '70%' }} />
+      {/* Unified "My Current Plan & Credits" Window */}
+      <Card padding="lg" className={styles.myPlanCard}>
+        <div className={styles.myPlanGrid}>
+          {/* Active Tier Column */}
+          <div className={styles.tierCol}>
+            <div className={styles.tierHeader}>
+              <Crown size={20} className={isPro ? styles.crownPro : styles.crownFree} />
+              <span className={styles.tierSubtitle}>Current Active Plan</span>
             </div>
-          ) : (
-            <>
-              <div className={styles.statHeader}>
-                <span className={styles.statLabel}>Available Credits</span>
-                <Badge tone={creditsRemaining > 20 ? 'accent' : 'danger'}>
-                  {creditsRemaining > 20 ? 'Active' : 'Low Balance'}
-                </Badge>
-              </div>
-              <div className={styles.statValueRow}>
-                <span className={styles.statValue}>
-                  {creditsRemaining.toLocaleString()}
-                </span>
-                <span className={styles.statUnit}>credits</span>
-              </div>
-              <p className={styles.statHint}>1 credit ≈ 100 Gemini tokens consumed</p>
-            </>
-          )}
-        </Card>
-
-        <Card padding="md">
-          {isLoadingWallet && !wallet ? (
-            <div className={styles.skeletonStat}>
-              <Skeleton style={{ height: 16, width: '40%' }} />
-              <Skeleton style={{ height: 36, width: '60%', margin: '8px 0' }} />
-              <Skeleton style={{ height: 12, width: '70%' }} />
+            <div className={styles.tierTitleRow}>
+              <h2 className={styles.tierTitle}>
+                {isPro ? 'Pro Monthly Tier' : 'Free Starter Tier'}
+              </h2>
+              <Badge tone={isPro ? 'accent' : 'neutral'}>
+                {isPro ? 'Pro Member' : 'Standard'}
+              </Badge>
             </div>
-          ) : (
-            <>
-              <div className={styles.statHeader}>
-                <span className={styles.statLabel}>Account Tier</span>
-                <Badge tone={currentTier === 'pro_monthly' ? 'accent' : 'neutral'}>
-                  {currentTier === 'pro_monthly' ? 'Pro Member' : 'Free Tier'}
-                </Badge>
-              </div>
-              <div className={styles.statValueRow}>
-                <span className={styles.statValue}>
-                  {currentTier === 'pro_monthly' ? 'Pro Monthly' : 'Free Starter'}
-                </span>
-              </div>
-              <p className={styles.statHint}>
-                {currentTier === 'pro_monthly'
-                  ? 'Pro models, unlimited workspaces & priority streaming'
-                  : 'Upgrade with Power Studio Tier for pro privileges'}
-              </p>
-            </>
-          )}
-        </Card>
+            <p className={styles.tierPerks}>
+              {isPro
+                ? '✓ Gemini 3.1 Pro & Flash access • Priority streaming • Unlimited workspaces'
+                : 'Standard Gemini 3.8 Flash access • Personal library • 1 credit ≈ 100 tokens'}
+            </p>
+          </div>
 
-        <Card padding="md">
-          {isLoadingWallet && !wallet ? (
-            <div className={styles.skeletonStat}>
-              <Skeleton style={{ height: 16, width: '40%' }} />
-              <Skeleton style={{ height: 36, width: '60%', margin: '8px 0' }} />
-              <Skeleton style={{ height: 12, width: '70%' }} />
+          {/* Credits Balance Column */}
+          <div className={styles.creditsCol}>
+            <div className={styles.creditsHeader}>
+              <span className={styles.colLabel}>Available Credits</span>
+              <Badge tone={creditsRemaining > 20 ? 'accent' : 'danger'}>
+                {creditsRemaining > 20 ? 'Active' : 'Depleted'}
+              </Badge>
             </div>
-          ) : (
-            <>
-              <div className={styles.statHeader}>
-                <span className={styles.statLabel}>Total Tokens Consumed</span>
-                <Sparkles size={16} style={{ color: 'var(--color-text-muted)' }} />
-              </div>
-              <div className={styles.statValueRow}>
-                <span className={styles.statValue}>{totalTokens.toLocaleString()}</span>
-                <span className={styles.statUnit}>tokens</span>
-              </div>
-              <p className={styles.statHint}>Cumulative input + output across all models</p>
-            </>
-          )}
-        </Card>
-      </div>
+            <div className={styles.creditValueRow}>
+              <span className={styles.creditsBig}>{creditsRemaining.toLocaleString()}</span>
+              <span className={styles.creditsUnit}>credits</span>
+            </div>
+            <span className={styles.creditsHint}>
+              1 credit = 100 Gemini tokens (atomic source metering)
+            </span>
+          </div>
 
-      {/* Razorpay Test Mode Sandbox Credentials Drawer */}
-      <TestCredentialsCard />
+          {/* Cumulative Token Consumption Column */}
+          <div className={styles.usageCol}>
+            <div className={styles.usageHeader}>
+              <span className={styles.colLabel}>Total Tokens Consumed</span>
+              <Sparkles size={16} className={styles.sparkleIcon} />
+            </div>
+            <div className={styles.tokenValueRow}>
+              <span className={styles.tokensBig}>{totalTokens.toLocaleString()}</span>
+              <span className={styles.tokensUnit}>tokens</span>
+            </div>
+            <span className={styles.creditsHint}>Cumulative input + output across all models</span>
+          </div>
+        </div>
+      </Card>
 
-      {/* Recharge Packages Section */}
-      <section className={styles.section}>
+      {/* Recharge & Upgrade Plans Section */}
+      <section className={styles.plansSection}>
         <div className={styles.sectionHeader}>
           <div className={styles.sectionTitleRow}>
-            <Zap size={20} style={{ color: 'var(--color-accent)' }} />
-            <h2>Recharge Packages</h2>
+            <Zap size={22} className={styles.zapIcon} />
+            <h2>Recharge &amp; Upgrade Plans</h2>
           </div>
           <p>
-            Credit packages and pricing are securely verified on the server. Select a tier to top-up.
+            Choose a recharge top-up or upgrade to Pro Monthly. Secured via Razorpay Test Mode with dynamic UPI &amp; QR verification.
           </p>
         </div>
 
-        {isLoadingPlans && plans.length === 0 ? (
-          <div className={styles.skeletonGrid}>
-            <Skeleton className={styles.skeletonCard} />
-            <Skeleton className={styles.skeletonCard} />
-            <Skeleton className={styles.skeletonCard} />
-          </div>
-        ) : (
-          <div className={styles.plansGrid}>
-            {plans.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                isProcessing={isProcessingCheckout && checkoutPlanId === plan.id}
-                onCheckout={handleCheckout}
-                onSimulate={handleSimulate}
-              />
-            ))}
-          </div>
-        )}
+        <div className={styles.plansGrid}>
+          {plans.map((plan) => (
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              isCurrentTier={isPro && plan.tier === 'pro_monthly'}
+              isProcessing={isProcessingCheckout && activeCheckoutPlan?.id === plan.id}
+              onCheckout={handleOpenCheckout}
+              onSimulate={handleDirectSimulate}
+            />
+          ))}
+        </div>
       </section>
 
-      {/* Token & Credit Economics Guide */}
-      <TokenEconomicsCard />
-
       {/* Billing Ledger / Transaction History */}
-      <section className={styles.section}>
+      <section className={styles.historySection}>
         <div className={styles.sectionHeader}>
           <div className={styles.sectionTitleRow}>
             <Wallet size={20} style={{ color: 'var(--color-text-secondary)' }} />
             <h2>Transaction History</h2>
           </div>
-          <p>
-            Audited transaction ledger ensuring each recharge is credited exactly once.
-          </p>
+          <p>Audited transaction ledger ensuring each recharge is credited exactly once.</p>
         </div>
 
         <TransactionTable
@@ -326,35 +287,12 @@ export default function WalletPage() {
         />
       </section>
 
-      {/* Direct Razorpay UPI & QR Checkout Modal */}
-      <UpiQrModal
-        open={Boolean(qrModalPlan)}
-        plan={qrModalPlan}
-        isProcessing={isProcessingCheckout}
-        onClose={() => setQrModalPlan(null)}
-        onConfirmPayment={() => {
-          if (!qrModalPlan) return;
-          simulateTestRecharge({
-            plan: qrModalPlan,
-            onPaymentSuccess: (result) => {
-              handlePaymentSuccess(result);
-              setQrModalPlan(null);
-            },
-            onPaymentError: handlePaymentError,
-          });
-        }}
-        onOpenRazorpayDirect={() => {
-          if (!qrModalPlan) return;
-          checkout({
-            plan: qrModalPlan,
-            user,
-            onPaymentSuccess: (result) => {
-              handlePaymentSuccess(result);
-              setQrModalPlan(null);
-            },
-            onPaymentError: handlePaymentError,
-          });
-        }}
+      {/* Razorpay Test Mode Animation Modal */}
+      <RazorpayPaymentModal
+        open={Boolean(activeCheckoutPlan)}
+        plan={activeCheckoutPlan}
+        onClose={() => setActiveCheckoutPlan(null)}
+        onPaymentSuccess={handleModalPayment}
       />
     </div>
   );

@@ -123,56 +123,174 @@
   }
 }
 
-.statsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: var(--space-4);
+/* My Current Plan & Wallet Status Window */
+.myPlanCard {
+  border: 1px solid var(--color-border);
+  background: linear-gradient(
+    135deg,
+    var(--color-bg-surface) 0%,
+    color-mix(in srgb, var(--color-accent) 4%, var(--color-bg-surface)) 100%
+  );
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
-.skeletonStat {
+.myPlanGrid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: var(--space-6);
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+  }
+}
+
+.tierCol {
   display: flex;
   flex-direction: column;
+  gap: var(--space-2);
+  border-right: 1px solid var(--color-border);
+  padding-right: var(--space-6);
+
+  @media (max-width: 900px) {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    padding-right: 0;
+    padding-bottom: var(--space-4);
+  }
 }
 
-.statHeader {
+.tierHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.crownPro {
+  color: #f59e0b;
+}
+
+.crownFree {
+  color: var(--color-text-muted);
+}
+
+.tierSubtitle {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: var(--weight-bold);
+}
+
+.tierTitleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5);
+  flex-wrap: wrap;
+}
+
+.tierTitle {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.tierPerks {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin: var(--space-1) 0 0 0;
+}
+
+.creditsCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border-right: 1px solid var(--color-border);
+  padding-right: var(--space-6);
+
+  @media (max-width: 900px) {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    padding-right: 0;
+    padding-bottom: var(--space-4);
+  }
+}
+
+.creditsHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-3);
 }
 
-.statLabel {
-  font-size: var(--text-sm);
+.colLabel {
+  font-size: var(--text-xs);
   color: var(--color-text-secondary);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
 }
 
-.statValueRow {
+.creditValueRow {
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
-  margin-bottom: var(--space-2);
+  margin: var(--space-1) 0;
 }
 
-.statValue {
+.creditsBig {
   font-size: var(--text-3xl);
-  font-weight: var(--weight-bold);
+  font-weight: 800;
+  color: var(--color-accent);
+  font-family: var(--font-sans);
+}
+
+.creditsUnit {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.creditsHint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.usageCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.usageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sparkleIcon {
+  color: var(--color-text-muted);
+}
+
+.tokenValueRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: var(--space-1) 0;
+}
+
+.tokensBig {
+  font-size: var(--text-3xl);
+  font-weight: 800;
   color: var(--color-text-primary);
   font-family: var(--font-sans);
 }
 
-.statUnit {
+.tokensUnit {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
 
-.statHint {
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  margin: 0;
-}
-
-.section {
+/* Plans Section */
+.plansSection {
   display: flex;
   flex-direction: column;
 }
@@ -200,25 +318,17 @@
   gap: var(--space-2);
 }
 
+.zapIcon {
+  color: var(--color-accent);
+}
+
 .plansGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
   gap: var(--space-6);
 }
 
-.skeletonGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-  gap: var(--space-6);
-}
-
-.skeletonCard {
-  height: 380px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border);
-  background-color: var(--color-bg-surface);
-  padding: var(--space-6);
+.historySection {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
 }
