@@ -108,8 +108,10 @@ export const useWalletStore = create((set, get) => ({
       // 2. Try loading official Razorpay script
       const scriptLoaded = await get().loadRazorpayScript();
 
-      if (!scriptLoaded || !window.Razorpay) {
-        // Fallback simulation mode if Razorpay CDN is blocked/offline in test environment
+      const isMockKey = !keyId || keyId.includes('demo') || keyId.includes('mock');
+
+      if (isMockKey || !scriptLoaded || !window.Razorpay) {
+        // Direct simulation mode if Razorpay demo key is active or CDN is blocked
         const verifyRes = await walletApi.verifyPayment({
           razorpay_order_id: orderId,
           razorpay_payment_id: `pay_mock_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
@@ -227,4 +229,6 @@ export const useWalletStore = create((set, get) => ({
       onPaymentError?.(err);
     }
   },
+
+  clearError: () => set({ error: null }),
 }));

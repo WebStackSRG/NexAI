@@ -7,10 +7,131 @@
   padding-bottom: var(--space-12);
 }
 
+.spinIcon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.errorBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+}
+
+.bannerContent {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+.bannerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.dismissBtn {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-weight: var(--weight-bold);
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+  transition: opacity var(--transition-fast);
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.successBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  color: var(--color-success);
+  font-size: var(--text-sm);
+}
+
+.exhaustedBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: rgba(239, 68, 68, 0.12);
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+
+  svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  strong {
+    color: var(--color-danger);
+  }
+}
+
+.lowCreditBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3-5) var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--color-warning);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+
+  svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  strong {
+    color: var(--color-warning);
+  }
+}
+
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: var(--space-4);
+}
+
+.skeletonStat {
+  display: flex;
+  flex-direction: column;
 }
 
 .statHeader {
@@ -51,6 +172,11 @@
   margin: 0;
 }
 
+.section {
+  display: flex;
+  flex-direction: column;
+}
+
 .sectionHeader {
   margin-bottom: var(--space-5);
 
@@ -58,14 +184,20 @@
     font-size: var(--text-xl);
     font-weight: var(--weight-semibold);
     color: var(--color-text-primary);
-    margin: 0 0 var(--space-1) 0;
+    margin: 0;
   }
 
   p {
     font-size: var(--text-sm);
     color: var(--color-text-secondary);
-    margin: 0;
+    margin: var(--space-1) 0 0 0;
   }
+}
+
+.sectionTitleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .plansGrid {
@@ -89,35 +221,4 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-}
-
-.testNoticeBanner {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  background-color: rgba(139, 92, 246, 0.08);
-  border: 1px solid rgba(139, 92, 246, 0.2);
-  color: var(--color-text-secondary);
-  font-size: var(--text-xs);
-  margin-bottom: var(--space-6);
-
-  svg {
-    color: var(--color-accent);
-    flex-shrink: 0;
-  }
-}
-
-.successBanner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-4);
-  border-radius: var(--radius-md);
-  background-color: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.25);
-  color: var(--color-success);
-  font-size: var(--text-sm);
-  margin-bottom: var(--space-6);
 }

@@ -214,3 +214,30 @@ This log tracks architectural and design decisions made for the NexAI project, p
      - Credit exhaustion gate (HTTP 402 `INSUFFICIENT_CREDITS`)
   2. **Code Cleanliness & Build Polish:** Fixed CSS property syntax warnings in `client/src/features/wallet/PlanCard.module.scss`, verified zero debug `console.log` in production runtime code, and ensured complete parity in `.env.example` configurations.
   3. **Viva Defense Guide (`docs/viva-prep.md`):** Authored an in-depth viva examination defense guide detailing system architecture diagrams, RAG pipeline mechanics, the 5 core moats explaining why NexAI is not an AI wrapper, and model answers for the top 10 toughest capstone defense questions.
+
+## ADR-022: Formal 1-Page Academic & Executive Project Abstract
+
+- **Date:** 2026-09-28
+- **Status:** Accepted
+- **Context:** Final diploma/capstone submission and examiner review require a formal, high-impact one-page project abstract articulating the real-world problem statement, the system architecture solution, and verified outcomes. The document must strictly adhere to a single-page printable constraint (A4) and be directly exportable or importable to Google Docs.
+- **Decision:**
+  1. Authored standard academic markdown abstract in `docs/ABSTRACT.md` conforming to capstone project submission standards.
+  2. Created a dedicated print-optimized HTML interface (`docs/ABSTRACT.html`) with CSS `@page { size: A4; margin: 12mm 15mm; }`, professional typography, and a "Copy Formatted Text" clipboard engine allowing 1-click rich-text paste directly into Google Docs without formatting degradation.
+  3. Structured the content into four distinct pillars: Project Metadata, Problem Statement (Real-World Inefficiencies), Proposed Solution (NexAI Subsystems), and Quantifiable Outcomes & Impact.
+
+## ADR-023: Wallet Section Polish, Real-Time Sync, Itemized Receipts & Sandbox Helpers
+
+- **Date:** 2026-09-29
+- **Status:** Accepted
+- **Context:** To ensure full alignment with `docs/BUILD_GUIDE.md` (Step 11), `docs/PRD.md` (Phase 2), and `docs/viva-prep.md` (Defense Demonstration Flow), the Wallet & Billing client feature suite required comprehensive loading, error/retry, and empty state handling (Rule 13), manual live balance synchronization, itemized transaction receipt dialogs, and a developer sandbox credential helper for seamless offline or viva test-mode checkout execution.
+- **Decision:**
+  1. **CreditBadge Export & Component Alignment:** Implemented and exported `CreditBadge` from `client/src/features/wallet/` in accordance with `docs/BUILD_GUIDE.md` specifications, with automatic low-balance visual cues.
+  2. **Live Balance Sync:** Added a "Sync Balance" action on `WalletPage.jsx` with spinning refresh animation, allowing instant live balance reconciliation after AI token usage without full browser reloads.
+  3. **Data View Completeness (Rule 13):**
+     - Skeletons for stats and transaction table rows during network loads.
+     - Global error banner with an explicit "Retry" action if fetching or verification encounters network failures.
+     - Low-balance and zero-balance warning banners highlighting HTTP 402 AI request gatekeeping.
+  4. **Itemized Transaction Receipt Modal (`TransactionReceiptModal.jsx`):** Allows users to click any ledger row or "Receipt" button to inspect detailed cryptographic proof, order references, Razorpay payment identifiers, and printable summaries.
+  5. **Transaction Ledger Status Filtering:** Enhanced `TransactionTable.jsx` with quick status filter pills (`All`, `Success`, `Pending`) for rapid ledger auditing.
+  6. **Interactive Test-Mode Sandbox Credentials & Token Economics:** Added `TestCredentialsCard.jsx` displaying standard Razorpay test card credentials (`4111 •••• •••• 1111`) and test UPI identifiers for viva evaluators, alongside `TokenEconomicsCard.jsx` explaining source token metering (`ceil(tokens / 100)`).
+

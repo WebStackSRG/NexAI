@@ -1,0 +1,166 @@
+.receiptModal {
+  max-width: 520px;
+}
+
+.receiptBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.receiptCard {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.topRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.brandName {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: var(--weight-semibold);
+}
+
+.receiptTitle {
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  margin: var(--space-1) 0 0 0;
+}
+
+.statusWithIcon {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.iconSuccess {
+  color: var(--color-success);
+}
+
+.iconWarning {
+  color: var(--color-warning);
+}
+
+.iconDanger {
+  color: var(--color-danger);
+}
+
+.amountDisplay {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1-5);
+  padding-top: var(--space-2);
+  border-top: 1px dashed var(--color-border);
+}
+
+.currencySymbol {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--color-accent);
+}
+
+.amountValue {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+}
+
+.creditsCredited {
+  font-size: var(--text-sm);
+  color: var(--color-success);
+  font-weight: var(--weight-medium);
+  margin-left: var(--space-1);
+}
+
+.metaList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+}
+
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--text-xs);
+  padding: var(--space-1-5) 0;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--color-border);
+  }
+}
+
+.metaKey {
+  color: var(--color-text-secondary);
+}
+
+.metaVal {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+}
+
+.metaValMono {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  color: var(--color-text-primary);
+  background: var(--color-bg-elevated);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  word-break: break-all;
+  max-width: 250px;
+}
+
+.gatewayBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-accent);
+  font-weight: var(--weight-medium);
+}
+
+.verificationNote {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+
+  svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.leftActions {
+  display: flex;
+  gap: var(--space-2);
+}
