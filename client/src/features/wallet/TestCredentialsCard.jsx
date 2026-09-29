@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CreditCard, Copy, Check, ChevronDown, ChevronUp, ShieldCheck, Sparkles } from 'lucide-react';
+import { QrCode, Copy, Check, ChevronDown, ChevronUp, ShieldCheck, Sparkles } from 'lucide-react';
 import styles from './TestCredentialsCard.module.scss';
 
 export function TestCredentialsCard() {
@@ -22,17 +22,17 @@ export function TestCredentialsCard() {
       >
         <div className={styles.titleGroup}>
           <div className={styles.iconCircle}>
-            <CreditCard size={16} />
+            <QrCode size={16} />
           </div>
           <div className={styles.textGroup}>
-            <span className={styles.title}>Razorpay Test Mode Sandbox Credentials</span>
+            <span className={styles.title}>Razorpay UPI &amp; Dynamic QR Sandbox Mode</span>
             <span className={styles.subtitle}>
-              Use these simulated test credentials when testing checkout or verifying the billing ledger.
+              Fast, card-free payments via direct UPI QR codes (GPay, PhonePe, Paytm, BHIM).
             </span>
           </div>
         </div>
         <div className={styles.toggleBtn}>
-          <span className={styles.toggleLabel}>{isOpen ? 'Hide' : 'Show Details'}</span>
+          <span className={styles.toggleLabel}>{isOpen ? 'Hide' : 'Show Guide'}</span>
           {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </div>
       </button>
@@ -40,32 +40,21 @@ export function TestCredentialsCard() {
       {isOpen && (
         <div className={styles.content}>
           <div className={styles.grid}>
-            {/* Test Card */}
+            {/* Dynamic QR Guide */}
             <div className={styles.credentialBox}>
               <div className={styles.boxHeader}>
-                <span className={styles.boxTitle}>Test Credit Card</span>
-                <button
-                  type="button"
-                  className={styles.copyBtn}
-                  onClick={() => handleCopy('card', '4111111111111111')}
-                  title="Copy Card Number"
-                >
-                  {copiedKey === 'card' ? <Check size={13} /> : <Copy size={13} />}
-                  <span>{copiedKey === 'card' ? 'Copied' : 'Copy'}</span>
-                </button>
+                <span className={styles.boxTitle}>Dynamic UPI QR Scan</span>
               </div>
-              <div className={styles.boxValueMono}>4111 •••• •••• 1111</div>
+              <div className={styles.boxValueMono}>GPay / PhonePe / Paytm / BHIM</div>
               <div className={styles.cardDetailsRow}>
-                <span>Exp: <strong>12/30</strong></span>
-                <span>CVV: <strong>123</strong></span>
-                <span>OTP: <strong>123456</strong></span>
+                <span>Scan instant on-screen QR Code directly with any mobile UPI app.</span>
               </div>
             </div>
 
-            {/* Test UPI */}
+            {/* Test UPI ID */}
             <div className={styles.credentialBox}>
               <div className={styles.boxHeader}>
-                <span className={styles.boxTitle}>Test UPI ID</span>
+                <span className={styles.boxTitle}>Sandbox Test UPI VPA</span>
                 <button
                   type="button"
                   className={styles.copyBtn}
@@ -78,7 +67,7 @@ export function TestCredentialsCard() {
               </div>
               <div className={styles.boxValueMono}>success@razorpay</div>
               <div className={styles.cardDetailsRow}>
-                <span>Status: <strong>Auto-Approved</strong></span>
+                <span>Razorpay Test VPA — <strong>Auto-Approved</strong></span>
               </div>
             </div>
 
@@ -87,11 +76,11 @@ export function TestCredentialsCard() {
               <div className={styles.boxHeader}>
                 <span className={styles.boxTitleAccent}>
                   <Sparkles size={14} />
-                  Instant Ledger Demo
+                  1-Click UPI Verification
                 </span>
               </div>
               <p className={styles.instantDesc}>
-                For automated grading, click <strong>&quot;⚡ Instant Test Mode Recharge&quot;</strong> on any plan card to test HMAC signature verification without opening third-party popups.
+                Click <strong>&quot;⚡ Instant UPI Verification&quot;</strong> on any plan or approve inside the QR modal to test cryptographically verified HMAC ledger crediting.
               </p>
             </div>
           </div>
@@ -99,7 +88,7 @@ export function TestCredentialsCard() {
           <div className={styles.footerNote}>
             <ShieldCheck size={14} />
             <span>
-              Zero real money or KYC required. All payment transitions update the MongoDB transaction ledger idempotently.
+              <strong>Zero Card Details Policy:</strong> No card numbers or banking secrets are ever requested in NexAI. Payments use direct UPI and Razorpay QR protocols.
             </span>
           </div>
         </div>

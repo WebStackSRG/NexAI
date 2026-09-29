@@ -28,7 +28,7 @@ describe('TransactionReceiptModal Component', () => {
     expect(screen.getByText(/\+500 credits added/i)).toBeInTheDocument();
     expect(screen.getByText('tx_rec_123')).toBeInTheDocument();
     expect(screen.getByText('pay_test_456')).toBeInTheDocument();
-    expect(screen.getByText('Razorpay Test Mode')).toBeInTheDocument();
+    expect(screen.getByText(/Razorpay Direct UPI \/ QR/i)).toBeInTheDocument();
   });
 
   it('calls onClose when Done button is clicked', () => {

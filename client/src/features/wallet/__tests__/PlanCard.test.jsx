@@ -37,11 +37,11 @@ describe('PlanCard Component', () => {
       />,
     );
 
-    const rechargeBtn = screen.getByRole('button', { name: /recharge ₹49/i });
+    const rechargeBtn = screen.getByRole('button', { name: /pay via upi \/ qr ₹49/i });
     fireEvent.click(rechargeBtn);
     expect(handleCheckout).toHaveBeenCalledWith(mockPlan);
 
-    const testBtn = screen.getByRole('button', { name: /instant test mode recharge/i });
+    const testBtn = screen.getByRole('button', { name: /instant upi verification/i });
     fireEvent.click(testBtn);
     expect(handleSimulate).toHaveBeenCalledWith(mockPlan);
   });

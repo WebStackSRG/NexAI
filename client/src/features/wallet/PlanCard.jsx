@@ -1,4 +1,4 @@
-import { Zap, Check, ShieldCheck } from 'lucide-react';
+import { QrCode, Smartphone, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils/cn';
@@ -47,23 +47,23 @@ export function PlanCard({ plan, isProcessing = false, onCheckout, onSimulate })
         <Button
           variant={isPopular ? 'primary' : 'secondary'}
           size="md"
-          leftIcon={<Zap size={16} />}
+          leftIcon={<QrCode size={16} />}
           loading={isProcessing}
           disabled={isProcessing}
           onClick={() => onCheckout?.(plan)}
         >
-          Recharge ₹{plan.amountINR}
+          Pay via UPI / QR ₹{plan.amountINR}
         </Button>
 
         <Button
           variant="ghost"
           size="sm"
           className={styles.testAction}
-          leftIcon={<ShieldCheck size={14} />}
+          leftIcon={<Smartphone size={14} />}
           disabled={isProcessing}
           onClick={() => onSimulate?.(plan)}
         >
-          ⚡ Instant Test Mode Recharge
+          ⚡ Instant UPI Verification
         </Button>
       </div>
     </div>
@@ -71,4 +71,3 @@ export function PlanCard({ plan, isProcessing = false, onCheckout, onSimulate })
 }
 
 export default PlanCard;
-

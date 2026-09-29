@@ -131,11 +131,11 @@ Gateway: Razorpay Test Mode`;
           </div>
 
           <div className={styles.metaRow}>
-            <span className={styles.metaKey}>Payment Gateway</span>
+            <span className={styles.metaKey}>Payment Method</span>
             <span className={styles.metaVal}>
               <span className={styles.gatewayBadge}>
                 <ShieldCheck size={13} />
-                Razorpay Test Mode
+                Razorpay Direct UPI / QR
               </span>
             </span>
           </div>

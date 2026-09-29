@@ -128,7 +128,7 @@ export const useWalletStore = create((set, get) => ({
         return;
       }
 
-      // 3. Open Razorpay Checkout modal
+      // 3. Open Razorpay Checkout modal locked strictly to UPI & QR
       const options = {
         key: keyId,
         amount,
@@ -138,6 +138,25 @@ export const useWalletStore = create((set, get) => ({
         order_id: orderId,
         prefill: {
           email: user?.email || '',
+          method: 'upi',
+        },
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: 'Pay using UPI / QR',
+                instruments: [
+                  {
+                    method: 'upi',
+                  },
+                ],
+              },
+            },
+            sequence: ['block.upi'],
+            preferences: {
+              show_default_blocks: false,
+            },
+          },
         },
         theme: {
           color: '#8b5cf6', // design token violet-500

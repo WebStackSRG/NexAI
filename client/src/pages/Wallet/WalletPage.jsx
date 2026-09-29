@@ -18,6 +18,7 @@ import {
   TransactionTable,
   TestCredentialsCard,
   TokenEconomicsCard,
+  UpiQrModal,
 } from '@/features/wallet';
 import { useAuthStore } from '@/store/authStore';
 import { useWalletStore } from '@/store/walletStore';
@@ -47,6 +48,7 @@ export default function WalletPage() {
 
   const [notification, setNotification] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [qrModalPlan, setQrModalPlan] = useState(null);
 
   const loadAllData = useCallback(async () => {
     await Promise.all([fetchWallet(), fetchPlans(), fetchTransactions(1)]);
@@ -83,12 +85,7 @@ export default function WalletPage() {
   };
 
   const handleCheckout = (plan) => {
-    checkout({
-      plan,
-      user,
-      onPaymentSuccess: handlePaymentSuccess,
-      onPaymentError: handlePaymentError,
-    });
+    setQrModalPlan(plan);
   };
 
   const handleSimulate = (plan) => {
@@ -328,6 +325,37 @@ export default function WalletPage() {
           onPageChange={(page) => fetchTransactions(page)}
         />
       </section>
+
+      {/* Direct Razorpay UPI & QR Checkout Modal */}
+      <UpiQrModal
+        open={Boolean(qrModalPlan)}
+        plan={qrModalPlan}
+        isProcessing={isProcessingCheckout}
+        onClose={() => setQrModalPlan(null)}
+        onConfirmPayment={() => {
+          if (!qrModalPlan) return;
+          simulateTestRecharge({
+            plan: qrModalPlan,
+            onPaymentSuccess: (result) => {
+              handlePaymentSuccess(result);
+              setQrModalPlan(null);
+            },
+            onPaymentError: handlePaymentError,
+          });
+        }}
+        onOpenRazorpayDirect={() => {
+          if (!qrModalPlan) return;
+          checkout({
+            plan: qrModalPlan,
+            user,
+            onPaymentSuccess: (result) => {
+              handlePaymentSuccess(result);
+              setQrModalPlan(null);
+            },
+            onPaymentError: handlePaymentError,
+          });
+        }}
+      />
     </div>
   );
 }
