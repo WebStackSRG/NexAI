@@ -37,6 +37,12 @@ export const sendMessageSchema = z.object({
     .min(1, 'Message content cannot be empty'),
   model: z.enum(['flash', 'pro']).optional(),
   isSimulation: z.boolean().optional(),
+  attachments: z.array(z.object({
+    name: z.string().optional(),
+    mimeType: z.string(),
+    data: z.string().optional(),
+    size: z.number().optional(),
+  })).optional(),
 });
 
 export const chatIdParamSchema = z.object({

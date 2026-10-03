@@ -221,7 +221,7 @@ export const useChatStore = create((set, get) => ({
    * Send a message and stream the assistant response
    * @param {string} content
    */
-  sendMessage: async (content) => {
+  sendMessage: async (content, attachments = []) => {
     const trimmed = content.trim();
     if (!trimmed || get().isStreaming) {
       return;
@@ -251,6 +251,7 @@ export const useChatStore = create((set, get) => ({
       chatId: targetChatId,
       role: 'user',
       content: trimmed,
+      attachments: Array.isArray(attachments) ? attachments : [],
       createdAt: new Date().toISOString(),
     };
 
@@ -280,6 +281,7 @@ export const useChatStore = create((set, get) => ({
         chatId: targetChatId,
         content: trimmed,
         model,
+        attachments,
         isSimulation,
         signal: abortController.signal,
         onToken: (text) => {

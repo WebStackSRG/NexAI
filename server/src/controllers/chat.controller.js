@@ -98,7 +98,7 @@ export const getMessages = asyncHandler(async (req, res) => {
  */
 export async function sendMessage(req, res, next) {
   const { id } = req.params;
-  const { content, model: requestedModel, isSimulation = false } = req.body;
+  const { content, model: requestedModel, isSimulation = false, attachments = [] } = req.body;
   const model = requestedModel || req.user.settings?.defaultModel || 'flash';
   const isSimulationMode =
     isSimulation === true ||
@@ -118,6 +118,7 @@ export async function sendMessage(req, res, next) {
       chatId: chat._id,
       role: 'user',
       content,
+      attachments: Array.isArray(attachments) ? attachments : [],
     });
 
     // Handle Zero-Token Simulation Mode for testing and offline demos
@@ -138,6 +139,7 @@ export async function sendMessage(req, res, next) {
       const simResult = await streamChatSimulation({
         res,
         prompt: content,
+        attachments,
         isClientConnected: () => isClientConnected,
       });
 

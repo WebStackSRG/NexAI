@@ -41,7 +41,7 @@ export function getModelName(type = 'flash') {
   if (type === 'embed') {
     return env.GEMINI_EMBED_MODEL || 'text-embedding-004';
   }
-  return env.GEMINI_FLASH_MODEL || 'gemini-3.8-flash';
+  return env.GEMINI_FLASH_MODEL || 'gemini-3.5-flash-lite';
 }
 
 if (!env.GEMINI_API_KEY && env.NODE_ENV !== 'test') {

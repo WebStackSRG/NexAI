@@ -157,6 +157,7 @@ export async function streamChatMessage({
   chatId,
   content,
   model,
+  attachments = [],
   isSimulation = false,
   signal,
   onToken,
@@ -177,7 +178,7 @@ export async function streamChatMessage({
   const response = await fetch(url, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ content, model, isSimulation }),
+    body: JSON.stringify({ content, model, isSimulation, attachments }),
     signal,
     credentials: 'include',
   });

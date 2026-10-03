@@ -12,6 +12,9 @@ import {
   Bookmark,
   X,
   Terminal,
+  Image as ImageIcon,
+  Volume2,
+  Video,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { IconButton } from '@/components/ui/IconButton';
@@ -39,6 +42,7 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
   const [selectedPromptForVariables, setSelectedPromptForVariables] = useState(null);
+  const [isMultiline, setIsMultiline] = useState(false);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -85,9 +89,11 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
   // Adjust height of textarea dynamically
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = '24px';
+      textareaRef.current.style.height = 'auto';
       const scrollHeight = textareaRef.current.scrollHeight;
-      textareaRef.current.style.height = `${Math.min(Math.max(scrollHeight, 24), 160)}px`;
+      const newHeight = Math.min(Math.max(scrollHeight, 32), 160);
+      textareaRef.current.style.height = `${newHeight}px`;
+      setIsMultiline(scrollHeight > 38);
     }
   }, [input]);
 
@@ -106,8 +112,9 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
 
     setInput('');
     setAttachedContext(null);
+    setIsMultiline(false);
     if (textareaRef.current) {
-      textareaRef.current.style.height = '24px';
+      textareaRef.current.style.height = '32px';
     }
     await sendMessage(messageToSend);
   };
@@ -121,28 +128,52 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (
-        file.type.startsWith('text/') ||
-        file.name.match(/\.(md|txt|json|csv|js|ts|jsx|tsx|py|html|css|yaml|yml)$/i)
-      ) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          setAttachedContext({
-            name: file.name,
-            type: 'file',
-            content: event.target.result || '',
-          });
-        };
-        reader.readAsText(file);
-      } else {
+    if (!file) return;
+
+    const isText =
+      file.type.startsWith('text/') ||
+      file.name.match(/\.(md|txt|json|csv|js|ts|jsx|tsx|py|html|css|yaml|yml|sql|sh|env)$/i);
+
+    if (isText) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
         setAttachedContext({
           name: file.name,
           type: 'file',
-          content: `[File attachment: ${file.name}]`,
+          mimeType: file.type || 'text/plain',
+          content: event.target.result || '',
         });
-      }
+      };
+      reader.readAsText(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target.result || '';
+        const mimeType =
+          file.type ||
+          (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream');
+
+        const type = file.type.startsWith('image/')
+          ? 'image'
+          : file.type.startsWith('audio/')
+            ? 'audio'
+            : file.type.startsWith('video/')
+              ? 'video'
+              : file.name.toLowerCase().endsWith('.pdf') || file.type.includes('pdf')
+                ? 'pdf'
+                : 'file';
+
+        setAttachedContext({
+          name: file.name,
+          type,
+          mimeType,
+          data: dataUrl,
+          size: file.size,
+        });
+      };
+      reader.readAsDataURL(file);
     }
+
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -169,7 +200,13 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
       {attachedContext && (
         <div className={styles.attachedContextBar}>
           <div className={styles.fileBadge} title={attachedContext.name}>
-            {attachedContext.type === 'document' ? (
+            {attachedContext.type === 'image' ? (
+              <ImageIcon size={12} />
+            ) : attachedContext.type === 'audio' ? (
+              <Volume2 size={12} />
+            ) : attachedContext.type === 'video' ? (
+              <Video size={12} />
+            ) : attachedContext.type === 'document' ? (
               <Bookmark size={12} />
             ) : (
               <FileText size={12} />
@@ -191,14 +228,14 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
       )}
 
       <form className={styles.composerForm} onSubmit={handleSubmit}>
-        <div className={styles.composerBar}>
+        <div className={cn(styles.composerBar, isMultiline && styles.composerBarMultiline)}>
           <input
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
             style={{ display: 'none' }}
             aria-label="Attach file"
-            accept=".txt,.md,.markdown,.json,.csv,.pdf,.js,.ts,.py"
+            accept="image/*,audio/*,video/*,.pdf,.txt,.md,.markdown,.json,.csv,.js,.ts,.jsx,.tsx,.py,.html,.css,.yaml,.yml,.sql"
           />
 
           <div className={styles.leftControls}>

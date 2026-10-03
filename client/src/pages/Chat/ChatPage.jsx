@@ -51,12 +51,12 @@ export default function ChatPage() {
     }
   }, [chatId, activeChatId, selectChat]);
 
-  const handleSendFromHero = async (prompt) => {
+  const handleSendFromHero = async (prompt, attachments = []) => {
     const newChat = await createChat('New Chat');
     if (newChat) {
       navigate(`/chat/${newChat._id}`, { replace: true });
     }
-    await sendMessage(prompt);
+    await sendMessage(prompt, attachments);
   };
 
   const currentChat = chats.find((c) => c._id === activeChatId);

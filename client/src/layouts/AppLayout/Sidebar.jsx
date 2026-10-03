@@ -501,10 +501,13 @@ export function Sidebar({ onItemClick, isMobile = false }) {
             <div className={styles.headerActions}>
               <IconButton
                 icon={<Search size={17} />}
-                label="Search workspace"
+                label="Search workspace and conversations"
                 size="sm"
                 variant="ghost"
-                onClick={openCommandPalette}
+                onClick={() => {
+                  onItemClick?.();
+                  navigate("/search?tab=chats");
+                }}
                 className={styles.headerActionBtn}
               />
               {!isMobile && (
@@ -522,17 +525,30 @@ export function Sidebar({ onItemClick, isMobile = false }) {
         )}
       </div>
 
-      {/* Primary Action: New chat */}
+      {/* Primary Action: New chat & Search */}
       <div className={styles.newChatWrapper}>
         {isCollapsed ? (
-          <IconButton
-            icon={<SquarePen size={18} />}
-            label="New chat"
-            variant="ghost"
-            size="md"
-            onClick={handleNewChat}
-            className={styles.collapsedNewChatBtn}
-          />
+          <div className={styles.collapsedActions}>
+            <IconButton
+              icon={<SquarePen size={18} />}
+              label="New chat"
+              variant="ghost"
+              size="md"
+              onClick={handleNewChat}
+              className={styles.collapsedNewChatBtn}
+            />
+            <IconButton
+              icon={<Search size={18} />}
+              label="Search conversations"
+              variant="ghost"
+              size="md"
+              onClick={() => {
+                onItemClick?.();
+                navigate("/search?tab=chats");
+              }}
+              className={styles.collapsedSearchBtn}
+            />
+          </div>
         ) : (
           <button
             type="button"

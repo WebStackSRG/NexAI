@@ -4,7 +4,51 @@ import { sendSse } from './sse.js';
  * Predefined simulated responses across common developer, architectural, and UI scenarios.
  * Completely eliminates Gemini API consumption during UI testing and offline viva demos.
  */
-export function getSimulatedChatContent(prompt = '') {
+export function getSimulatedChatContent(prompt = '', attachments = []) {
+  if (Array.isArray(attachments) && attachments.length > 0) {
+    const att = attachments[0];
+    const isImage = att.mimeType?.startsWith('image/');
+    const isAudio = att.mimeType?.startsWith('audio/');
+    const isVideo = att.mimeType?.startsWith('video/');
+    const isPdf = att.mimeType?.includes('pdf') || att.name?.endsWith('.pdf');
+
+    const fileType = isImage ? 'Image' : isAudio ? 'Audio' : isVideo ? 'Video' : isPdf ? 'PDF Document' : 'File Asset';
+
+    const fullText = `### Multimodal Understanding: ${fileType} Analysis (${att.name || 'uploaded_media'})
+
+I have successfully parsed and analyzed the uploaded **${fileType}** asset: \`${att.name || 'attachment'}\`.
+
+#### 1. Extracted Insights & Perception Overview:
+* **MIME Classification:** \`${att.mimeType || 'application/octet-stream'}\`
+* **Analysis Scope:** Multimodal feature extraction processed with zero latency via NexAI multimodal engine.
+* **Contextual Prompt:** "${prompt || 'Examine uploaded asset'}"
+
+#### 2. Structural Breakdown:
+* **Perception Channel:** ${isImage ? 'Visual geometry, optical characters (OCR), and color harmony patterns inspected.' : isAudio ? 'Acoustic waveform, speech cadence, and vocal transcription processed.' : isVideo ? 'Temporal sequence frames and keyframe transitions analyzed.' : 'Full-text semantics and document structural layout indexed.'}
+* **Security & Verification:** Asset integrity verified with clean checksums and no malicious payloads detected.
+
+\`\`\`json
+{
+  "asset": "${att.name || 'file'}",
+  "type": "${fileType.toLowerCase()}",
+  "mimeType": "${att.mimeType || 'unknown'}",
+  "status": "ready_for_conversation"
+}
+\`\`\`
+
+Feel free to ask specific questions about this ${fileType.toLowerCase()} or request code transformations!`;
+
+    return {
+      title: `${fileType}: ${att.name || 'Multimodal Asset'}`,
+      fullText,
+      followUps: [
+        `Extract detailed insights from ${att.name || 'this file'}`,
+        `Summarize key points in 3 bullets`,
+        `Generate code handling this ${fileType.toLowerCase()} format`,
+      ],
+    };
+  }
+
   const normalized = (prompt || '').toLowerCase().trim();
 
   // 1. Concept / Quantum Computing (ChatHero starter prompt)
@@ -741,8 +785,8 @@ export function tokensToCredits(totalTokens) {
  * @param {() => boolean} options.isClientConnected
  * @returns {Promise<{ fullText: string, followUps: string[], title: string }>}
  */
-export async function streamChatSimulation({ res, prompt, isClientConnected }) {
-  const { title, fullText, followUps } = getSimulatedChatContent(prompt);
+export async function streamChatSimulation({ res, prompt, attachments = [], isClientConnected }) {
+  const { title, fullText, followUps } = getSimulatedChatContent(prompt, attachments);
 
   // Split into realistic word/token chunks
   const chunks = fullText.match(/\S+\s*/g) || [fullText];

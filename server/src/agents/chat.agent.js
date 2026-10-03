@@ -20,10 +20,30 @@ export function formatConversationHistory(rawMessages) {
   const firstUserIdx = sliced.findIndex((m) => m.role === 'user');
   const validMessages = firstUserIdx >= 0 ? sliced.slice(firstUserIdx) : sliced;
 
-  return validMessages.map((msg) => ({
-    role: msg.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: msg.content }],
-  }));
+  return validMessages.map((msg) => {
+    const parts = [{ text: msg.content || '' }];
+
+    if (Array.isArray(msg.attachments)) {
+      for (const att of msg.attachments) {
+        if (att.data && att.mimeType) {
+          const base64Data = att.data.includes('base64,')
+            ? att.data.split('base64,')[1]
+            : att.data;
+          parts.push({
+            inlineData: {
+              mimeType: att.mimeType,
+              data: base64Data,
+            },
+          });
+        }
+      }
+    }
+
+    return {
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts,
+    };
+  });
 }
 
 /**

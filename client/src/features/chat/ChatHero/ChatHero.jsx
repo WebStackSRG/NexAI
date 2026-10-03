@@ -15,6 +15,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { IconButton } from '@/components/ui/IconButton';
+import { AttachContextModal } from '../ChatInput/AttachContextModal';
 import { PromptPickerModal, VariableFillModal } from '@/features/prompts';
 import { useChatStore } from '@/store/chatStore';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
@@ -55,7 +56,8 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
   } = useChatStore();
 
   const [input, setInput] = useState('');
-  const [attachedFile, setAttachedFile] = useState(null);
+  const [attachedContext, setAttachedContext] = useState(null);
+  const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [selectedPromptForVariables, setSelectedPromptForVariables] = useState(null);
   const textareaRef = useRef(null);
@@ -118,23 +120,45 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
   const handleSubmit = (e) => {
     e?.preventDefault();
     const trimmed = input.trim();
-    if ((!trimmed && !attachedFile) || isStreaming || insufficientCredits) {
+    if ((!trimmed && !attachedContext) || isStreaming || (insufficientCredits && !isSimulation)) {
       return;
     }
 
     let finalPrompt = trimmed;
-    if (attachedFile) {
-      finalPrompt = `[Context File: ${attachedFile.name}]\n\n${trimmed}`;
+    const attachments = [];
+
+    if (attachedContext) {
+      if (attachedContext.data) {
+        attachments.push({
+          name: attachedContext.name,
+          mimeType: attachedContext.mimeType,
+          data: attachedContext.data,
+          size: attachedContext.size,
+        });
+        if (!finalPrompt) {
+          finalPrompt = `[Analyzed ${attachedContext.type || "file"}: ${attachedContext.name}]`;
+        }
+      } else {
+        const prefix = `[Attached Context: ${attachedContext.name} (${attachedContext.type || "file"})]
+${attachedContext.content ? attachedContext.content.slice(0, 4000) : ""}
+
+`;
+        finalPrompt = `${prefix}${trimmed}`;
+      }
     }
 
-    setInput('');
-    setAttachedFile(null);
+    setInput("");
+    setAttachedContext(null);
     if (textareaRef.current) {
-      textareaRef.current.style.height = '24px';
+      textareaRef.current.style.height = "24px";
     }
 
     if (onSendPrompt) {
-      onSendPrompt(finalPrompt);
+      if (attachments.length > 0) {
+        onSendPrompt(finalPrompt, attachments);
+      } else {
+        onSendPrompt(finalPrompt);
+      }
     }
   };
 
@@ -147,9 +171,52 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setAttachedFile(file);
+    if (!file) return;
+
+    const isText =
+      file.type.startsWith('text/') ||
+      file.name.match(/\.(md|txt|json|csv|js|ts|jsx|tsx|py|html|css|yaml|yml|sql|sh|env)$/i);
+
+    if (isText) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setAttachedContext({
+          name: file.name,
+          type: 'file',
+          mimeType: file.type || 'text/plain',
+          content: event.target.result || '',
+        });
+      };
+      reader.readAsText(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target.result || '';
+        const mimeType =
+          file.type ||
+          (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream');
+
+        const type = file.type.startsWith('image/')
+          ? 'image'
+          : file.type.startsWith('audio/')
+            ? 'audio'
+            : file.type.startsWith('video/')
+              ? 'video'
+              : file.name.toLowerCase().endsWith('.pdf') || file.type.includes('pdf')
+                ? 'pdf'
+                : 'file';
+
+        setAttachedContext({
+          name: file.name,
+          type,
+          mimeType,
+          data: dataUrl,
+          size: file.size,
+        });
+      };
+      reader.readAsDataURL(file);
     }
+
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -167,7 +234,7 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
     }
   };
 
-  const hasContent = Boolean(input.trim() || attachedFile);
+  const hasContent = Boolean(input.trim() || attachedContext);
 
   return (
     <div className={styles.heroContainer} data-testid="chat-hero">
@@ -183,17 +250,27 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
           </p>
         </div>
 
-        {/* Floating attached file badge if any */}
-        {attachedFile && (
+        {/* Floating attached file / context badge */}
+        {attachedContext && (
           <div className={styles.fileBadgeRow}>
-            <div className={styles.fileBadge} title={attachedFile.name}>
-              <FileText size={13} />
-              <span className={styles.fileName}>{attachedFile.name}</span>
+            <div className={styles.fileBadge} title={attachedContext.name}>
+              {attachedContext.type === 'image' ? (
+                <ImageIcon size={13} />
+              ) : attachedContext.type === 'audio' ? (
+                <Volume2 size={13} />
+              ) : attachedContext.type === 'video' ? (
+                <Video size={13} />
+              ) : attachedContext.type === 'document' ? (
+                <Bookmark size={13} />
+              ) : (
+                <FileText size={13} />
+              )}
+              <span className={styles.fileName}>{attachedContext.name}</span>
               <button
                 type="button"
-                onClick={() => setAttachedFile(null)}
+                onClick={() => setAttachedContext(null)}
                 className={styles.removeFileBtn}
-                aria-label="Remove attached file"
+                aria-label="Remove attached context"
               >
                 <X size={11} />
               </button>
@@ -211,14 +288,15 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
               onChange={handleFileChange}
               style={{ display: 'none' }}
               aria-label="Attach file"
+              accept="image/*,audio/*,video/*,.pdf,.txt,.md,.markdown,.json,.csv,.js,.ts,.jsx,.tsx,.py,.html,.css,.yaml,.yml,.sql"
             />
             <IconButton
               type="button"
               icon={<Plus size={18} />}
-              label="Attach context file"
+              label="Attach context file or library"
               variant="ghost"
               size="sm"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => setIsAttachModalOpen(true)}
               className={styles.attachBtn}
             />
 
@@ -327,6 +405,14 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
           ))}
         </div>
       </div>
+
+      {/* Attach Context from Library or Device Modal */}
+      <AttachContextModal
+        open={isAttachModalOpen}
+        onClose={() => setIsAttachModalOpen(false)}
+        onSelect={(item) => setAttachedContext(item)}
+        onUploadLocal={() => fileInputRef.current?.click()}
+      />
 
       {/* Prompt Selector Modal */}
       <PromptPickerModal

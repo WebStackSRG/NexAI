@@ -110,7 +110,12 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
   }, []);
 
   const scrollToBottom = useCallback((smooth = true) => {
-    if (messagesEndRef.current) {
+    if (containerRef.current) {
+      containerRef.current.scrollTo({
+        top: containerRef.current.scrollHeight,
+        behavior: smooth ? 'smooth' : 'auto',
+      });
+    } else if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({
         behavior: smooth ? 'smooth' : 'auto',
         block: 'end',
@@ -444,7 +449,7 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                 </div>
               );
             })}
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} className={styles.scrollAnchor} />
           </div>
         )}
       </div>
