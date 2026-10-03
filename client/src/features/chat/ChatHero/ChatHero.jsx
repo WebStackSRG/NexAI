@@ -23,6 +23,7 @@ import { PromptPickerModal, VariableFillModal } from '@/features/prompts';
 import { useChatStore } from '@/store/chatStore';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { cn } from '@/lib/utils/cn';
+import logoImg from '@/assets/logo.png';
 import styles from './ChatHero.module.scss';
 
 
@@ -193,7 +194,7 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
         {/* Gemini-inspired Hero Headline */}
         <div className={styles.greetingHeader}>
           <div className={styles.sparkleIcon}>
-            <Sparkles size={24} />
+            <img src={logoImg} alt="NexAI Logo" className={styles.heroLogoImg} />
           </div>
           <h1 className={styles.heroHeadline}>Where should we start?</h1>
           <p className={styles.heroSubtitle}>

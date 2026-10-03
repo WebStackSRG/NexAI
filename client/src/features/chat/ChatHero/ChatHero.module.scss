@@ -37,16 +37,25 @@
   gap: var(--space-2);
 
   .sparkleIcon {
-    width: 44px;
-    height: 44px;
+    width: 52px;
+    height: 52px;
     border-radius: var(--radius-full);
-    background: linear-gradient(135deg, var(--color-accent) 0%, var(--green-400) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--gray-0);
-    box-shadow: 0 4px 20px -2px color-mix(in srgb, var(--color-accent) 45%, transparent);
     margin-bottom: var(--space-1);
+
+    .heroLogoImg {
+      width: 52px;
+      height: 52px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 18px color-mix(in srgb, var(--color-accent) 55%, transparent));
+      transition: transform var(--duration-fast) var(--ease-standard);
+
+      &:hover {
+        transform: scale(1.06);
+      }
+    }
   }
 
   .heroHeadline {
