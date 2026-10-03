@@ -489,7 +489,8 @@
     }
   }
 
-  &:hover {
+  &:hover,
+  &:has([data-dropdown-open='true']) {
     background-color: var(--color-bg-hover);
     color: var(--color-text-primary);
 
@@ -579,7 +580,8 @@
     }
   }
 
-  &:hover {
+  &:hover,
+  &:has([data-dropdown-open='true']) {
     background-color: var(--color-bg-hover);
     color: var(--color-text-primary);
 

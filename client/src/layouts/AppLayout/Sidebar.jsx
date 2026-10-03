@@ -456,7 +456,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
                     },
                   },
                 ]}
-                align="right"
+                align="flyout"
               />
             </div>
           </>
@@ -670,7 +670,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
                               onClick: (e) => handleDeleteProject(proj, e),
                             },
                           ]}
-                          align="right"
+                          align="flyout"
                         />
                       </div>
                     </div>
@@ -759,7 +759,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
                       onClick: () => setChatFilter('older'),
                     },
                   ]}
-                  align="right"
+                  align="flyout"
                 />
               </div>
             </div>
@@ -876,7 +876,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
                   </div>
                 }
                 items={userMenuItems}
-                align="left"
+                align="top-left"
               />
             </div>
 
@@ -907,7 +907,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
                 </div>
               }
               items={userMenuItems}
-              align="left"
+              align="flyout"
             />
             <IconButton
               icon={<Settings size={16} />}
