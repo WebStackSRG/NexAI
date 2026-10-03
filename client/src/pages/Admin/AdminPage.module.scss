@@ -28,6 +28,10 @@
   gap: var(--space-4);
 }
 
+.telemetrySection {
+  width: 100%;
+}
+
 .chartsGrid {
   display: grid;
   grid-template-columns: 2fr 1fr;

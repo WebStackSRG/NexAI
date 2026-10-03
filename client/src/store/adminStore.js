@@ -4,6 +4,9 @@ import { adminApi } from '@/lib/api/admin.api.js';
 export const useAdminStore = create((set, get) => ({
   stats: null,
   usageData: null,
+  systemConfig: null,
+  telemetry: null,
+  isUpdatingConfig: false,
   range: '7d',
   transactions: {
     list: [],
@@ -31,21 +34,71 @@ export const useAdminStore = create((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const currentRange = get().range;
-      const [statsRes, usageRes] = await Promise.all([
+      const promises = [
         adminApi.getStats(),
         adminApi.getUsage({ range: currentRange }),
-      ]);
+      ];
 
-      set({
+      if (typeof adminApi.getConfig === 'function') {
+        promises.push(adminApi.getConfig().catch(() => null));
+      }
+
+      const [statsRes, usageRes, configRes] = await Promise.all(promises);
+
+      const updates = {
         stats: statsRes.data?.data || statsRes.data,
         usageData: usageRes.data?.data || usageRes.data,
         isLoading: false,
-      });
+      };
+
+      if (configRes?.data?.data) {
+        updates.systemConfig = configRes.data.data.config;
+        updates.telemetry = configRes.data.data.telemetry;
+      }
+
+      set(updates);
     } catch (err) {
       set({
         error: err.response?.data?.error?.message || err.message || 'Failed to load admin overview',
         isLoading: false,
       });
+    }
+  },
+
+  fetchConfig: async () => {
+    try {
+      const res = await adminApi.getConfig();
+      const payload = res.data?.data || res.data || {};
+      set({
+        systemConfig: payload.config || null,
+        telemetry: payload.telemetry || null,
+      });
+      return payload;
+    } catch (err) {
+      set({
+        error: err.response?.data?.error?.message || err.message,
+      });
+      return null;
+    }
+  },
+
+  updateBillingMode: async (mode) => {
+    set({ isUpdatingConfig: true });
+    try {
+      const res = await adminApi.updateConfig({ billingEnforcementMode: mode });
+      const payload = res.data?.data || res.data || {};
+      set({
+        systemConfig: payload.config || null,
+        telemetry: payload.telemetry || get().telemetry,
+        isUpdatingConfig: false,
+      });
+      return payload;
+    } catch (err) {
+      set({
+        isUpdatingConfig: false,
+        error: err.response?.data?.error?.message || 'Failed to update governance mode',
+      });
+      throw err;
     }
   },
 

@@ -49,6 +49,16 @@
       box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
     }
   }
+
+  &.quotaMode {
+    background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+    border-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
+
+    &:hover {
+      background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+      box-shadow: 0 2px 8px color-mix(in srgb, var(--color-accent) 25%, transparent);
+    }
+  }
 }
 
 .icon {
@@ -58,7 +68,18 @@
 .label {
   display: inline-flex;
   align-items: baseline;
-  gap: 2px;
+  gap: 3px;
+}
+
+.quotaPill {
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-accent) 25%, transparent);
+  margin-right: 2px;
 }
 
 .value {
@@ -67,4 +88,11 @@
 
 .unit {
   opacity: 0.85;
+}
+
+.callsLeft {
+  font-size: 11px;
+  opacity: 0.85;
+  font-weight: var(--weight-normal);
+  margin-left: 2px;
 }

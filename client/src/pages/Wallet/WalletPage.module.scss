@@ -101,6 +101,67 @@
   }
 }
 
+.quotaModeBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.quotaModeHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.quotaIcon {
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.quotaText {
+  flex: 1;
+
+  strong {
+    color: var(--color-accent);
+    margin-right: var(--space-1);
+  }
+
+  span {
+    color: var(--color-text-secondary);
+  }
+}
+
+.quotaFreeDepletedBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+
+  svg {
+    flex-shrink: 0;
+    color: var(--color-accent);
+    margin-top: 2px;
+  }
+
+  strong {
+    color: var(--color-accent);
+  }
+}
+
 .lowCreditBanner {
   display: flex;
   align-items: flex-start;

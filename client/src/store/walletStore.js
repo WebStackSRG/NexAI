@@ -60,6 +60,12 @@ export const DEFAULT_PLANS = [
 
 export const useWalletStore = create((set, get) => ({
   wallet: null,
+  governance: {
+    billingEnforcementMode: 'quota_free',
+    dailyGeminiQuotaLimit: 1500,
+    dailyRequestsUsed: 0,
+    dailyRequestsRemaining: 1500,
+  },
   plans: DEFAULT_PLANS,
   transactions: [],
   pagination: {
@@ -75,12 +81,21 @@ export const useWalletStore = create((set, get) => ({
   checkoutPlanId: null,
   error: null,
 
+  setGovernance: (governance) => set({ governance }),
+
   fetchWallet: async () => {
     set({ isLoadingWallet: true, error: null });
     try {
       const res = await walletApi.getWallet();
-      const wallet = res.data.data.wallet;
-      set({ wallet, isLoadingWallet: false });
+      const payload = res.data?.data || res.data || {};
+      const wallet = payload.wallet;
+      const governance = payload.governance;
+
+      set({
+        wallet,
+        ...(governance ? { governance } : {}),
+        isLoadingWallet: false,
+      });
 
       // Keep authStore in sync
       if (wallet && typeof wallet.creditsRemaining === 'number') {

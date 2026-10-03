@@ -5,8 +5,6 @@ import {
   Mic,
   MicOff,
   ArrowUp,
-  X,
-  FileText, Bookmark, Image as ImageIcon, Volume2, Video,
   HelpCircle,
   Code2,
   Mail,
@@ -20,7 +18,9 @@ import { AttachContextModal } from '../ChatInput/AttachContextModal';
 import { AttachedContextPreview } from '../ChatInput/AttachedContextPreview';
 import { PromptPickerModal, VariableFillModal } from '@/features/prompts';
 import { useChatStore } from '@/store/chatStore';
+import { useAuthStore } from '@/store/authStore';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
+import { getGreetingContext } from './greetingHelper';
 import { cn } from '@/lib/utils/cn';
 import logoImg from '@/assets/logo.png';
 import styles from './ChatHero.module.scss';
@@ -50,6 +50,9 @@ const STARTER_PROMPTS = [
 ];
 
 export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) {
+  const user = useAuthStore((state) => state.user);
+  const greeting = getGreetingContext(user);
+
   const {
     insufficientCredits,
     isStreaming,
@@ -248,15 +251,13 @@ ${attachedContext.content ? attachedContext.content.slice(0, 4000) : ""}
   return (
     <div className={styles.heroContainer} data-testid="chat-hero">
       <div className={styles.heroContent}>
-        {/* Gemini-inspired Hero Headline */}
+        {/* Context-Aware Gemini-inspired Hero Headline */}
         <div className={styles.greetingHeader}>
           <div className={styles.sparkleIcon}>
             <img src={logoImg} alt="NexAI Logo" className={styles.heroLogoImg} />
           </div>
-          <h1 className={styles.heroHeadline}>Where should we start?</h1>
-          <p className={styles.heroSubtitle}>
-            Type a prompt or choose a starter suggestion below to get started.
-          </p>
+          <h1 className={styles.heroHeadline}>{greeting.headline}</h1>
+          <p className={styles.heroSubtitle}>{greeting.subtitle}</p>
         </div>
 
         {/* Modern Responsive Prompt Composer Card */}

@@ -217,6 +217,13 @@ export function LibraryCard({
         </div>
       </div>
 
+      {/* If file item has an image, render preview thumbnail */}
+      {isFile && item.fileData && (item.mimeType?.startsWith('image/') || item.fileData.startsWith('data:image')) && (
+        <div className={styles.imageCardPreview}>
+          <img src={item.fileData} alt={item.title} loading="lazy" />
+        </div>
+      )}
+
       {/* Main Content Area */}
       <h3 className={styles.title} title={item.title}>
         {item.title}
@@ -263,6 +270,7 @@ LibraryCard.propTypes = {
     category: PropTypes.string,
     sections: PropTypes.array,
     fileName: PropTypes.string,
+    fileData: PropTypes.string,
     size: PropTypes.number,
     scorecard: PropTypes.object,
     createdAt: PropTypes.string,

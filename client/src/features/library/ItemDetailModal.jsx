@@ -257,6 +257,18 @@ export function ItemDetailModal() {
             </a>
           )}
 
+          {isFile && viewingItem.fileData && (
+            <a
+              href={viewingItem.fileData}
+              download={viewingItem.fileName || viewingItem.title || 'download'}
+              className={styles.toolActionBtn}
+              title="Download file"
+            >
+              <Download size={13} />
+              <span>Download</span>
+            </a>
+          )}
+
           <button
             type="button"
             className={cn(styles.toolActionBtn, styles.danger)}
@@ -396,10 +408,36 @@ export function ItemDetailModal() {
                 <span>File Metadata</span>
                 <span>{formatFileSize(viewingItem.size)}</span>
               </div>
+
+              {viewingItem.fileData &&
+                (viewingItem.mimeType?.startsWith('image/') ||
+                  viewingItem.fileData.startsWith('data:image')) && (
+                  <div className={styles.detailImageContainer}>
+                    <img
+                      src={viewingItem.fileData}
+                      alt={viewingItem.fileName || viewingItem.title}
+                    />
+                  </div>
+                )}
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 'var(--text-sm)' }}>
                 <div><strong>File Name:</strong> {viewingItem.fileName || 'Unnamed File'}</div>
                 {viewingItem.mimeType && <div><strong>MIME Type:</strong> {viewingItem.mimeType}</div>}
               </div>
+
+              {viewingItem.fileData && (
+                <div style={{ marginTop: 'var(--space-3)' }}>
+                  <a
+                    href={viewingItem.fileData}
+                    download={viewingItem.fileName || viewingItem.title || 'download'}
+                    className={styles.toolActionBtn}
+                  >
+                    <Download size={13} />
+                    <span>Download Original File</span>
+                  </a>
+                </div>
+              )}
+
               {viewingItem.content && (
                 <div style={{ marginTop: 'var(--space-3)', paddingTop: 'var(--space-3)', borderTop: '1px solid var(--color-border)' }}>
                   <MarkdownRenderer content={viewingItem.content} />

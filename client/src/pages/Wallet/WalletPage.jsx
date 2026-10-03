@@ -65,6 +65,11 @@ export default function WalletPage() {
   const totalTokens =
     wallet?.totalTokensConsumed ?? user?.wallet?.totalTokensConsumed ?? 0;
 
+  const governance = useWalletStore((state) => state.governance);
+  const isQuotaMode = (governance?.billingEnforcementMode ?? 'quota_free') === 'quota_free';
+  const dailyLimit = governance?.dailyGeminiQuotaLimit || 1500;
+  const callsRemaining = governance?.dailyRequestsRemaining ?? dailyLimit;
+
   const isPro = currentTier === 'pro_monthly';
 
   const handlePaymentSuccess = (result) => {
@@ -126,6 +131,22 @@ export default function WalletPage() {
         }
       />
 
+      {/* Quota-Free Mode Governance Banner */}
+      {isQuotaMode && (
+        <div className={styles.quotaModeBanner}>
+          <div className={styles.quotaModeHeader}>
+            <Zap size={18} className={styles.quotaIcon} />
+            <div className={styles.quotaText}>
+              <strong>⚡ Quota-Free Evaluation Mode Active:</strong>
+              <span>
+                Demonstration mode enabled using Google Gemini API free-tier quota ({callsRemaining.toLocaleString()} / {dailyLimit.toLocaleString()} daily calls left today • Resets at 00:00 UTC). Credit deductions and token telemetry are simulated in real time.
+              </span>
+            </div>
+            <Badge tone="accent">1,500 RPD Active</Badge>
+          </div>
+        </div>
+      )}
+
       {/* Global Error Banner */}
       {error && (
         <div className={styles.errorBanner} role="alert">
@@ -169,14 +190,23 @@ export default function WalletPage() {
 
       {/* Zero Balance / Low Balance Banner */}
       {creditsRemaining === 0 ? (
-        <div className={styles.exhaustedBanner}>
-          <ShieldAlert size={20} />
-          <div>
-            <strong>Credit Balance Exhausted (0 credits):</strong> AI chat, mock interview
-            critiques, and document generations are currently paused with HTTP 402. Select a
-            recharge package below to restore instant AI access.
+        isQuotaMode ? (
+          <div className={styles.quotaFreeDepletedBanner}>
+            <Zap size={20} />
+            <div>
+              <strong>Simulated Credits Depleted (0 credits) — Unrestricted Demo Active:</strong> Under Quota-Free Evaluation Mode, AI chat, mock interviews, and document drafting continue running without interruption using Google Gemini Free Tier quota ({callsRemaining.toLocaleString()} calls remaining today). You can also test a recharge package below to demonstrate the Razorpay payment gateway.
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className={styles.exhaustedBanner}>
+            <ShieldAlert size={20} />
+            <div>
+              <strong>Credit Balance Exhausted (0 credits):</strong> AI chat, mock interview
+              critiques, and document generations are currently paused with HTTP 402. Select a
+              recharge package below to restore instant AI access.
+            </div>
+          </div>
+        )
       ) : creditsRemaining <= 20 ? (
         <div className={styles.lowCreditBanner}>
           <AlertTriangle size={18} />
@@ -214,9 +244,11 @@ export default function WalletPage() {
           {/* Credits Balance Column */}
           <div className={styles.creditsCol}>
             <div className={styles.creditsHeader}>
-              <span className={styles.colLabel}>Available Credits</span>
-              <Badge tone={creditsRemaining > 20 ? 'accent' : 'danger'}>
-                {creditsRemaining > 20 ? 'Active' : 'Depleted'}
+              <span className={styles.colLabel}>
+                {isQuotaMode ? 'Simulated Credits' : 'Available Credits'}
+              </span>
+              <Badge tone={isQuotaMode ? 'accent' : creditsRemaining > 20 ? 'accent' : 'danger'}>
+                {isQuotaMode ? 'Quota Mode' : creditsRemaining > 20 ? 'Active' : 'Depleted'}
               </Badge>
             </div>
             <div className={styles.creditValueRow}>
@@ -224,7 +256,9 @@ export default function WalletPage() {
               <span className={styles.creditsUnit}>credits</span>
             </div>
             <span className={styles.creditsHint}>
-              1 credit = 100 Gemini tokens (atomic source metering)
+              {isQuotaMode
+                ? `1 credit ≈ 100 Gemini tokens • ⚡ ${callsRemaining.toLocaleString()} / 1,500 daily calls left`
+                : '1 credit = 100 Gemini tokens (atomic source metering)'}
             </span>
           </div>
 

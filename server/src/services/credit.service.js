@@ -2,6 +2,7 @@ import { User } from '../models/User.js';
 import { UsageLog } from '../models/UsageLog.js';
 import { ApiError } from '../utils/ApiError.js';
 import { env } from '../config/env.js';
+import { systemConfigService } from './systemConfig.service.js';
 
 /**
  * Calculates credit cost from token count based on env configuration.
@@ -18,7 +19,8 @@ export function tokensToCredits(tokens) {
 
 /**
  * Asserts that a user has a positive credit balance.
- * Throws 402 INSUFFICIENT_CREDITS if creditsRemaining <= 0.
+ * Throws 402 INSUFFICIENT_CREDITS if creditsRemaining <= 0 in credit_strict mode.
+ * Bypasses 402 if billingEnforcementMode is 'quota_free'.
  *
  * @param {string} userId - User ID to check
  * @returns {Promise<number>} Current credit balance
@@ -30,11 +32,16 @@ export async function assertBalance(userId) {
   }
 
   const creditsRemaining = user.wallet?.creditsRemaining ?? 0;
-  if (creditsRemaining <= 0) {
-    throw new ApiError(402, 'INSUFFICIENT_CREDITS', 'Recharge to continue');
+  if (creditsRemaining > 0) {
+    return creditsRemaining;
   }
 
-  return creditsRemaining;
+  const mode = systemConfigService.getBillingMode();
+  if (mode === 'quota_free') {
+    return creditsRemaining;
+  }
+
+  throw new ApiError(402, 'INSUFFICIENT_CREDITS', 'Recharge to continue');
 }
 
 /**

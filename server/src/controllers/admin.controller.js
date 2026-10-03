@@ -1,5 +1,6 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { adminService } from '../services/admin.service.js';
+import { systemConfigService } from '../services/systemConfig.service.js';
 
 export const getStats = asyncHandler(async (req, res) => {
   const stats = await adminService.getPlatformStats();
@@ -38,5 +39,37 @@ export const getErrors = asyncHandler(async (req, res) => {
   });
   res.status(200).json({
     data: result,
+  });
+});
+
+export const getConfig = asyncHandler(async (_req, res) => {
+  const [config, telemetry] = await Promise.all([
+    systemConfigService.getConfig(),
+    systemConfigService.getGeminiTelemetry(),
+  ]);
+
+  res.status(200).json({
+    data: {
+      config,
+      telemetry,
+    },
+  });
+});
+
+export const updateConfig = asyncHandler(async (req, res) => {
+  const { billingEnforcementMode, dailyGeminiQuotaLimit } = req.body;
+  const config = await systemConfigService.updateConfig({
+    billingEnforcementMode,
+    dailyGeminiQuotaLimit,
+    updatedBy: req.user?._id,
+  });
+  const telemetry = await systemConfigService.getGeminiTelemetry();
+
+  res.status(200).json({
+    data: {
+      message: 'Governance configuration updated successfully',
+      config,
+      telemetry,
+    },
   });
 });

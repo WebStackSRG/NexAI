@@ -132,6 +132,19 @@ export async function* streamChatReply({
     systemInstruction += `\n\n[USER LONG-TERM MEMORY (CROSS-CHAT PERSISTENT CONTEXT)]:\nThe following verified facts, identity, and preferences are remembered about this user across past conversations. Seamlessly incorporate them into your responses without explicitly saying "According to my memory" unless asked:\n${memoryItems}`;
   }
 
+  // Inject real-time temporal awareness (current day, date, time)
+  const now = new Date();
+  const timeString = now.toLocaleString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  });
+  systemInstruction += `\n\n[TEMPORAL CONTEXT]:\nCurrent timestamp is ${timeString}. You are fully context-aware of the current time, day, and date when responding to user greetings, scheduling, or time-sensitive questions.`;
+
   const thinkingConfig = buildThinkingConfig({ thinkingLevel, model });
   const config = thinkingConfig ? { thinkingConfig } : {};
 

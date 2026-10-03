@@ -283,4 +283,24 @@ This log tracks architectural and design decisions made for the NexAI project, p
   4. **User Agency & Settings Management (`MemoryManager`):**
      - Full CRUD API at `/api/memories` and interactive UI card in `/settings` allowing users to inspect what NexAI has remembered, toggle priority pinning, add custom memories manually, or wipe memory cleanly ("Clear All").
 
+## ADR-027: Dual-Mode Quota Governance, 1,500 RPD Evaluation Mode & Admin Live Gemini Telemetry
+
+- **Date:** 2026-10-03
+- **Status:** Accepted (Documented & Ready for Implementation Approval)
+- **Context:** During college viva evaluations and live testing, users and evaluators frequently hit the artificial 100 starter credit limit (~10,000 tokens), prematurely halting interactive feature demonstrations (Chat, Mock Interviews, Document generation) with HTTP 402 `INSUFFICIENT_CREDITS`. However, the underlying Google Gemini API free tier allows up to 1,500 Requests Per Day (RPD), 15 RPM, and 1,000,000 TPM without financial cost. A solution was needed to allow unconstrained college demonstrations while strictly preserving the commercial token-billing architecture and payment gateway for evaluators.
+- **Decision:**
+  1. **Dual-Mode System Setting (`systemConfig`):**
+     - Introduce platform setting `billingEnforcementMode`: `'quota_free'` (Default for Academic/Demo) vs `'credit_strict'` (Commercial SaaS).
+     - Environment variable fallback: `CREDIT_ENFORCEMENT_MODE=quota_free`.
+     - In `quota_free` mode: `creditCheck.js` bypasses HTTP 402 rejection as long as daily Gemini requests remain under 1,500 RPD, while `credit.service.js` continues to atomically compute tokens, deduct simulated credits, and write `UsageLog` entries.
+     - In `credit_strict` mode: standard 100 credit limit is enforced, blocking requests at 0 balance and requiring Razorpay test recharge.
+  2. **1-Click Admin Mode Toggle:**
+     - Exposed directly in the `/admin` header, allowing the presenter to flip between `Quota-Free Demo` and `Credit-Strict SaaS` modes with zero downtime or server restarts.
+  3. **Live Gemini Quota Telemetry in Admin Dashboard:**
+     - Visual progress meter for `Requests Today / 1,500 RPD` resetting at 00:00 UTC.
+     - Rate-limit safety metrics: live RPM gauge (15 RPM limit) and TPM counter.
+     - Real-time token consumption logs with per-call transparency.
+  4. **Transparent Wallet & Topbar UI:**
+     - Clearly communicates mode status: `⚡ Quota Mode: X / 1,500 Daily Calls Left`, allowing evaluators to see simulated credit deductions alongside real quota headroom.
+
 

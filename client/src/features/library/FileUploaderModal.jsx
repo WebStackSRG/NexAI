@@ -33,6 +33,7 @@ export function FileUploaderModal() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileContent, setFileContent] = useState('');
   const [fileBase64, setFileBase64] = useState('');
+  const [imagePreview, setImagePreview] = useState('');
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
   const [tags, setTags] = useState(['file', 'upload']);
@@ -45,7 +46,9 @@ export function FileUploaderModal() {
     setSelectedFile(file);
     setTitle(file.name.replace(/\.[^/.]+$/, ''));
     setFileBase64('');
+    setImagePreview('');
 
+    const isImage = file.type.startsWith('image/');
     const isPdf =
       file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     const isText =
@@ -56,7 +59,20 @@ export function FileUploaderModal() {
       file.type.includes('xml') ||
       file.name.match(TEXT_FILE_EXTENSIONS);
 
-    if (isText) {
+    if (isImage) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target.result || '';
+        const base64 =
+          typeof dataUrl === 'string' && dataUrl.includes(',')
+            ? dataUrl.split(',')[1]
+            : '';
+        setFileBase64(base64);
+        setImagePreview(dataUrl);
+        setFileContent(`[Image Asset: ${file.name} (${formatFileSize(file.size)})]`);
+      };
+      reader.readAsDataURL(file);
+    } else if (isText) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const text = e.target.result || '';
@@ -129,8 +145,9 @@ export function FileUploaderModal() {
         if (suggestion.summary) setSummary(suggestion.summary);
         if (suggestion.tags) setTags(suggestion.tags);
         if (fileBase64 && suggestion.summary) {
+          const typeLabel = selectedFile.type?.startsWith('image/') ? 'Image' : 'PDF';
           setFileContent(
-            `## Document Summary\n${suggestion.summary}\n\n[Original PDF File: ${selectedFile.name} (${formatFileSize(selectedFile.size)})]`,
+            `## Document Summary\n${suggestion.summary}\n\n[Original ${typeLabel} File: ${selectedFile.name} (${formatFileSize(selectedFile.size)})]`,
           );
         }
       }
@@ -153,6 +170,11 @@ export function FileUploaderModal() {
       content: fileContent,
       summary: summary.trim(),
       tags,
+      fileData:
+        imagePreview ||
+        (fileBase64 && selectedFile.type
+          ? `data:${selectedFile.type};base64,${fileBase64}`
+          : ''),
     });
 
     handleClose();
@@ -161,6 +183,8 @@ export function FileUploaderModal() {
   const handleClose = () => {
     setSelectedFile(null);
     setFileContent('');
+    setFileBase64(null);
+    setImagePreview('');
     setTitle('');
     setSummary('');
     setTags(['file', 'upload']);
@@ -196,7 +220,7 @@ export function FileUploaderModal() {
               ref={fileInputRef}
               onChange={handleInputChange}
               style={{ display: 'none' }}
-              accept=".txt,.md,.markdown,.json,.csv,.pdf,.js,.ts,.jsx,.tsx,.py,.html,.css,.scss,.yaml,.yml,.sql,.sh,.bash,.env,.xml,.toml,.rs,.go,.java,.c,.cpp,.h,.cs,.php,.rb,.swift,.kt,.dart"
+              accept=".txt,.md,.markdown,.json,.csv,.pdf,.js,.ts,.jsx,.tsx,.py,.html,.css,.scss,.yaml,.yml,.sql,.sh,.bash,.env,.xml,.toml,.rs,.go,.java,.c,.cpp,.h,.cs,.php,.rb,.swift,.kt,.dart,image/*"
             />
             <div className={styles.dropzoneIcon}>
               <UploadCloud size={32} />
@@ -205,7 +229,7 @@ export function FileUploaderModal() {
               <strong>Click to upload</strong> or drag and drop files here
             </p>
             <p className={styles.dropzoneHint}>
-              Supports Code files (.js, .py, .ts, .sql, etc.), Markdown, JSON, CSV, Text, and PDF documents
+              Supports Images (PNG, JPG, WebP), Code files (.js, .py, .ts, etc.), Markdown, JSON, CSV, Text, and PDF documents
             </p>
           </div>
 
@@ -223,12 +247,22 @@ export function FileUploaderModal() {
               <button
                 type="button"
                 className={styles.removeFileBtn}
-                onClick={() => setSelectedFile(null)}
+                onClick={() => {
+                  setSelectedFile(null);
+                  setImagePreview('');
+                  setFileBase64(null);
+                }}
                 aria-label="Remove selected file"
               >
                 <X size={16} />
               </button>
             </div>
+
+            {imagePreview && (
+              <div className={styles.imagePreviewWrapper}>
+                <img src={imagePreview} alt={selectedFile.name} />
+              </div>
+            )}
 
             <div className={styles.aiAssistBar}>
               <Button

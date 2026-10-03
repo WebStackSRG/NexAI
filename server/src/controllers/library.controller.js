@@ -230,6 +230,7 @@ export const createItem = asyncHandler(async (req, res) => {
     fileName,
     mimeType,
     size,
+    fileData,
     scorecard,
     transcript,
     topic,
@@ -262,6 +263,7 @@ export const createItem = asyncHandler(async (req, res) => {
     fileName: fileName || '',
     mimeType: mimeType || '',
     size: size || 0,
+    fileData: fileData || '',
     scorecard: scorecard || null,
     transcript: Array.isArray(transcript) ? transcript : [],
     topic: topic || '',
@@ -451,6 +453,9 @@ export const updateItem = asyncHandler(async (req, res) => {
   if (sections !== undefined) {
     item.sections = sections;
     textChanged = true;
+  }
+  if (req.body.fileData !== undefined) {
+    item.fileData = req.body.fileData;
   }
 
   await item.save();

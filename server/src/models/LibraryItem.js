@@ -87,6 +87,10 @@ const libraryItemSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    fileData: {
+      type: String,
+      default: '',
+    },
 
     // Interview specific (Step 9 preparation)
     scorecard: {

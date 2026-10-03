@@ -47,6 +47,7 @@ export const createLibraryItemSchema = z.object({
   fileName: z.string().optional().default(''),
   mimeType: z.string().optional().default(''),
   size: z.number().optional().default(0),
+  fileData: z.string().optional().default(''),
   scorecard: z.any().optional(),
   transcript: z.array(z.any()).optional(),
   topic: z.string().optional().default(''),
@@ -59,6 +60,7 @@ export const updateLibraryItemSchema = z.object({
   summary: z.string().optional(),
   tags: z.array(z.string()).optional(),
   content: z.string().optional(),
+  fileData: z.string().optional(),
   category: z.enum(['resume', 'report', 'spec', 'notes', 'other']).optional(),
   sections: z.array(sectionSchema).optional(),
 });
