@@ -85,17 +85,6 @@ export default function SearchPage() {
   const location = useLocation();
   const { chats: allChats, fetchChats } = useChatStore();
 
-  useEffect(() => {
-    fetchChats();
-  }, [fetchChats]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const tabParam = params.get('tab');
-    if (tabParam && ['all', 'library', 'prompts', 'chats'].includes(tabParam)) {
-      setActiveTab(tabParam);
-    }
-  }, [location.search, setActiveTab]);
   const {
     query,
     activeTab,
@@ -111,6 +100,18 @@ export default function SearchPage() {
     removeRecentSearch,
     clearRecentSearches,
   } = useSearchStore();
+
+  useEffect(() => {
+    fetchChats();
+  }, [fetchChats]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
+    if (tabParam && ['all', 'library', 'prompts', 'chats'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [location.search, setActiveTab]);
 
   const [localInput, setLocalInput] = useState(query);
   const debouncedInput = useDebounce(localInput, 300);
