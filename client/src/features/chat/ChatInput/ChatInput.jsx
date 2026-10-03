@@ -5,8 +5,6 @@ import {
   ArrowUp,
   Square,
   Zap,
-  Sparkles,
-  Cpu,
   Mic,
   MicOff,
   Paperclip,
@@ -20,7 +18,6 @@ import { IconButton } from '@/components/ui/IconButton';
 import { PromptPickerModal, VariableFillModal } from '@/features/prompts';
 import { AttachContextModal } from './AttachContextModal';
 import { useChatStore } from '@/store/chatStore';
-import { useAuthStore } from '@/store/authStore';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils/cn';
@@ -28,14 +25,11 @@ import styles from './ChatInput.module.scss';
 
 export function ChatInput({ prefillValue, onClearPrefill }) {
   const navigate = useNavigate();
-  const user = useAuthStore((state) => state.user);
   const {
     sendMessage,
     isStreaming,
     stopGeneration,
     insufficientCredits,
-    selectedModel,
-    setSelectedModel,
     isSimulation,
     toggleSimulation,
   } = useChatStore();
@@ -77,13 +71,6 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
     },
   });
 
-  // Initialize model from user settings if available
-  useEffect(() => {
-    if (user?.settings?.defaultModel) {
-      setSelectedModel(user.settings.defaultModel);
-    }
-  }, [user?.settings?.defaultModel, setSelectedModel]);
-
   // Handle external prefill (e.g. from prompt vault or suggestion chips)
   useEffect(() => {
     if (prefillValue) {
@@ -98,8 +85,9 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
   // Adjust height of textarea dynamically
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 180)}px`;
+      textareaRef.current.style.height = '24px';
+      const scrollHeight = textareaRef.current.scrollHeight;
+      textareaRef.current.style.height = `${Math.min(Math.max(scrollHeight, 24), 160)}px`;
     }
   }, [input]);
 
@@ -119,7 +107,7 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
     setInput('');
     setAttachedContext(null);
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = '24px';
     }
     await sendMessage(messageToSend);
   };
@@ -178,32 +166,42 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
         </div>
       )}
 
-      <form className={styles.composerForm} onSubmit={handleSubmit}>
-        <div className={styles.toolbar}>
-          <div className={styles.leftToolbar}>
-            <div className={styles.modelSelector}>
-              <button
-                type="button"
-                className={cn(styles.modelPill, selectedModel === 'flash' && styles.activeModel)}
-                onClick={() => setSelectedModel('flash')}
-                disabled={isStreaming}
-                title="Gemini Flash (fast and cost-effective)"
-              >
-                <Sparkles size={14} />
-                <span>Flash</span>
-              </button>
-              <button
-                type="button"
-                className={cn(styles.modelPill, selectedModel === 'pro' && styles.activeModel)}
-                onClick={() => setSelectedModel('pro')}
-                disabled={isStreaming}
-                title="Gemini Pro (deep reasoning and complex tasks)"
-              >
-                <Cpu size={14} />
-                <span>Pro</span>
-              </button>
-            </div>
+      {attachedContext && (
+        <div className={styles.attachedContextBar}>
+          <div className={styles.fileBadge} title={attachedContext.name}>
+            {attachedContext.type === 'document' ? (
+              <Bookmark size={12} />
+            ) : (
+              <FileText size={12} />
+            )}
+            <span className={styles.fileName}>
+              {attachedContext.name}
+              {attachedContext.category ? ` (${attachedContext.category})` : ''}
+            </span>
+            <button
+              type="button"
+              onClick={() => setAttachedContext(null)}
+              className={styles.removeFileBtn}
+              aria-label="Remove attached context"
+            >
+              <X size={11} />
+            </button>
+          </div>
+        </div>
+      )}
 
+      <form className={styles.composerForm} onSubmit={handleSubmit}>
+        <div className={styles.composerBar}>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+            aria-label="Attach file"
+            accept=".txt,.md,.markdown,.json,.csv,.pdf,.js,.ts,.py"
+          />
+
+          <div className={styles.leftControls}>
             <button
               type="button"
               className={cn(styles.simPill, isSimulation && styles.activeSimPill)}
@@ -214,46 +212,35 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
                   ? 'Simulation Mode active (0 Gemini tokens consumed)'
                   : 'Enable Zero-Token Simulation Mode for testing'
               }
+              aria-label="Toggle simulation mode"
             >
               <Zap size={13} className={isSimulation ? styles.activeZap : undefined} />
-              <span>{isSimulation ? 'Simulation (0 Tokens)' : 'Simulation'}</span>
+              <span className={styles.simText}>{isSimulation ? 'Sim (0)' : 'Sim'}</span>
             </button>
-
-            {attachedContext && (
-              <div className={styles.fileBadge} title={attachedContext.name}>
-                {attachedContext.type === 'document' ? (
-                  <Bookmark size={12} />
-                ) : (
-                  <FileText size={12} />
-                )}
-                <span className={styles.fileName}>
-                  {attachedContext.name}
-                  {attachedContext.category ? ` (${attachedContext.category})` : ''}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setAttachedContext(null)}
-                  className={styles.removeFileBtn}
-                  aria-label="Remove attached context"
-                >
-                  <X size={11} />
-                </button>
-              </div>
-            )}
           </div>
 
-          <div className={styles.rightToolbar}>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              style={{ display: 'none' }}
-              aria-label="Attach file"
-              accept=".txt,.md,.markdown,.json,.csv,.pdf,.js,.ts,.py"
-            />
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={insufficientCredits}
+            placeholder={
+              insufficientCredits
+                ? 'Recharge your credits to send messages...'
+                : isSimulation
+                  ? 'Simulation (0 tokens) — Message NexAI...'
+                  : 'Message NexAI... (Enter to send, Shift + Enter for new line)'
+            }
+            className={styles.textarea}
+            aria-label="Chat input message"
+          />
+
+          <div className={styles.rightControls}>
             <IconButton
               type="button"
-              icon={<Terminal size={16} />}
+              icon={<Terminal size={15} />}
               label="Use prompt template"
               variant="ghost"
               size="sm"
@@ -262,7 +249,7 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
             />
             <IconButton
               type="button"
-              icon={<Paperclip size={16} />}
+              icon={<Paperclip size={15} />}
               label="Attach context from file or library"
               variant="ghost"
               size="sm"
@@ -273,9 +260,9 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
               type="button"
               icon={
                 isListening ? (
-                  <MicOff size={16} className={styles.activeMicIcon} />
+                  <MicOff size={15} className={styles.activeMicIcon} />
                 ) : (
-                  <Mic size={16} />
+                  <Mic size={15} />
                 )
               }
               label={
@@ -291,43 +278,23 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
               onClick={toggleListening}
               className={cn(styles.toolBtn, isListening && styles.listeningMic)}
             />
-          </div>
-        </div>
 
-        <div className={styles.inputRow}>
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={insufficientCredits}
-            placeholder={
-              insufficientCredits
-                ? 'Recharge your credits to send messages...'
-                : 'Message NexAI... (Enter to send, Shift + Enter for new line)'
-            }
-            className={styles.textarea}
-            aria-label="Chat input message"
-          />
-
-          <div className={styles.submitWrapper}>
             {isStreaming ? (
               <IconButton
-                icon={<Square size={16} fill="currentColor" />}
+                icon={<Square size={14} fill="currentColor" />}
                 label="Stop generating"
                 variant="secondary"
-                size="md"
+                size="sm"
                 onClick={stopGeneration}
                 className={styles.stopButton}
               />
             ) : (
               <IconButton
                 type="submit"
-                icon={<ArrowUp size={18} />}
+                icon={<ArrowUp size={16} />}
                 label="Send message"
                 variant="primary"
-                size="md"
+                size="sm"
                 disabled={(!input.trim() && !attachedContext) || insufficientCredits}
                 className={styles.sendButton}
               />

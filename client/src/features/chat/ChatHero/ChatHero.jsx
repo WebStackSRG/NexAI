@@ -11,13 +11,9 @@ import {
   Code2,
   Mail,
   Server,
-  ChevronDown,
-  Sparkles,
-  Cpu,
   Terminal,
   Zap,
 } from 'lucide-react';
-import { Dropdown } from '@/components/ui/Dropdown';
 import { IconButton } from '@/components/ui/IconButton';
 import { PromptPickerModal, VariableFillModal } from '@/features/prompts';
 import { useChatStore } from '@/store/chatStore';
@@ -52,8 +48,6 @@ const STARTER_PROMPTS = [
 
 export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) {
   const {
-    selectedModel,
-    setSelectedModel,
     insufficientCredits,
     isStreaming,
     isSimulation,
@@ -173,19 +167,6 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
     }
   };
 
-  const modelMenuItems = [
-    {
-      label: 'Gemini 3.8 Flash (Fast & Cost-Effective)',
-      icon: <Sparkles size={15} />,
-      onClick: () => setSelectedModel('flash'),
-    },
-    {
-      label: 'Gemini 3.1 Pro (Deep Reasoning & Analysis)',
-      icon: <Cpu size={15} />,
-      onClick: () => setSelectedModel('pro'),
-    },
-  ];
-
   const hasContent = Boolean(input.trim() || attachedFile);
 
   return (
@@ -198,7 +179,7 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
           </div>
           <h1 className={styles.heroHeadline}>Where should we start?</h1>
           <p className={styles.heroSubtitle}>
-            Select a model, type a prompt, or use starter suggestions to begin.
+            Type a prompt or choose a starter suggestion below to get started.
           </p>
         </div>
 
@@ -280,23 +261,6 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
                 <Zap size={13} className={isSimulation ? styles.activeZap : undefined} />
                 <span>{isSimulation ? 'Sim (0 Tokens)' : 'Sim'}</span>
               </button>
-
-              <Dropdown
-                trigger={
-                  <button
-                    type="button"
-                    className={styles.modelTrigger}
-                    aria-label="Select AI Model"
-                  >
-                    <span className={styles.modelName}>
-                      {selectedModel === 'pro' ? 'Gemini 3.1 Pro' : 'Gemini 3.8 Flash'}
-                    </span>
-                    <ChevronDown size={13} className={styles.chevron} />
-                  </button>
-                }
-                items={modelMenuItems}
-                align="right"
-              />
 
               <IconButton
                 type="button"

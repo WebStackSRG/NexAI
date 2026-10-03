@@ -26,6 +26,7 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { toast } from '@/store/uiStore';
 
 import { cn } from '@/lib/utils/cn';
+import logoImg from '@/assets/logo.png';
 import styles from './MessageThread.module.scss';
 
 
@@ -196,7 +197,7 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                       <Avatar name={user?.email || 'User'} size="sm" />
                     ) : (
                       <div className={styles.aiAvatar}>
-                        <Sparkles size={16} />
+                        <img src={logoImg} alt="NexAI" className={styles.avatarLogo} />
                       </div>
                     )}
                   </div>
@@ -222,10 +223,33 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                       {isUser ? (
                         <div className={styles.userText}>{message.content}</div>
                       ) : isCurrentlyStreaming && !message.content ? (
-                        <div className={styles.typingIndicator} aria-label="Thinking...">
-                          <span className={styles.dot} />
-                          <span className={styles.dot} />
-                          <span className={styles.dot} />
+                        <div className={styles.thinkingContainer} aria-label="NexAI is thinking">
+                          <div className={styles.orbitalScene}>
+                            <div className={styles.orbitalAura} />
+                            <div className={styles.orbitalRing1}>
+                              <span className={styles.orbitalDot1} />
+                            </div>
+                            <div className={styles.orbitalRing2}>
+                              <span className={styles.orbitalDot2} />
+                            </div>
+                            <div className={styles.orbitalRing3}>
+                              <span className={styles.orbitalDot3} />
+                            </div>
+                            <div className={styles.logo3dWrapper}>
+                              <img src={logoImg} alt="NexAI Thinking" className={styles.thinkingLogoImg} />
+                            </div>
+                          </div>
+                          <div className={styles.thinkingDetails}>
+                            <div className={styles.thinkingHeader}>
+                              <span className={styles.shimmerText}>NexAI is thinking</span>
+                              <div className={styles.pulsingDots}>
+                                <span className={styles.pulseDot} />
+                                <span className={styles.pulseDot} />
+                                <span className={styles.pulseDot} />
+                              </div>
+                            </div>
+                            <span className={styles.thinkingSubtext}>Formulating response & reasoning...</span>
+                          </div>
                         </div>
                       ) : hasError ? (
                         <div className={styles.errorCard}>

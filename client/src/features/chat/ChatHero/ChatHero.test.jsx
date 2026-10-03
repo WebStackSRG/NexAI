@@ -18,11 +18,9 @@ describe('ChatHero Component', () => {
 
     expect(screen.getByText('Where should we start?')).toBeInTheDocument();
     expect(
-      screen.getByText(/select a model, type a prompt, or use starter suggestions to begin/i),
+      screen.getByText(/type a prompt or choose a starter suggestion below to get started/i),
     ).toBeInTheDocument();
 
-    expect(screen.getByLabelText(/select ai model/i)).toBeInTheDocument();
-    expect(screen.getByText('Gemini 3.8 Flash')).toBeInTheDocument();
     expect(screen.getByLabelText(/ask nexai anything/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/attach context file/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/voice input not supported in this browser/i)).toBeInTheDocument();
@@ -71,17 +69,5 @@ describe('ChatHero Component', () => {
     fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
 
     expect(handleSendPrompt).toHaveBeenCalledWith('Explain closures');
-  });
-
-  it('switches AI model selection via dropdown', () => {
-    render(<ChatHero onSendPrompt={vi.fn()} />);
-
-    const modelTrigger = screen.getByLabelText(/select ai model/i);
-    fireEvent.click(modelTrigger);
-
-    const proOption = screen.getByText(/gemini 3.1 pro/i);
-    fireEvent.click(proOption);
-
-    expect(useChatStore.getState().setSelectedModel).toHaveBeenCalledWith('pro');
   });
 });
