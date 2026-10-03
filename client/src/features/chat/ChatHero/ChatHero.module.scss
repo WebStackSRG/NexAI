@@ -37,16 +37,25 @@
   gap: var(--space-2);
 
   .sparkleIcon {
-    width: 44px;
-    height: 44px;
+    width: 52px;
+    height: 52px;
     border-radius: var(--radius-full);
-    background: linear-gradient(135deg, var(--color-accent) 0%, var(--green-400) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--gray-0);
-    box-shadow: 0 4px 20px -2px color-mix(in srgb, var(--color-accent) 45%, transparent);
     margin-bottom: var(--space-1);
+
+    .heroLogoImg {
+      width: 52px;
+      height: 52px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 18px color-mix(in srgb, var(--color-accent) 55%, transparent));
+      transition: transform var(--duration-fast) var(--ease-standard);
+
+      &:hover {
+        transform: scale(1.06);
+      }
+    }
   }
 
   .heroHeadline {
@@ -244,6 +253,55 @@
   100% {
     transform: scale(1.08);
     box-shadow: 0 0 12px 4px color-mix(in srgb, var(--red-500) 60%, transparent);
+  }
+}
+
+.simPill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  border: 1px dashed var(--color-border);
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  font-size: 11.5px;
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-standard);
+
+  &:hover:not(:disabled) {
+    border-color: var(--amber-500);
+    color: var(--amber-500);
+  }
+
+  &.activeSimPill {
+    border: 1px solid var(--amber-500);
+    background-color: color-mix(in srgb, var(--amber-500) 12%, var(--color-bg-surface));
+    color: var(--amber-500);
+    font-weight: var(--weight-semibold);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--amber-500) 25%, transparent);
+
+    .activeZap {
+      color: var(--amber-500);
+      animation: pulseZap 1.5s infinite alternate;
+    }
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+@keyframes pulseZap {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.15);
+    opacity: 1;
   }
 }
 

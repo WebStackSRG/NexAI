@@ -15,12 +15,29 @@ export const useChatStore = create((set, get) => ({
   error: null,
   insufficientCredits: false,
   selectedModel: 'flash',
+  isSimulation: false,
 
   /**
    * Set the AI model to use (flash or pro)
    * @param {'flash' | 'pro'} model
    */
   setSelectedModel: (model) => set({ selectedModel: model }),
+
+  /**
+   * Toggle zero-token simulation mode
+   */
+  toggleSimulation: () =>
+    set((state) => {
+      const next = !state.isSimulation;
+      toast.info(
+        next
+          ? '🎮 Simulation Mode Active (0 Gemini tokens consumed)'
+          : '⚡ Live Gemini AI Mode Active',
+      );
+      return { isSimulation: next };
+    }),
+
+  setIsSimulation: (isSimulation) => set({ isSimulation }),
 
   /**
    * Fetch all user chat sessions
@@ -204,13 +221,13 @@ export const useChatStore = create((set, get) => ({
    * Send a message and stream the assistant response
    * @param {string} content
    */
-  sendMessage: async (content) => {
+  sendMessage: async (content, attachments = []) => {
     const trimmed = content.trim();
     if (!trimmed || get().isStreaming) {
       return;
     }
 
-    if (get().insufficientCredits) {
+    if (get().insufficientCredits && !get().isSimulation) {
       toast.error('Insufficient credits. Recharge to continue.');
       return;
     }
@@ -234,6 +251,7 @@ export const useChatStore = create((set, get) => ({
       chatId: targetChatId,
       role: 'user',
       content: trimmed,
+      attachments: Array.isArray(attachments) ? attachments : [],
       createdAt: new Date().toISOString(),
     };
 
@@ -257,11 +275,14 @@ export const useChatStore = create((set, get) => ({
 
     try {
       const model = get().selectedModel;
+      const isSimulation = get().isSimulation;
 
       await streamChatMessage({
         chatId: targetChatId,
         content: trimmed,
         model,
+        attachments,
+        isSimulation,
         signal: abortController.signal,
         onToken: (text) => {
           set((state) => {
@@ -285,6 +306,7 @@ export const useChatStore = create((set, get) => ({
                 ...lastMsg,
                 _id: doneData.messageId || lastMsg._id,
                 tokensUsed: doneData.tokensUsed,
+                followUps: doneData.followUps || [],
                 isStreaming: false,
               };
             }

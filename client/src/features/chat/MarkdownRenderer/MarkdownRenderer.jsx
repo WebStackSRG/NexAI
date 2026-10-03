@@ -1,15 +1,16 @@
 import PropTypes from 'prop-types';
 import Markdown from 'react-markdown';
 import { CodeBlock } from '../CodeBlock';
+import { cn } from '@/lib/utils/cn';
 import styles from './MarkdownRenderer.module.scss';
 
-export function MarkdownRenderer({ content = '' }) {
+export function MarkdownRenderer({ content = '', isStreaming = false }) {
   if (!content) {
     return null;
   }
 
   return (
-    <div className={styles.markdownContent}>
+    <div className={cn(styles.markdownContent, isStreaming && styles.streamingContent)}>
       <Markdown
         components={{
           pre({ children }) {
@@ -68,4 +69,5 @@ export function MarkdownRenderer({ content = '' }) {
 
 MarkdownRenderer.propTypes = {
   content: PropTypes.string,
+  isStreaming: PropTypes.bool,
 };

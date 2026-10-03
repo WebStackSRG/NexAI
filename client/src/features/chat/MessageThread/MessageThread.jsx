@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import {
   Sparkles,
   ArrowDown,
+  ArrowRight,
   Square,
   Copy,
   Check,
@@ -25,6 +26,7 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { toast } from '@/store/uiStore';
 
 import { cn } from '@/lib/utils/cn';
+import logoImg from '@/assets/logo.png';
 import styles from './MessageThread.module.scss';
 
 
@@ -108,7 +110,12 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
   }, []);
 
   const scrollToBottom = useCallback((smooth = true) => {
-    if (messagesEndRef.current) {
+    if (containerRef.current) {
+      containerRef.current.scrollTo({
+        top: containerRef.current.scrollHeight,
+        behavior: smooth ? 'smooth' : 'auto',
+      });
+    } else if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({
         behavior: smooth ? 'smooth' : 'auto',
         block: 'end',
@@ -194,8 +201,21 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                     {isUser ? (
                       <Avatar name={user?.email || 'User'} size="sm" />
                     ) : (
-                      <div className={styles.aiAvatar}>
-                        <Sparkles size={16} />
+                      <div
+                        className={cn(
+                          styles.aiAvatar,
+                          isCurrentlyStreaming && !message.content && styles.aiAvatarThinking,
+                        )}
+                      >
+                        {isCurrentlyStreaming && !message.content ? (
+                          <div className={styles.geminiSpinner} aria-label="Thinking...">
+                            <span className={styles.geminiDot} />
+                            <span className={styles.geminiDot} />
+                            <span className={styles.geminiDot} />
+                          </div>
+                        ) : (
+                          <img src={logoImg} alt="NexAI" className={styles.avatarLogo} />
+                        )}
                       </div>
                     )}
                   </div>
@@ -221,10 +241,8 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                       {isUser ? (
                         <div className={styles.userText}>{message.content}</div>
                       ) : isCurrentlyStreaming && !message.content ? (
-                        <div className={styles.typingIndicator} aria-label="Thinking...">
-                          <span className={styles.dot} />
-                          <span className={styles.dot} />
-                          <span className={styles.dot} />
+                        <div className={styles.aiMarkdown}>
+                          <span className={styles.blinkingCursor} aria-hidden="true" />
                         </div>
                       ) : hasError ? (
                         <div className={styles.errorCard}>
@@ -245,7 +263,10 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                         </div>
                       ) : (
                         <div className={styles.aiMarkdown}>
-                          <MarkdownRenderer content={message.content} />
+                          <MarkdownRenderer
+                            content={message.content}
+                            isStreaming={isCurrentlyStreaming}
+                          />
                           {isCurrentlyStreaming && (
                             <span className={styles.blinkingCursor} aria-hidden="true" />
                           )}
@@ -400,11 +421,35 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
 
                       </div>
                     )}
+
+                    {/* Suggested follow-up prompt chips */}
+                    {!isCurrentlyStreaming && isLast && !isUser && message.followUps && message.followUps.length > 0 && (
+                      <div className={styles.followUpsRow}>
+                        <div className={styles.followUpsLabel}>
+                          <Sparkles size={13} className={styles.followUpSparkle} />
+                          <span>Suggested next steps:</span>
+                        </div>
+                        <div className={styles.followUpsList}>
+                          {message.followUps.map((chip, chipIdx) => (
+                            <button
+                              key={chipIdx}
+                              type="button"
+                              className={styles.followUpChip}
+                              onClick={() => onSelectSuggestion?.(chip)}
+                              title={`Ask: "${chip}"`}
+                            >
+                              <span>{chip}</span>
+                              <ArrowRight size={12} className={styles.chipArrow} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
             })}
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} className={styles.scrollAnchor} />
           </div>
         )}
       </div>

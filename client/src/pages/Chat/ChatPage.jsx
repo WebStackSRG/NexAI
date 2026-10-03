@@ -51,12 +51,12 @@ export default function ChatPage() {
     }
   }, [chatId, activeChatId, selectChat]);
 
-  const handleSendFromHero = async (prompt) => {
+  const handleSendFromHero = async (prompt, attachments = []) => {
     const newChat = await createChat('New Chat');
     if (newChat) {
       navigate(`/chat/${newChat._id}`, { replace: true });
     }
-    await sendMessage(prompt);
+    await sendMessage(prompt, attachments);
   };
 
   const currentChat = chats.find((c) => c._id === activeChatId);
@@ -88,7 +88,7 @@ export default function ChatPage() {
           {/* Full-width conversation canvas */}
           <div className={styles.threadArea}>
             <MessageThread
-              onSelectSuggestion={(prompt) => setPrefillPrompt(prompt)}
+              onSelectSuggestion={(prompt) => sendMessage(prompt)}
               onEditPrompt={(prompt) => setPrefillPrompt(prompt)}
             />
           </div>

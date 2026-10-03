@@ -223,7 +223,7 @@ export function ChatSidebar({ onSelectChat, className }) {
                             onClick: (e) => handleStartDelete(chat._id, e),
                           },
                         ]}
-                        align="right"
+                        align="flyout"
                       />
                     </div>
                   </>

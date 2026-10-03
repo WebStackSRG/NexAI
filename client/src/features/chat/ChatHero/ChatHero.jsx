@@ -11,17 +11,16 @@ import {
   Code2,
   Mail,
   Server,
-  ChevronDown,
-  Sparkles,
-  Cpu,
   Terminal,
+  Zap,
 } from 'lucide-react';
-import { Dropdown } from '@/components/ui/Dropdown';
 import { IconButton } from '@/components/ui/IconButton';
+import { AttachContextModal } from '../ChatInput/AttachContextModal';
 import { PromptPickerModal, VariableFillModal } from '@/features/prompts';
 import { useChatStore } from '@/store/chatStore';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { cn } from '@/lib/utils/cn';
+import logoImg from '@/assets/logo.png';
 import styles from './ChatHero.module.scss';
 
 
@@ -49,10 +48,16 @@ const STARTER_PROMPTS = [
 ];
 
 export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) {
-  const { selectedModel, setSelectedModel, insufficientCredits, isStreaming } = useChatStore();
+  const {
+    insufficientCredits,
+    isStreaming,
+    isSimulation,
+    toggleSimulation,
+  } = useChatStore();
 
   const [input, setInput] = useState('');
-  const [attachedFile, setAttachedFile] = useState(null);
+  const [attachedContext, setAttachedContext] = useState(null);
+  const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [selectedPromptForVariables, setSelectedPromptForVariables] = useState(null);
   const textareaRef = useRef(null);
@@ -115,23 +120,45 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
   const handleSubmit = (e) => {
     e?.preventDefault();
     const trimmed = input.trim();
-    if ((!trimmed && !attachedFile) || isStreaming || insufficientCredits) {
+    if ((!trimmed && !attachedContext) || isStreaming || (insufficientCredits && !isSimulation)) {
       return;
     }
 
     let finalPrompt = trimmed;
-    if (attachedFile) {
-      finalPrompt = `[Context File: ${attachedFile.name}]\n\n${trimmed}`;
+    const attachments = [];
+
+    if (attachedContext) {
+      if (attachedContext.data) {
+        attachments.push({
+          name: attachedContext.name,
+          mimeType: attachedContext.mimeType,
+          data: attachedContext.data,
+          size: attachedContext.size,
+        });
+        if (!finalPrompt) {
+          finalPrompt = `[Analyzed ${attachedContext.type || "file"}: ${attachedContext.name}]`;
+        }
+      } else {
+        const prefix = `[Attached Context: ${attachedContext.name} (${attachedContext.type || "file"})]
+${attachedContext.content ? attachedContext.content.slice(0, 4000) : ""}
+
+`;
+        finalPrompt = `${prefix}${trimmed}`;
+      }
     }
 
-    setInput('');
-    setAttachedFile(null);
+    setInput("");
+    setAttachedContext(null);
     if (textareaRef.current) {
-      textareaRef.current.style.height = '24px';
+      textareaRef.current.style.height = "24px";
     }
 
     if (onSendPrompt) {
-      onSendPrompt(finalPrompt);
+      if (attachments.length > 0) {
+        onSendPrompt(finalPrompt, attachments);
+      } else {
+        onSendPrompt(finalPrompt);
+      }
     }
   };
 
@@ -144,16 +171,59 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setAttachedFile(file);
+    if (!file) return;
+
+    const isText =
+      file.type.startsWith('text/') ||
+      file.name.match(/\.(md|txt|json|csv|js|ts|jsx|tsx|py|html|css|yaml|yml|sql|sh|env)$/i);
+
+    if (isText) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setAttachedContext({
+          name: file.name,
+          type: 'file',
+          mimeType: file.type || 'text/plain',
+          content: event.target.result || '',
+        });
+      };
+      reader.readAsText(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target.result || '';
+        const mimeType =
+          file.type ||
+          (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream');
+
+        const type = file.type.startsWith('image/')
+          ? 'image'
+          : file.type.startsWith('audio/')
+            ? 'audio'
+            : file.type.startsWith('video/')
+              ? 'video'
+              : file.name.toLowerCase().endsWith('.pdf') || file.type.includes('pdf')
+                ? 'pdf'
+                : 'file';
+
+        setAttachedContext({
+          name: file.name,
+          type,
+          mimeType,
+          data: dataUrl,
+          size: file.size,
+        });
+      };
+      reader.readAsDataURL(file);
     }
+
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
   const handleSelectChip = (promptText) => {
-    if (isStreaming || insufficientCredits) return;
+    if (isStreaming || (insufficientCredits && !isSimulation)) return;
     if (onSendPrompt) {
       onSendPrompt(promptText);
     } else {
@@ -164,20 +234,7 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
     }
   };
 
-  const modelMenuItems = [
-    {
-      label: 'Gemini 3.8 Flash (Fast & Cost-Effective)',
-      icon: <Sparkles size={15} />,
-      onClick: () => setSelectedModel('flash'),
-    },
-    {
-      label: 'Gemini 3.1 Pro (Deep Reasoning & Analysis)',
-      icon: <Cpu size={15} />,
-      onClick: () => setSelectedModel('pro'),
-    },
-  ];
-
-  const hasContent = Boolean(input.trim() || attachedFile);
+  const hasContent = Boolean(input.trim() || attachedContext);
 
   return (
     <div className={styles.heroContainer} data-testid="chat-hero">
@@ -185,25 +242,35 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
         {/* Gemini-inspired Hero Headline */}
         <div className={styles.greetingHeader}>
           <div className={styles.sparkleIcon}>
-            <Sparkles size={24} />
+            <img src={logoImg} alt="NexAI Logo" className={styles.heroLogoImg} />
           </div>
           <h1 className={styles.heroHeadline}>Where should we start?</h1>
           <p className={styles.heroSubtitle}>
-            Select a model, type a prompt, or use starter suggestions to begin.
+            Type a prompt or choose a starter suggestion below to get started.
           </p>
         </div>
 
-        {/* Floating attached file badge if any */}
-        {attachedFile && (
+        {/* Floating attached file / context badge */}
+        {attachedContext && (
           <div className={styles.fileBadgeRow}>
-            <div className={styles.fileBadge} title={attachedFile.name}>
-              <FileText size={13} />
-              <span className={styles.fileName}>{attachedFile.name}</span>
+            <div className={styles.fileBadge} title={attachedContext.name}>
+              {attachedContext.type === 'image' ? (
+                <ImageIcon size={13} />
+              ) : attachedContext.type === 'audio' ? (
+                <Volume2 size={13} />
+              ) : attachedContext.type === 'video' ? (
+                <Video size={13} />
+              ) : attachedContext.type === 'document' ? (
+                <Bookmark size={13} />
+              ) : (
+                <FileText size={13} />
+              )}
+              <span className={styles.fileName}>{attachedContext.name}</span>
               <button
                 type="button"
-                onClick={() => setAttachedFile(null)}
+                onClick={() => setAttachedContext(null)}
                 className={styles.removeFileBtn}
-                aria-label="Remove attached file"
+                aria-label="Remove attached context"
               >
                 <X size={11} />
               </button>
@@ -221,14 +288,15 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
               onChange={handleFileChange}
               style={{ display: 'none' }}
               aria-label="Attach file"
+              accept="image/*,audio/*,video/*,.pdf,.txt,.md,.markdown,.json,.csv,.js,.ts,.jsx,.tsx,.py,.html,.css,.yaml,.yml,.sql"
             />
             <IconButton
               type="button"
               icon={<Plus size={18} />}
-              label="Attach context file"
+              label="Attach context file or library"
               variant="ghost"
               size="sm"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => setIsAttachModalOpen(true)}
               className={styles.attachBtn}
             />
 
@@ -239,34 +307,38 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={insufficientCredits}
+              disabled={insufficientCredits && !isSimulation}
               placeholder={
-                insufficientCredits
+                insufficientCredits && !isSimulation
                   ? 'Recharge your credits to send messages...'
-                  : 'Ask NexAI anything...'
+                  : isSimulation
+                    ? 'Simulation Mode (0 tokens) — Ask anything...'
+                    : 'Ask NexAI anything...'
               }
               className={styles.inputField}
               aria-label="Ask NexAI anything"
             />
 
-            {/* Right Controls: Model Selector + Mic + Send */}
+            {/* Right Controls: Model Selector + Simulation Toggle + Mic + Send */}
             <div className={styles.rightControls}>
-              <Dropdown
-                trigger={
-                  <button
-                    type="button"
-                    className={styles.modelTrigger}
-                    aria-label="Select AI Model"
-                  >
-                    <span className={styles.modelName}>
-                      {selectedModel === 'pro' ? 'Gemini 3.1 Pro' : 'Gemini 3.8 Flash'}
-                    </span>
-                    <ChevronDown size={13} className={styles.chevron} />
-                  </button>
+              <button
+                type="button"
+                onClick={toggleSimulation}
+                className={cn(styles.simPill, isSimulation && styles.activeSimPill)}
+                title={
+                  isSimulation
+                    ? 'Simulation mode active (0 tokens consumed)'
+                    : 'Switch to zero-token simulation mode'
                 }
-                items={modelMenuItems}
-                align="right"
-              />
+                aria-label={
+                  isSimulation
+                    ? 'Disable zero-token simulation mode'
+                    : 'Enable zero-token simulation mode'
+                }
+              >
+                <Zap size={13} className={isSimulation ? styles.activeZap : undefined} />
+                <span>{isSimulation ? 'Sim (0 Tokens)' : 'Sim'}</span>
+              </button>
 
               <IconButton
                 type="button"
@@ -308,7 +380,7 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
                   label="Send prompt"
                   variant="primary"
                   size="sm"
-                  disabled={!hasContent || insufficientCredits}
+                  disabled={!hasContent || (insufficientCredits && !isSimulation)}
                   className={styles.sendBtn}
                 />
               )}
@@ -333,6 +405,14 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
           ))}
         </div>
       </div>
+
+      {/* Attach Context from Library or Device Modal */}
+      <AttachContextModal
+        open={isAttachModalOpen}
+        onClose={() => setIsAttachModalOpen(false)}
+        onSelect={(item) => setAttachedContext(item)}
+        onUploadLocal={() => fileInputRef.current?.click()}
+      />
 
       {/* Prompt Selector Modal */}
       <PromptPickerModal

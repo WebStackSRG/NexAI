@@ -14,6 +14,7 @@ export const useInterviewStore = create((set, get) => ({
   difficulty: 'mid',
   topic: 'MERN Stack Architecture & REST/WebSocket APIs',
   selectedModel: 'flash',
+  isSimulation: false,
 
   // Active session
   currentSession: null,
@@ -39,6 +40,14 @@ export const useInterviewStore = create((set, get) => ({
   // Setup action
   setSetupField: (field, value) => {
     set({ [field]: value });
+  },
+
+  toggleSimulation: () => {
+    set((state) => ({ isSimulation: !state.isSimulation }));
+  },
+
+  setIsSimulation: (isSimulation) => {
+    set({ isSimulation: Boolean(isSimulation) });
   },
 
   // Audio state actions
@@ -105,12 +114,14 @@ export const useInterviewStore = create((set, get) => ({
     }
   },
 
-  // Start new interview with live Gemini AI
+  // Start new interview with live Gemini AI or offline simulation
   startInterview: async (config = {}) => {
     const role = (config.role || get().role || 'Full-Stack Engineer').trim();
     const difficulty = config.difficulty || get().difficulty || 'mid';
     const topic = (config.topic || get().topic || 'MERN Stack Architecture & REST/WebSocket APIs').trim();
     const model = config.model || get().selectedModel || 'flash';
+    const isSimulation =
+      config.isSimulation !== undefined ? Boolean(config.isSimulation) : Boolean(get().isSimulation);
 
     set({
       isStarting: true,
@@ -126,6 +137,7 @@ export const useInterviewStore = create((set, get) => ({
         difficulty,
         topic,
         model,
+        isSimulation,
       });
 
       const payload = res?.data || res || {};
@@ -213,6 +225,7 @@ export const useInterviewStore = create((set, get) => ({
         interviewId: session._id,
         content: trimmed,
         model,
+        isSimulation: Boolean(session.isSimulation || get().isSimulation),
         signal: abortController.signal,
         onToken: (text) => {
           set((state) => {
@@ -356,8 +369,10 @@ export const useInterviewStore = create((set, get) => ({
 
     try {
       const model = get().selectedModel;
+      const isSimulation = Boolean(session.isSimulation || get().isSimulation);
       const res = await interviewApi.concludeInterview(session._id, {
         model,
+        isSimulation,
       });
       const payload = res?.data || res || {};
       const updatedSession = payload.session || res?.session;

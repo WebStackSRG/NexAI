@@ -88,6 +88,8 @@ export function InterviewSetup({
   isStarting = false,
   sessions = [],
   onSelectSession,
+  isSimulation = false,
+  onToggleSimulation,
 }) {
   const configColRef = useRef(null);
   const [configHeight, setConfigHeight] = useState(null);
@@ -560,13 +562,45 @@ export function InterviewSetup({
               </div>
             </div>
 
+            {/* Simulation Mode Toggle Card */}
+            <div className={styles.simulationCard}>
+              <div className={styles.simulationLeft}>
+                <div className={cn(styles.simIconWrap, isSimulation && styles.activeSimIcon)}>
+                  <Zap size={16} />
+                </div>
+                <div className={styles.simTextWrap}>
+                  <div className={styles.simTitleRow}>
+                    <span className={styles.simTitle}>Zero-Token Simulation Mode</span>
+                    <Badge tone={isSimulation ? 'warning' : 'neutral'} size="sm">
+                      {isSimulation ? 'Active (0 Tokens)' : 'Offline Demo'}
+                    </Badge>
+                  </div>
+                  <p className={styles.simSubtitle}>
+                    Run end-to-end technical viva interviews without consuming Gemini API tokens or wallet credits.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className={cn(styles.simToggleBtn, isSimulation && styles.activeToggleBtn)}
+                onClick={onToggleSimulation}
+                aria-label="Toggle simulation mode"
+              >
+                <span>{isSimulation ? 'Enabled' : 'Enable'}</span>
+              </button>
+            </div>
+
             {/* Ready to Start Summary Bar & CTA */}
             <div className={styles.ctaRow}>
               <div className={styles.summaryBar}>
                 <span className={styles.summaryPrefix}>Selected Configuration:</span>
                 <span className={styles.summaryValue}>
                   {role || 'Select Role'} · {difficulty.toUpperCase()} ·{' '}
-                  {selectedModel === 'flash' ? 'Flash Model' : 'Pro Model'}
+                  {isSimulation
+                    ? 'Offline Simulation (0 Tokens)'
+                    : selectedModel === 'flash'
+                      ? 'Flash Model'
+                      : 'Pro Model'}
                 </span>
               </div>
 
@@ -582,8 +616,10 @@ export function InterviewSetup({
                 Enter Simulation Arena
               </Button>
 
-              <span className={styles.meteringNotice}>
-                ⚡ Real-time AI interviewer metered with credits (~1-2 credits/turn)
+              <span className={cn(styles.meteringNotice, isSimulation && styles.simNotice)}>
+                {isSimulation
+                  ? '⚡ Simulation Mode active: Zero tokens & zero wallet credits deducted.'
+                  : '⚡ Real-time AI interviewer metered with credits (~1-2 credits/turn)'}
               </span>
             </div>
           </Card>
@@ -680,4 +716,6 @@ InterviewSetup.propTypes = {
   isStarting: PropTypes.bool,
   sessions: PropTypes.array,
   onSelectSession: PropTypes.func.isRequired,
+  isSimulation: PropTypes.bool,
+  onToggleSimulation: PropTypes.func,
 };
