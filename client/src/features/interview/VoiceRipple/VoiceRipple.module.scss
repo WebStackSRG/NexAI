@@ -7,9 +7,18 @@
   align-items: center;
   justify-content: center;
   user-select: none;
+  gap: var(--space-4);
+  width: 100%;
+}
 
-  // Sizing definitions
-  &.sm {
+.ringsWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  // Sizing definitions for rings & orb stage
+  .sm & {
     width: 100px;
     height: 100px;
 
@@ -19,7 +28,7 @@
     }
   }
 
-  &.md {
+  .md & {
     width: 180px;
     height: 180px;
 
@@ -29,9 +38,9 @@
     }
   }
 
-  &.lg {
-    width: 240px;
-    height: 240px;
+  .lg & {
+    width: 220px;
+    height: 220px;
 
     .centerOrb {
       width: 108px;
@@ -198,12 +207,21 @@
 }
 
 .statusLabel {
-  margin-top: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.8125rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-text-secondary);
   text-align: center;
-  transition: color var(--duration-fast) var(--ease-standard);
+  padding: 6px 16px;
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--duration-fast) var(--ease-standard);
+  z-index: 10;
+  max-width: 90%;
 }
 
 // Hardware-accelerated keyframe definitions

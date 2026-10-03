@@ -34,32 +34,34 @@ export function VoiceRipple({
       aria-label={getAccessibleLabel()}
       aria-live="polite"
     >
-      {/* Concentric ripple rings with staggered hardware-accelerated animations */}
-      <div className={cn(styles.rippleRing, styles.ring1)} aria-hidden="true" />
-      <div className={cn(styles.rippleRing, styles.ring2)} aria-hidden="true" />
-      <div className={cn(styles.rippleRing, styles.ring3)} aria-hidden="true" />
-      <div className={cn(styles.rippleRing, styles.ring4)} aria-hidden="true" />
+      {/* Concentric ripple rings & center orb stage */}
+      <div className={styles.ringsWrapper}>
+        <div className={cn(styles.rippleRing, styles.ring1)} aria-hidden="true" />
+        <div className={cn(styles.rippleRing, styles.ring2)} aria-hidden="true" />
+        <div className={cn(styles.rippleRing, styles.ring3)} aria-hidden="true" />
+        <div className={cn(styles.rippleRing, styles.ring4)} aria-hidden="true" />
 
-      {/* Central Interactive Orb */}
-      <div className={styles.centerOrb} aria-hidden="true">
-        {isInterviewer ? (
-          <Bot size={size === 'lg' ? 36 : size === 'sm' ? 20 : 28} className={styles.orbIcon} />
-        ) : isCandidate ? (
-          <Mic size={size === 'lg' ? 36 : size === 'sm' ? 20 : 28} className={styles.orbIcon} />
-        ) : (
-          <Volume2 size={size === 'lg' ? 36 : size === 'sm' ? 20 : 28} className={styles.orbIcon} />
-        )}
+        {/* Central Interactive Orb */}
+        <div className={styles.centerOrb} aria-hidden="true">
+          {isInterviewer ? (
+            <Bot size={size === 'lg' ? 36 : size === 'sm' ? 20 : 28} className={styles.orbIcon} />
+          ) : isCandidate ? (
+            <Mic size={size === 'lg' ? 36 : size === 'sm' ? 20 : 28} className={styles.orbIcon} />
+          ) : (
+            <Volume2 size={size === 'lg' ? 36 : size === 'sm' ? 20 : 28} className={styles.orbIcon} />
+          )}
 
-        {/* Dynamic Mini Waveform Bars */}
-        {isSpeaking && (
-          <div className={styles.waveBars} aria-hidden="true">
-            <span className={styles.bar} />
-            <span className={styles.bar} />
-            <span className={styles.bar} />
-            <span className={styles.bar} />
-            <span className={styles.bar} />
-          </div>
-        )}
+          {/* Dynamic Mini Waveform Bars */}
+          {isSpeaking && (
+            <div className={styles.waveBars} aria-hidden="true">
+              <span className={styles.bar} />
+              <span className={styles.bar} />
+              <span className={styles.bar} />
+              <span className={styles.bar} />
+              <span className={styles.bar} />
+            </div>
+          )}
+        </div>
       </div>
 
       {statusText && <span className={styles.statusLabel}>{statusText}</span>}

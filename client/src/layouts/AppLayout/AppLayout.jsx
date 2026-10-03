@@ -23,6 +23,9 @@ export function AppLayout() {
 
   const isChatRoute =
     location.pathname === '/chat' || location.pathname.startsWith('/chat/');
+  const isWideRoute =
+    location.pathname.startsWith('/interview') ||
+    location.pathname.startsWith('/library');
 
   return (
     <div className={styles.layout}>
@@ -38,7 +41,13 @@ export function AppLayout() {
 
       <div className={styles.mainWrapper}>
         <Topbar />
-        <main className={cn(styles.content, isChatRoute && styles.chatContent)}>
+        <main
+          className={cn(
+            styles.content,
+            isChatRoute && styles.chatContent,
+            isWideRoute && styles.wideContent,
+          )}
+        >
           <Suspense
             fallback={
               <div

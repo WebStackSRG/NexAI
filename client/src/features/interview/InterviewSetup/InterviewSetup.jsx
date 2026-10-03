@@ -15,6 +15,9 @@ import {
   Cpu,
   GraduationCap,
   Code2,
+  Target,
+  TrendingUp,
+  BarChart2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -91,8 +94,22 @@ export function InterviewSetup({
   isSimulation = false,
   onToggleSimulation,
 }) {
-  const configColRef = useRef(null);
-  const [configHeight, setConfigHeight] = useState(null);
+  // Calculate performance overview metrics
+  const completedSessions = sessions.filter(
+    (s) => s.status === 'completed' && s.scorecard?.overallScore !== undefined
+  );
+  const totalCompleted = completedSessions.length;
+  const avgScore =
+    totalCompleted > 0
+      ? Math.round(
+          completedSessions.reduce((acc, s) => acc + (s.scorecard.overallScore || 0), 0) /
+            totalCompleted
+        )
+      : null;
+  const bestScore =
+    totalCompleted > 0
+      ? Math.max(...completedSessions.map((s) => s.scorecard.overallScore || 0))
+      : null;
 
   // Custom role state
   const isPresetRole = ROLE_PRESETS.some((p) => p.id === role);
@@ -113,23 +130,6 @@ export function InterviewSetup({
   });
   const [showAddTag, setShowAddTag] = useState(false);
   const [newTagInput, setNewTagInput] = useState('');
-
-  // Synchronize height of the recent simulations card with the config card
-  useEffect(() => {
-    if (!configColRef.current) return;
-    const updateHeight = () => {
-      if (configColRef.current) {
-        setConfigHeight(Math.round(configColRef.current.offsetHeight));
-      }
-    };
-    updateHeight();
-
-    if (typeof ResizeObserver !== 'undefined') {
-      const observer = new ResizeObserver(updateHeight);
-      observer.observe(configColRef.current);
-      return () => observer.disconnect();
-    }
-  }, []);
 
   const handleSelectPreset = (presetId) => {
     setCustomRoleMode(false);
@@ -210,7 +210,7 @@ export function InterviewSetup({
     <div className={styles.setupContainer}>
       <div className={styles.mainGrid}>
         {/* Left Column: Setup Config Form */}
-        <div className={styles.configColumn} ref={configColRef}>
+        <div className={styles.configColumn}>
           <Card className={styles.setupCard} padding="lg">
             {/* Header */}
             <div className={styles.headerArea}>
@@ -503,90 +503,24 @@ export function InterviewSetup({
               </div>
             </div>
 
-            {/* STEP 4: AI Model Selection */}
-            <div className={styles.formSection}>
-              <div className={styles.stepHeader}>
-                <div className={styles.stepNumberBadge}>4</div>
-                <div className={styles.stepHeaderText}>
-                  <label className={styles.stepTitle}>AI Interviewer Model</label>
-                  <span className={styles.stepSubtitle}>
-                    Select speech speed vs multi-turn analytical depth
-                  </span>
-                </div>
+            {/* Compact Simulation Mode Toggle */}
+            <div className={styles.compactSimRow}>
+              <div className={styles.simStatusInfo}>
+                <span className={styles.modeLabel}>Interviewer Engine:</span>
+                <span className={cn(styles.modeIndicator, isSimulation ? styles.simMode : styles.liveMode)}>
+                  {isSimulation ? 'Offline Simulation (0 Tokens)' : 'Live Gemini AI (Gemini Flash)'}
+                </span>
               </div>
 
-              <div className={styles.modelRow}>
-                <button
-                  type="button"
-                  className={cn(styles.modelCard, selectedModel === 'flash' && styles.selected)}
-                  onClick={() => onModelChange('flash')}
-                >
-                  <div className={styles.modelIcon}>
-                    <Zap size={16} />
-                  </div>
-                  <div className={styles.modelContent}>
-                    <div className={styles.modelTop}>
-                      <span className={styles.modelTitle}>Gemini Flash</span>
-                      <span className={styles.modelBadge}>Fastest</span>
-                    </div>
-                    <span className={styles.modelSub}>Ultra-fast real-time speech responses</span>
-                  </div>
-                  {selectedModel === 'flash' && (
-                    <div className={styles.checkIndicator}>
-                      <Check size={12} />
-                    </div>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  className={cn(styles.modelCard, selectedModel === 'pro' && styles.selected)}
-                  onClick={() => onModelChange('pro')}
-                >
-                  <div className={styles.modelIcon}>
-                    <Sparkles size={16} />
-                  </div>
-                  <div className={styles.modelContent}>
-                    <div className={styles.modelTop}>
-                      <span className={styles.modelTitle}>Gemini Pro</span>
-                      <span className={styles.modelBadgePro}>Deep Viva</span>
-                    </div>
-                    <span className={styles.modelSub}>Deep multi-turn architectural probing</span>
-                  </div>
-                  {selectedModel === 'pro' && (
-                    <div className={styles.checkIndicator}>
-                      <Check size={12} />
-                    </div>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Simulation Mode Toggle Card */}
-            <div className={styles.simulationCard}>
-              <div className={styles.simulationLeft}>
-                <div className={cn(styles.simIconWrap, isSimulation && styles.activeSimIcon)}>
-                  <Zap size={16} />
-                </div>
-                <div className={styles.simTextWrap}>
-                  <div className={styles.simTitleRow}>
-                    <span className={styles.simTitle}>Zero-Token Simulation Mode</span>
-                    <Badge tone={isSimulation ? 'warning' : 'neutral'} size="sm">
-                      {isSimulation ? 'Active (0 Tokens)' : 'Offline Demo'}
-                    </Badge>
-                  </div>
-                  <p className={styles.simSubtitle}>
-                    Run end-to-end technical viva interviews without consuming Gemini API tokens or wallet credits.
-                  </p>
-                </div>
-              </div>
               <button
                 type="button"
-                className={cn(styles.simToggleBtn, isSimulation && styles.activeToggleBtn)}
+                className={cn(styles.compactSimBtn, isSimulation && styles.activeSimBtn)}
                 onClick={onToggleSimulation}
                 aria-label="Toggle simulation mode"
+                title={isSimulation ? 'Switch to Live AI Interview' : 'Switch to Zero-Token Simulation'}
               >
-                <span>{isSimulation ? 'Enabled' : 'Enable'}</span>
+                <Zap size={13} className={isSimulation ? styles.activeZap : undefined} />
+                <span>{isSimulation ? 'Simulation: Active' : 'Simulation: Off'}</span>
               </button>
             </div>
 
@@ -596,11 +530,7 @@ export function InterviewSetup({
                 <span className={styles.summaryPrefix}>Selected Configuration:</span>
                 <span className={styles.summaryValue}>
                   {role || 'Select Role'} · {difficulty.toUpperCase()} ·{' '}
-                  {isSimulation
-                    ? 'Offline Simulation (0 Tokens)'
-                    : selectedModel === 'flash'
-                      ? 'Flash Model'
-                      : 'Pro Model'}
+                  {isSimulation ? 'Offline Simulation (0 Tokens)' : 'Live AI Interview (Gemini Flash)'}
                 </span>
               </div>
 
@@ -612,35 +542,49 @@ export function InterviewSetup({
                 disabled={!role.trim() || !topic.trim() || isStarting}
                 loading={isStarting}
                 leftIcon={<Play size={16} />}
+                aria-label="Enter Simulation Arena"
               >
-                Enter Simulation Arena
+                {isSimulation ? 'Enter Simulation Arena' : 'Start Technical Interview'}
               </Button>
 
               <span className={cn(styles.meteringNotice, isSimulation && styles.simNotice)}>
                 {isSimulation
                   ? '⚡ Simulation Mode active: Zero tokens & zero wallet credits deducted.'
-                  : '⚡ Real-time AI interviewer metered with credits (~1-2 credits/turn)'}
+                  : '⚡ Real-time Gemini AI interviewer metered with credits (~1-2 credits/turn)'}
               </span>
             </div>
           </Card>
         </div>
 
-        {/* Right Column: History & Past Sessions */}
+        {/* Right Column: History, Metrics & Preparation Hub */}
         <div className={styles.historyColumn}>
-          <Card
-            className={styles.historyCard}
-            padding="lg"
-            style={
-              configHeight && typeof window !== 'undefined' && window.innerWidth >= 1024
-                ? { height: `${configHeight}px`, maxHeight: `${configHeight}px` }
-                : undefined
-            }
-          >
+          {/* Quick Metrics Overview Strip */}
+          <div className={styles.statsStrip}>
+            <div className={styles.statBox}>
+              <span className={styles.statLabel}>Screenings</span>
+              <span className={styles.statValue}>{sessions.length}</span>
+            </div>
+            <div className={styles.statBox}>
+              <span className={styles.statLabel}>Avg Score</span>
+              <span className={cn(styles.statValue, avgScore !== null && styles.accentValue)}>
+                {avgScore !== null ? `${avgScore}%` : '—'}
+              </span>
+            </div>
+            <div className={styles.statBox}>
+              <span className={styles.statLabel}>Top Score</span>
+              <span className={cn(styles.statValue, bestScore !== null && styles.successValue)}>
+                {bestScore !== null ? `${bestScore}/100` : '—'}
+              </span>
+            </div>
+          </div>
+
+          {/* Recent Simulations Card */}
+          <Card className={styles.historyCard} padding="lg">
             <div className={styles.historyHeader}>
-              <h3 className={styles.historyTitle}>
+              <div className={styles.historyTitleWrap}>
                 <Clock size={16} />
-                Recent Simulations
-              </h3>
+                <h3 className={styles.historyTitle}>Recent Simulations</h3>
+              </div>
               <span className={styles.historyCount}>{sessions.length} sessions</span>
             </div>
 
@@ -696,6 +640,55 @@ export function InterviewSetup({
                 })}
               </div>
             )}
+          </Card>
+
+          {/* Technical Evaluation Rubric & Prep Guide */}
+          <Card className={styles.rubricCard} padding="lg">
+            <div className={styles.rubricHeader}>
+              <div className={styles.rubricTitleWrap}>
+                <Target size={16} className={styles.rubricIcon} />
+                <h4 className={styles.rubricTitle}>Evaluation Criteria & Viva Rigor</h4>
+              </div>
+              <span className={styles.rubricBadge}>4-Pillar Model</span>
+            </div>
+
+            <p className={styles.rubricDesc}>
+              Simulates senior engineering panel rigor with continuous adaptive follow-ups and strict architectural defense.
+            </p>
+
+            <div className={styles.rubricGrid}>
+              <div className={styles.rubricItem}>
+                <span className={styles.rubricDot} />
+                <div>
+                  <strong className={styles.rubricLabel}>Technical Accuracy</strong>
+                  <p className={styles.rubricSub}>Language primitives, API lifecycle & runtime internals</p>
+                </div>
+              </div>
+
+              <div className={styles.rubricItem}>
+                <span className={styles.rubricDot} />
+                <div>
+                  <strong className={styles.rubricLabel}>System Design</strong>
+                  <p className={styles.rubricSub}>State boundaries, synchronization, caching & scalability</p>
+                </div>
+              </div>
+
+              <div className={styles.rubricItem}>
+                <span className={styles.rubricDot} />
+                <div>
+                  <strong className={styles.rubricLabel}>Problem Solving</strong>
+                  <p className={styles.rubricSub}>Algorithmic reasoning, edge cases & latency trade-offs</p>
+                </div>
+              </div>
+
+              <div className={styles.rubricItem}>
+                <span className={styles.rubricDot} />
+                <div>
+                  <strong className={styles.rubricLabel}>Viva Communication</strong>
+                  <p className={styles.rubricSub}>Articulate rationale, defensive depth & concise answers</p>
+                </div>
+              </div>
+            </div>
           </Card>
         </div>
       </div>

@@ -11,6 +11,8 @@ import {
   Copy,
   Check,
   Target,
+  ArrowLeft,
+  Plus,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -61,6 +63,20 @@ export function Scorecard({
     if (score >= 70) return styles.scoreAccent;
     if (score >= 50) return styles.scoreWarning;
     return styles.scoreDanger;
+  };
+
+  const getScoreFillClass = (score) => {
+    if (score >= 85) return styles.fillSuccess;
+    if (score >= 70) return styles.fillAccent;
+    if (score >= 50) return styles.fillWarning;
+    return styles.fillDanger;
+  };
+
+  const getScoreTextClass = (score) => {
+    if (score >= 85) return styles.textSuccess;
+    if (score >= 70) return styles.textAccent;
+    if (score >= 50) return styles.textWarning;
+    return styles.textDanger;
   };
 
   const handleCopyReport = async () => {
@@ -137,29 +153,45 @@ ${summary}`;
         <div className={styles.actionToolbar}>
           <div className={styles.leftActions}>
             <Button
-              variant="primary"
-              size="md"
+              variant="secondary"
+              size="sm"
               onClick={handleViewInLibrary}
+              leftIcon={<Bookmark size={15} />}
               className={styles.libraryBtn}
             >
-              <Bookmark size={15} />
               View in Library
             </Button>
             <Button
               variant="secondary"
-              size="md"
+              size="sm"
               onClick={handleCopyReport}
+              leftIcon={hasCopied ? <Check size={15} /> : <Copy size={15} />}
               className={styles.copyBtn}
             >
-              {hasCopied ? <Check size={15} /> : <Copy size={15} />}
               {hasCopied ? 'Copied' : 'Copy Report'}
             </Button>
           </div>
 
-          <Button variant="ghost" size="md" onClick={onReset} className={styles.newInterviewBtn}>
-            <RotateCcw size={15} />
-            Start New Simulation
-          </Button>
+          <div className={styles.rightActions}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onReset}
+              leftIcon={<ArrowLeft size={15} />}
+              className={styles.backBtn}
+            >
+              Back to Setup
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={onReset}
+              leftIcon={<Plus size={15} />}
+              className={styles.practiceBtn}
+            >
+              Practice New Interview
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -198,11 +230,13 @@ ${summary}`;
               <div key={cat.id} className={styles.catItem}>
                 <div className={styles.catHeader}>
                   <span className={styles.catLabel}>{cat.label}</span>
-                  <span className={styles.catScore}>{cat.score}%</span>
+                  <span className={cn(styles.catScore, getScoreTextClass(cat.score))}>
+                    {cat.score}%
+                  </span>
                 </div>
                 <div className={styles.progressBarBg}>
                   <div
-                    className={cn(styles.progressBarFill, getScoreColorClass(cat.score))}
+                    className={cn(styles.progressBarFill, getScoreFillClass(cat.score))}
                     style={{ width: `${Math.min(100, Math.max(0, cat.score))}%` }}
                   />
                 </div>

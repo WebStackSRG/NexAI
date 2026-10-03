@@ -46,10 +46,20 @@ function parseJsonOutput(text) {
  * @returns {Array<{role: 'user' | 'model', parts: Array<{text: string}>}>}
  */
 export function formatInterviewHistory(messages) {
-  return messages.map((m) => ({
+  const formatted = messages.map((m) => ({
     role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: m.content }],
+    parts: [{ text: m.content || '' }],
   }));
+
+  // Gemini API requires the first turn in contents to have role: 'user'
+  if (formatted.length > 0 && formatted[0].role === 'model') {
+    formatted.unshift({
+      role: 'user',
+      parts: [{ text: 'Hello, I am ready for the technical interview.' }],
+    });
+  }
+
+  return formatted;
 }
 
 /**

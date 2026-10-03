@@ -4,6 +4,48 @@ import { streamInterviewResponse, sanitizeErrorMessage } from '@/lib/sse.js';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from '@/components/ui/Toast';
 
+// Helper: sanitize markdown artifacts so TTS sounds natural and clear
+function sanitizeForSpeech(raw) {
+  if (!raw) return '';
+  return raw
+    .replace(/```[\s\S]*?```/g, ' Code snippet omitted. ') // Don't speak raw code blocks
+    .replace(/`([^`]+)`/g, '$1') // Strip inline backticks
+    .replace(/#{1,6}\s+/g, '') // Strip markdown heading markers
+    .replace(/(\*\*|__)(.*?)\1/g, '$2') // Strip bold
+    .replace(/(\*|_)(.*?)\1/g, '$2') // Strip italics
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Strip markdown links
+    .replace(/^\s*[-*+]\s+/gm, '') // Strip bullet points
+    .replace(/^\s*\d+\.\s+/gm, '') // Strip list numbers
+    .replace(/^\s*>\s+/gm, '') // Strip blockquote markers
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Helper: pick the clearest natural voice available on the user's browser
+function getBestSpeechVoice() {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return null;
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices || voices.length === 0) return null;
+
+  // 1. Prioritize Natural/Online Neural voices (Edge / Windows 11 / Chrome)
+  const natural = voices.find(
+    (v) => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Online'))
+  );
+  if (natural) return natural;
+
+  // 2. Google US English (Chrome)
+  const google = voices.find((v) => v.name.includes('Google') && v.lang.startsWith('en'));
+  if (google) return google;
+
+  // 3. Clear US or GB English voices
+  const standardEnglish = voices.find(
+    (v) => v.lang === 'en-US' || v.lang === 'en-GB' || v.lang.startsWith('en')
+  );
+  if (standardEnglish) return standardEnglish;
+
+  return voices[0] || null;
+}
+
 export const useInterviewStore = create((set, get) => ({
   // Past sessions history
   sessions: [],
@@ -416,14 +458,21 @@ export const useInterviewStore = create((set, get) => ({
     }
   },
 
-  // Text-To-Speech audio readout helper
+  // Text-To-Speech audio readout helper with markdown sanitization and natural voice selection
   speakInterviewerText: (text) => {
     if (!text || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
     try {
       window.speechSynthesis.cancel();
 
-      const utterance = new SpeechSynthesisUtterance(text);
+      const spokenText = sanitizeForSpeech(text);
+      if (!spokenText) return;
+
+      const utterance = new SpeechSynthesisUtterance(spokenText);
+      const voice = getBestSpeechVoice();
+      if (voice) {
+        utterance.voice = voice;
+      }
       utterance.rate = 1.0;
       utterance.pitch = 1.0;
 
@@ -444,6 +493,9 @@ export const useInterviewStore = create((set, get) => ({
           speakingSource: state.isListening ? 'candidate' : null,
         }));
       };
+
+      // Keep reference to prevent garbage collection cutting off long speech turns
+      window.__nexaiSpeechUtterance = utterance;
 
       window.speechSynthesis.speak(utterance);
     } catch {

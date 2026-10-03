@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, CreditCard, RotateCcw } from 'lucide-react';
+import { AlertCircle, CreditCard, RotateCcw, ArrowLeft, Plus } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Button } from '@/components/ui/Button';
 import {
@@ -80,12 +80,6 @@ export default function InterviewPage() {
               <CreditCard size={14} />
               <span>{creditsRemaining} credits</span>
             </div>
-            {currentSession && (
-              <Button variant="ghost" size="sm" onClick={resetSession} className={styles.exitBtn}>
-                <RotateCcw size={14} />
-                Exit Simulation
-              </Button>
-            )}
           </div>
         }
       />

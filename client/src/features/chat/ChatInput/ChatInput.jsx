@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/Button';
 import { IconButton } from '@/components/ui/IconButton';
 import { PromptPickerModal, VariableFillModal } from '@/features/prompts';
 import { AttachContextModal } from './AttachContextModal';
+import { AttachedContextPreview } from './AttachedContextPreview';
 import { useChatStore } from '@/store/chatStore';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { ROUTES } from '@/constants/routes';
@@ -45,6 +46,8 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
   const [isMultiline, setIsMultiline] = useState(false);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  const hasContent = Boolean(input.trim() || attachedContext);
 
   const insertCompiledPrompt = (compiledText) => {
     setInput((prev) => (prev ? `${prev}\n\n${compiledText}` : compiledText));
@@ -91,7 +94,7 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
       const scrollHeight = textareaRef.current.scrollHeight;
-      const newHeight = Math.min(Math.max(scrollHeight, 32), 160);
+      const newHeight = Math.min(Math.max(scrollHeight, 28), 220);
       textareaRef.current.style.height = `${newHeight}px`;
       setIsMultiline(scrollHeight > 38);
     }
@@ -114,7 +117,7 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
     setAttachedContext(null);
     setIsMultiline(false);
     if (textareaRef.current) {
-      textareaRef.current.style.height = '32px';
+      textareaRef.current.style.height = '28px';
     }
     await sendMessage(messageToSend);
   };
@@ -197,65 +200,25 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
         </div>
       )}
 
-      {attachedContext && (
-        <div className={styles.attachedContextBar}>
-          <div className={styles.fileBadge} title={attachedContext.name}>
-            {attachedContext.type === 'image' ? (
-              <ImageIcon size={12} />
-            ) : attachedContext.type === 'audio' ? (
-              <Volume2 size={12} />
-            ) : attachedContext.type === 'video' ? (
-              <Video size={12} />
-            ) : attachedContext.type === 'document' ? (
-              <Bookmark size={12} />
-            ) : (
-              <FileText size={12} />
-            )}
-            <span className={styles.fileName}>
-              {attachedContext.name}
-              {attachedContext.category ? ` (${attachedContext.category})` : ''}
-            </span>
-            <button
-              type="button"
-              onClick={() => setAttachedContext(null)}
-              className={styles.removeFileBtn}
-              aria-label="Remove attached context"
-            >
-              <X size={11} />
-            </button>
-          </div>
-        </div>
-      )}
-
       <form className={styles.composerForm} onSubmit={handleSubmit}>
-        <div className={cn(styles.composerBar, isMultiline && styles.composerBarMultiline)}>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            style={{ display: 'none' }}
-            aria-label="Attach file"
-            accept="image/*,audio/*,video/*,.pdf,.txt,.md,.markdown,.json,.csv,.js,.ts,.jsx,.tsx,.py,.html,.css,.yaml,.yml,.sql"
+        {/* Attached context / media preview */}
+        {attachedContext && (
+          <AttachedContextPreview
+            context={attachedContext}
+            onRemove={() => setAttachedContext(null)}
           />
+        )}
 
-          <div className={styles.leftControls}>
-            <button
-              type="button"
-              className={cn(styles.simPill, isSimulation && styles.activeSimPill)}
-              onClick={toggleSimulation}
-              disabled={isStreaming}
-              title={
-                isSimulation
-                  ? 'Simulation Mode active (0 Gemini tokens consumed)'
-                  : 'Enable Zero-Token Simulation Mode for testing'
-              }
-              aria-label="Toggle simulation mode"
-            >
-              <Zap size={13} className={isSimulation ? styles.activeZap : undefined} />
-              <span className={styles.simText}>{isSimulation ? 'Sim (0)' : 'Sim'}</span>
-            </button>
-          </div>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          style={{ display: 'none' }}
+          aria-label="Attach file"
+          accept="image/*,audio/*,video/*,.pdf,.txt,.md,.markdown,.json,.csv,.js,.ts,.jsx,.tsx,.py,.html,.css,.yaml,.yml,.sql"
+        />
 
+        <div className={styles.inputArea}>
           <textarea
             ref={textareaRef}
             rows={1}
@@ -273,6 +236,36 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
             className={styles.textarea}
             aria-label="Chat input message"
           />
+        </div>
+
+        <div className={styles.bottomToolbar}>
+          <div className={styles.leftControls}>
+            <IconButton
+              type="button"
+              icon={<Paperclip size={16} />}
+              label="Attach context from file or library"
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsAttachModalOpen(true)}
+              className={styles.toolBtn}
+            />
+
+            <button
+              type="button"
+              className={cn(styles.simPill, isSimulation && styles.activeSimPill)}
+              onClick={toggleSimulation}
+              disabled={isStreaming}
+              title={
+                isSimulation
+                  ? 'Simulation Mode active (0 Gemini tokens consumed)'
+                  : 'Enable Zero-Token Simulation Mode for testing'
+              }
+              aria-label="Toggle simulation mode"
+            >
+              <Zap size={13} className={isSimulation ? styles.activeZap : undefined} />
+              <span className={styles.simText}>{isSimulation ? 'Sim (0)' : 'Sim'}</span>
+            </button>
+          </div>
 
           <div className={styles.rightControls}>
             <IconButton
@@ -282,15 +275,6 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
               variant="ghost"
               size="sm"
               onClick={() => setIsPickerOpen(true)}
-              className={styles.toolBtn}
-            />
-            <IconButton
-              type="button"
-              icon={<Paperclip size={15} />}
-              label="Attach context from file or library"
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsAttachModalOpen(true)}
               className={styles.toolBtn}
             />
             <IconButton
@@ -326,15 +310,17 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
                 className={styles.stopButton}
               />
             ) : (
-              <IconButton
-                type="submit"
-                icon={<ArrowUp size={16} />}
-                label="Send message"
-                variant="primary"
-                size="sm"
-                disabled={(!input.trim() && !attachedContext) || insufficientCredits}
-                className={styles.sendButton}
-              />
+              hasContent && (
+                <IconButton
+                  type="submit"
+                  icon={<ArrowUp size={16} />}
+                  label="Send message"
+                  variant="primary"
+                  size="sm"
+                  disabled={!hasContent || (insufficientCredits && !isSimulation)}
+                  className={styles.sendButton}
+                />
+              )
             )}
           </div>
         </div>

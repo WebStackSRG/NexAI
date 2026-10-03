@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { IconButton } from '@/components/ui/IconButton';
 import { AttachContextModal } from '../ChatInput/AttachContextModal';
+import { AttachedContextPreview } from '../ChatInput/AttachedContextPreview';
 import { PromptPickerModal, VariableFillModal } from '@/features/prompts';
 import { useChatStore } from '@/store/chatStore';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
@@ -104,16 +105,14 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
   });
 
 
-  // Adjust textarea height dynamically if multiline, default to single-line
+  // Adjust textarea height dynamically with smooth auto-grow up to 220px
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
       const scrollH = textareaRef.current.scrollHeight;
-      if (scrollH > 40) {
-        textareaRef.current.style.height = `${Math.min(scrollH, 120)}px`;
-      } else {
-        textareaRef.current.style.height = '24px';
-      }
+      const minH = 28;
+      const maxH = 220;
+      textareaRef.current.style.height = `${Math.min(Math.max(scrollH, minH), maxH)}px`;
     }
   }, [input]);
 
@@ -150,7 +149,7 @@ ${attachedContext.content ? attachedContext.content.slice(0, 4000) : ""}
     setInput("");
     setAttachedContext(null);
     if (textareaRef.current) {
-      textareaRef.current.style.height = "24px";
+      textareaRef.current.style.height = "28px";
     }
 
     if (onSendPrompt) {
@@ -250,38 +249,18 @@ ${attachedContext.content ? attachedContext.content.slice(0, 4000) : ""}
           </p>
         </div>
 
-        {/* Floating attached file / context badge */}
-        {attachedContext && (
-          <div className={styles.fileBadgeRow}>
-            <div className={styles.fileBadge} title={attachedContext.name}>
-              {attachedContext.type === 'image' ? (
-                <ImageIcon size={13} />
-              ) : attachedContext.type === 'audio' ? (
-                <Volume2 size={13} />
-              ) : attachedContext.type === 'video' ? (
-                <Video size={13} />
-              ) : attachedContext.type === 'document' ? (
-                <Bookmark size={13} />
-              ) : (
-                <FileText size={13} />
-              )}
-              <span className={styles.fileName}>{attachedContext.name}</span>
-              <button
-                type="button"
-                onClick={() => setAttachedContext(null)}
-                className={styles.removeFileBtn}
-                aria-label="Remove attached context"
-              >
-                <X size={11} />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Gemini One-Liner Pill Capsule Input */}
-        <div className={styles.composerCapsule}>
+        {/* Modern Responsive Prompt Composer Card */}
+        <div className={styles.composerCard}>
           <form onSubmit={handleSubmit} className={styles.composerForm}>
-            {/* Left '+' Attachment Button */}
+            {/* Attached media & context preview */}
+            {attachedContext && (
+              <AttachedContextPreview
+                context={attachedContext}
+                onRemove={() => setAttachedContext(null)}
+              />
+            )}
+
+            {/* Hidden File Input for Attachments */}
             <input
               type="file"
               ref={fileInputRef}
@@ -290,100 +269,107 @@ ${attachedContext.content ? attachedContext.content.slice(0, 4000) : ""}
               aria-label="Attach file"
               accept="image/*,audio/*,video/*,.pdf,.txt,.md,.markdown,.json,.csv,.js,.ts,.jsx,.tsx,.py,.html,.css,.yaml,.yml,.sql"
             />
-            <IconButton
-              type="button"
-              icon={<Plus size={18} />}
-              label="Attach context file or library"
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsAttachModalOpen(true)}
-              className={styles.attachBtn}
-            />
 
-            {/* Center Input Field */}
-            <textarea
-              ref={textareaRef}
-              rows={1}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={insufficientCredits && !isSimulation}
-              placeholder={
-                insufficientCredits && !isSimulation
-                  ? 'Recharge your credits to send messages...'
-                  : isSimulation
-                    ? 'Simulation Mode (0 tokens) — Ask anything...'
-                    : 'Ask NexAI anything...'
-              }
-              className={styles.inputField}
-              aria-label="Ask NexAI anything"
-            />
-
-            {/* Right Controls: Model Selector + Simulation Toggle + Mic + Send */}
-            <div className={styles.rightControls}>
-              <button
-                type="button"
-                onClick={toggleSimulation}
-                className={cn(styles.simPill, isSimulation && styles.activeSimPill)}
-                title={
-                  isSimulation
-                    ? 'Simulation mode active (0 tokens consumed)'
-                    : 'Switch to zero-token simulation mode'
+            {/* Full-width Responsive Prompt Textarea */}
+            <div className={styles.inputWrapper}>
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={insufficientCredits && !isSimulation}
+                placeholder={
+                  insufficientCredits && !isSimulation
+                    ? 'Recharge your credits to send messages...'
+                    : isSimulation
+                      ? 'Simulation Mode (0 tokens) — Ask anything...'
+                      : 'Ask NexAI anything...'
                 }
-                aria-label={
-                  isSimulation
-                    ? 'Disable zero-token simulation mode'
-                    : 'Enable zero-token simulation mode'
-                }
-              >
-                <Zap size={13} className={isSimulation ? styles.activeZap : undefined} />
-                <span>{isSimulation ? 'Sim (0 Tokens)' : 'Sim'}</span>
-              </button>
-
-              <IconButton
-                type="button"
-                icon={<Terminal size={15} />}
-                label="Use prompt template"
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsPickerOpen(true)}
-                className={styles.toolBtn}
+                className={styles.inputField}
+                aria-label="Ask NexAI anything"
               />
+            </div>
 
-              <IconButton
-                type="button"
-                icon={
-                  isListening ? (
-                    <MicOff size={16} className={styles.activeMicIcon} />
-                  ) : (
-                    <Mic size={16} />
-                  )
-                }
-                label={
-                  !isVoiceSupported
-                    ? 'Voice input not supported in this browser'
-                    : isListening
-                      ? 'Stop listening'
-                      : 'Voice dictation'
-                }
-                disabled={!isVoiceSupported}
-                variant={isListening ? 'primary' : 'ghost'}
-                size="sm"
-                onClick={toggleListening}
-                className={cn(styles.toolBtn, isListening && styles.listeningMic)}
-              />
-
-              {hasContent && (
+            {/* Bottom Actions Toolbar: Attach on left, Tools & Submit on right */}
+            <div className={styles.bottomToolbar}>
+              <div className={styles.leftActions}>
                 <IconButton
-                  type="submit"
-                  icon={<ArrowUp size={16} />}
-                  label="Send prompt"
-                  variant="primary"
+                  type="button"
+                  icon={<Plus size={18} />}
+                  label="Attach context file or library"
+                  variant="ghost"
                   size="sm"
-                  disabled={!hasContent || (insufficientCredits && !isSimulation)}
-                  className={styles.sendBtn}
+                  onClick={() => setIsAttachModalOpen(true)}
+                  className={styles.attachBtn}
                 />
-              )}
+              </div>
+
+              <div className={styles.rightActions}>
+                <button
+                  type="button"
+                  onClick={toggleSimulation}
+                  className={cn(styles.simPill, isSimulation && styles.activeSimPill)}
+                  title={
+                    isSimulation
+                      ? 'Simulation mode active (0 tokens consumed)'
+                      : 'Switch to zero-token simulation mode'
+                  }
+                  aria-label={
+                    isSimulation
+                      ? 'Disable zero-token simulation mode'
+                      : 'Enable zero-token simulation mode'
+                  }
+                >
+                  <Zap size={13} className={isSimulation ? styles.activeZap : undefined} />
+                  <span className={styles.simText}>{isSimulation ? 'Sim (0 Tokens)' : 'Sim'}</span>
+                </button>
+
+                <IconButton
+                  type="button"
+                  icon={<Terminal size={15} />}
+                  label="Use prompt template"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsPickerOpen(true)}
+                  className={styles.toolBtn}
+                />
+
+                <IconButton
+                  type="button"
+                  icon={
+                    isListening ? (
+                      <MicOff size={16} className={styles.activeMicIcon} />
+                    ) : (
+                      <Mic size={16} />
+                    )
+                  }
+                  label={
+                    !isVoiceSupported
+                      ? 'Voice input not supported in this browser'
+                      : isListening
+                        ? 'Stop listening'
+                        : 'Voice dictation'
+                  }
+                  disabled={!isVoiceSupported}
+                  variant={isListening ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={toggleListening}
+                  className={cn(styles.toolBtn, isListening && styles.listeningMic)}
+                />
+
+                {hasContent && (
+                  <IconButton
+                    type="submit"
+                    icon={<ArrowUp size={16} />}
+                    label="Send prompt"
+                    variant="primary"
+                    size="sm"
+                    disabled={!hasContent || (insufficientCredits && !isSimulation)}
+                    className={styles.sendBtn}
+                  />
+                )}
+              </div>
             </div>
           </form>
         </div>
