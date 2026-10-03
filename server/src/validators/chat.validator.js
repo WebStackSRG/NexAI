@@ -36,6 +36,7 @@ export const sendMessageSchema = z.object({
     .trim()
     .min(1, 'Message content cannot be empty'),
   model: z.enum(['flash', 'pro']).optional(),
+  isSimulation: z.boolean().optional(),
 });
 
 export const chatIdParamSchema = z.object({

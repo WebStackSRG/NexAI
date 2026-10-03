@@ -5,6 +5,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { setupSse, sendSse, closeSse } from '../utils/sse.js';
 import { streamChatReply, generateChatTitle } from '../agents/chat.agent.js';
+import { streamChatSimulation } from '../utils/chatSimulator.js';
 import { deductCredits } from '../services/credit.service.js';
 import { logger } from '../utils/logger.js';
 
@@ -97,8 +98,12 @@ export const getMessages = asyncHandler(async (req, res) => {
  */
 export async function sendMessage(req, res, next) {
   const { id } = req.params;
-  const { content, model: requestedModel } = req.body;
+  const { content, model: requestedModel, isSimulation = false } = req.body;
   const model = requestedModel || req.user.settings?.defaultModel || 'flash';
+  const isSimulationMode =
+    isSimulation === true ||
+    req.query.simulation === 'true' ||
+    req.headers['x-simulation'] === 'true';
 
   let sseStarted = false;
 
@@ -115,7 +120,54 @@ export async function sendMessage(req, res, next) {
       content,
     });
 
-    // Check if chat is still using default title to auto-generate title
+    // Handle Zero-Token Simulation Mode for testing and offline demos
+    if (isSimulationMode) {
+      if (chat.title === 'New Chat') {
+        chat.title = content.slice(0, 32).trim() || 'Simulated Session';
+        await chat.save();
+      }
+
+      setupSse(res);
+      sseStarted = true;
+
+      let isClientConnected = true;
+      req.on('close', () => {
+        isClientConnected = false;
+      });
+
+      const simResult = await streamChatSimulation({
+        res,
+        prompt: content,
+        isClientConnected: () => isClientConnected,
+      });
+
+      const assistantMessage = await Message.create({
+        chatId: chat._id,
+        role: 'assistant',
+        content: simResult.fullText,
+        tokensUsed: 0,
+      });
+
+      chat.updatedAt = new Date();
+      await chat.save();
+
+      const currentCredits = req.user.wallet?.creditsRemaining ?? 0;
+
+      sendSse(res, 'done', {
+        messageId: assistantMessage._id.toString(),
+        tokensUsed: 0,
+        creditsDeducted: 0,
+        creditsRemaining: currentCredits,
+        chatTitle: chat.title,
+        followUps: simResult.followUps,
+        isSimulation: true,
+      });
+
+      closeSse(res);
+      return;
+    }
+
+    // Check if chat is still using default title to auto-generate title via Gemini
     const existingMessagesCount = await Message.countDocuments({ chatId: chat._id });
     if (chat.title === 'New Chat' || existingMessagesCount <= 1) {
       const titleResult = await generateChatTitle({

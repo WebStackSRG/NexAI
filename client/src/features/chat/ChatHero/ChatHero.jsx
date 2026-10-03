@@ -15,6 +15,7 @@ import {
   Sparkles,
   Cpu,
   Terminal,
+  Zap,
 } from 'lucide-react';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { IconButton } from '@/components/ui/IconButton';
@@ -49,7 +50,14 @@ const STARTER_PROMPTS = [
 ];
 
 export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) {
-  const { selectedModel, setSelectedModel, insufficientCredits, isStreaming } = useChatStore();
+  const {
+    selectedModel,
+    setSelectedModel,
+    insufficientCredits,
+    isStreaming,
+    isSimulation,
+    toggleSimulation,
+  } = useChatStore();
 
   const [input, setInput] = useState('');
   const [attachedFile, setAttachedFile] = useState(null);
@@ -153,7 +161,7 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
   };
 
   const handleSelectChip = (promptText) => {
-    if (isStreaming || insufficientCredits) return;
+    if (isStreaming || (insufficientCredits && !isSimulation)) return;
     if (onSendPrompt) {
       onSendPrompt(promptText);
     } else {
@@ -239,18 +247,39 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={insufficientCredits}
+              disabled={insufficientCredits && !isSimulation}
               placeholder={
-                insufficientCredits
+                insufficientCredits && !isSimulation
                   ? 'Recharge your credits to send messages...'
-                  : 'Ask NexAI anything...'
+                  : isSimulation
+                    ? 'Simulation Mode (0 tokens) — Ask anything...'
+                    : 'Ask NexAI anything...'
               }
               className={styles.inputField}
               aria-label="Ask NexAI anything"
             />
 
-            {/* Right Controls: Model Selector + Mic + Send */}
+            {/* Right Controls: Model Selector + Simulation Toggle + Mic + Send */}
             <div className={styles.rightControls}>
+              <button
+                type="button"
+                onClick={toggleSimulation}
+                className={cn(styles.simPill, isSimulation && styles.activeSimPill)}
+                title={
+                  isSimulation
+                    ? 'Simulation mode active (0 tokens consumed)'
+                    : 'Switch to zero-token simulation mode'
+                }
+                aria-label={
+                  isSimulation
+                    ? 'Disable zero-token simulation mode'
+                    : 'Enable zero-token simulation mode'
+                }
+              >
+                <Zap size={13} className={isSimulation ? styles.activeZap : undefined} />
+                <span>{isSimulation ? 'Sim (0 Tokens)' : 'Sim'}</span>
+              </button>
+
               <Dropdown
                 trigger={
                   <button
@@ -308,7 +337,7 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
                   label="Send prompt"
                   variant="primary"
                   size="sm"
-                  disabled={!hasContent || insufficientCredits}
+                  disabled={!hasContent || (insufficientCredits && !isSimulation)}
                   className={styles.sendBtn}
                 />
               )}

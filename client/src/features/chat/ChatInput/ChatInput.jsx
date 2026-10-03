@@ -36,6 +36,8 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
     insufficientCredits,
     selectedModel,
     setSelectedModel,
+    isSimulation,
+    toggleSimulation,
   } = useChatStore();
 
   const [input, setInput] = useState('');
@@ -201,6 +203,21 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
                 <span>Pro</span>
               </button>
             </div>
+
+            <button
+              type="button"
+              className={cn(styles.simPill, isSimulation && styles.activeSimPill)}
+              onClick={toggleSimulation}
+              disabled={isStreaming}
+              title={
+                isSimulation
+                  ? 'Simulation Mode active (0 Gemini tokens consumed)'
+                  : 'Enable Zero-Token Simulation Mode for testing'
+              }
+            >
+              <Zap size={13} className={isSimulation ? styles.activeZap : undefined} />
+              <span>{isSimulation ? 'Simulation (0 Tokens)' : 'Simulation'}</span>
+            </button>
 
             {attachedContext && (
               <div className={styles.fileBadge} title={attachedContext.name}>

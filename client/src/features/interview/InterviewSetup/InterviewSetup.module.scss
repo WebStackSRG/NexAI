@@ -643,6 +643,99 @@
   margin-top: 2px;
 }
 
+// Simulation Mode Card
+.simulationCard {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-border);
+  background-color: var(--color-bg-elevated);
+  margin-top: var(--space-4);
+  transition: all var(--duration-fast) var(--ease-standard);
+
+  .simulationLeft {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .simIconWrap {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-bg-surface);
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+    flex-shrink: 0;
+    transition: all var(--duration-fast) var(--ease-standard);
+
+    &.activeSimIcon {
+      background-color: color-mix(in srgb, var(--amber-500) 15%, transparent);
+      border-color: var(--amber-500);
+      color: var(--amber-500);
+      box-shadow: 0 0 10px color-mix(in srgb, var(--amber-500) 30%, transparent);
+    }
+  }
+
+  .simTextWrap {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .simTitleRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .simTitle {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text-primary);
+  }
+
+  .simSubtitle {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    line-height: var(--leading-normal);
+  }
+
+  .simToggleBtn {
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-border);
+    background-color: var(--color-bg-surface);
+    color: var(--color-text-secondary);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all var(--duration-fast) var(--ease-standard);
+
+    &:hover {
+      border-color: var(--amber-500);
+      color: var(--amber-500);
+    }
+
+    &.activeToggleBtn {
+      border-color: var(--amber-500);
+      background-color: var(--amber-500);
+      color: var(--gray-900);
+      font-weight: var(--weight-bold);
+      box-shadow: 0 0 12px color-mix(in srgb, var(--amber-500) 35%, transparent);
+    }
+  }
+}
+
 // CTA & Summary
 .ctaRow {
   display: flex;

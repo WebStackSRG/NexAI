@@ -88,7 +88,7 @@ export default function ChatPage() {
           {/* Full-width conversation canvas */}
           <div className={styles.threadArea}>
             <MessageThread
-              onSelectSuggestion={(prompt) => setPrefillPrompt(prompt)}
+              onSelectSuggestion={(prompt) => sendMessage(prompt)}
               onEditPrompt={(prompt) => setPrefillPrompt(prompt)}
             />
           </div>
