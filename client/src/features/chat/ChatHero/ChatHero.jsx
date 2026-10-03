@@ -13,6 +13,7 @@ import {
   Server,
   Terminal,
   Zap,
+  Brain,
 } from 'lucide-react';
 import { IconButton } from '@/components/ui/IconButton';
 import { AttachContextModal } from '../ChatInput/AttachContextModal';
@@ -54,7 +55,16 @@ export function ChatHero({ onSendPrompt, initialPrompt, onClearInitialPrompt }) 
     isStreaming,
     isSimulation,
     toggleSimulation,
+    thinkingLevel,
+    setThinkingLevel,
   } = useChatStore();
+
+  const handleCycleThinking = () => {
+    const levels = ['off', 'low', 'medium', 'high'];
+    const currentIndex = levels.indexOf(thinkingLevel);
+    const nextIndex = (currentIndex + 1) % levels.length;
+    setThinkingLevel(levels[nextIndex]);
+  };
 
   const [input, setInput] = useState('');
   const [attachedContext, setAttachedContext] = useState(null);
@@ -323,6 +333,28 @@ ${attachedContext.content ? attachedContext.content.slice(0, 4000) : ""}
                 >
                   <Zap size={13} className={isSimulation ? styles.activeZap : undefined} />
                   <span className={styles.simText}>{isSimulation ? 'Sim (0 Tokens)' : 'Sim'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  className={cn(
+                    styles.thinkingPill,
+                    thinkingLevel !== 'off' && styles.activeThinkingPill,
+                  )}
+                  onClick={handleCycleThinking}
+                  disabled={isStreaming}
+                  title={`Gemini Reasoning: ${thinkingLevel.toUpperCase()}. Click to cycle (Off, Low, Medium, High)`}
+                  aria-label={`Toggle thinking level, current is ${thinkingLevel}`}
+                >
+                  <Brain
+                    size={13}
+                    className={thinkingLevel !== 'off' ? styles.activeBrain : undefined}
+                  />
+                  <span className={styles.thinkingText}>
+                    {thinkingLevel === 'off'
+                      ? 'Think: Off'
+                      : `Think: ${thinkingLevel.charAt(0).toUpperCase() + thinkingLevel.slice(1)}`}
+                  </span>
                 </button>
 
                 <IconButton

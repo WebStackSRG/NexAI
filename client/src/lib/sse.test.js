@@ -37,6 +37,23 @@ describe('SSE Stream Parser (parseSseStream)', () => {
     expect(onDone).not.toHaveBeenCalled();
   });
 
+  it('parses thought events correctly', async () => {
+    const onThought = vi.fn();
+    const onToken = vi.fn();
+
+    const stream = createMockStream([
+      'event: thought\ndata: {"text":"Reasoning step 1"}\n\n',
+      'event: token\ndata: {"text":"Answer"}\n\n',
+    ]);
+
+    await parseSseStream(stream, { onThought, onToken });
+
+    expect(onThought).toHaveBeenCalledTimes(1);
+    expect(onThought).toHaveBeenCalledWith('Reasoning step 1');
+    expect(onToken).toHaveBeenCalledTimes(1);
+    expect(onToken).toHaveBeenCalledWith('Answer');
+  });
+
   it('parses done event with credit and token metadata', async () => {
     const onToken = vi.fn();
     const onDone = vi.fn();

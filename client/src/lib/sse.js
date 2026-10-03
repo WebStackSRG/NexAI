@@ -49,12 +49,16 @@ export function sanitizeErrorMessage(raw) {
  *
  * @param {ReadableStream<Uint8Array>} readableStream
  * @param {Object} handlers
+ * @param {(text: string) => void} [handlers.onThought]
  * @param {(text: string) => void} [handlers.onToken]
  * @param {(doneData: { messageId?: string, tokensUsed?: number, creditsDeducted?: number, creditsRemaining?: number, chatTitle?: string }) => void} [handlers.onDone]
  * @param {(errorData: { code?: string, message?: string }) => void} [handlers.onError]
  * @returns {Promise<void>}
  */
-export async function parseSseStream(readableStream, { onToken, onDone, onError } = {}) {
+export async function parseSseStream(
+  readableStream,
+  { onThought, onToken, onDone, onError } = {},
+) {
   const reader = readableStream.getReader();
   const decoder = new TextDecoder('utf-8');
 
