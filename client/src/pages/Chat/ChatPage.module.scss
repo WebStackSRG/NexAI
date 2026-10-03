@@ -87,12 +87,12 @@
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    color-mix(in srgb, var(--color-bg-app) 75%, transparent) 22%,
+    color-mix(in srgb, var(--color-bg-app) 75%, transparent) 20%,
     var(--color-bg-app) 55%,
     var(--color-bg-app) 100%
   );
-  padding: var(--space-2) 0 var(--space-4);
-  margin-top: calc(-1 * var(--space-10));
+  padding: var(--space-2) 0 calc(var(--space-6) + var(--space-1));
+  margin-top: calc(-1 * var(--space-12));
   pointer-events: none;
 
   > * {
