@@ -99,7 +99,13 @@ export const getMessages = asyncHandler(async (req, res) => {
  */
 export async function sendMessage(req, res, next) {
   const { id } = req.params;
-  const { content, model: requestedModel, isSimulation = false, attachments = [] } = req.body;
+  const {
+    content,
+    model: requestedModel,
+    thinkingLevel = 'off',
+    isSimulation = false,
+    attachments = [],
+  } = req.body;
   const model = requestedModel || req.user.settings?.defaultModel || 'flash';
   const isSimulationMode =
     isSimulation === true ||
@@ -149,6 +155,7 @@ export async function sendMessage(req, res, next) {
         prompt: content,
         attachments,
         memories,
+        thinkingLevel,
         isClientConnected: () => isClientConnected,
       });
 
@@ -156,6 +163,7 @@ export async function sendMessage(req, res, next) {
         chatId: chat._id,
         role: 'assistant',
         content: simResult.fullText,
+        thoughts: simResult.thoughts || '',
         tokensUsed: 0,
       });
 
@@ -182,6 +190,7 @@ export async function sendMessage(req, res, next) {
         creditsDeducted: 0,
         creditsRemaining: currentCredits,
         chatTitle: chat.title,
+        thoughts: simResult.thoughts || '',
         followUps: simResult.followUps,
         isSimulation: true,
       });
@@ -234,11 +243,13 @@ export async function sendMessage(req, res, next) {
     }
 
     let fullText = '';
+    let thoughts = '';
     let tokensUsed = 0;
 
     const stream = streamChatReply({
       messages: history,
       model,
+      thinkingLevel,
       customInstructions,
       sources: projectSources,
       memories,
@@ -247,6 +258,11 @@ export async function sendMessage(req, res, next) {
     for await (const chunk of stream) {
       if (!isClientConnected) {
         break;
+      }
+
+      if (chunk.thought) {
+        thoughts += chunk.thought;
+        sendSse(res, 'thought', { text: chunk.thought });
       }
 
       if (chunk.text) {
@@ -277,6 +293,7 @@ export async function sendMessage(req, res, next) {
       chatId: chat._id,
       role: 'assistant',
       content: fullText,
+      thoughts,
       tokensUsed,
     });
 
@@ -311,6 +328,7 @@ export async function sendMessage(req, res, next) {
       creditsDeducted: deduction.creditsDeducted,
       creditsRemaining: deduction.creditsRemaining,
       chatTitle: chat.title,
+      thoughts,
     });
 
     closeSse(res);

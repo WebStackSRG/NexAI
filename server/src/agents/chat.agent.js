@@ -1,9 +1,48 @@
 import { streamContent, generateContent } from '../services/gemini.service.js';
 import { deductCredits } from '../services/credit.service.js';
 import { CHAT_SYSTEM_PROMPT, TITLE_SYSTEM_PROMPT } from './prompts/chat.prompt.js';
+import { getModelName } from '../config/gemini.js';
 import { logger } from '../utils/logger.js';
 
 const MAX_HISTORY_MESSAGES = 20;
+
+/**
+ * Builds thinking configuration based on user preference and model capability.
+ * Follows official Google GenAI thinkingConfig documentation for Gemini 2.5 and 3.
+ *
+ * @param {Object} params
+ * @param {'off' | 'low' | 'medium' | 'high'} [params.thinkingLevel='off']
+ * @param {'flash' | 'pro'} [params.model='flash']
+ * @returns {Record<string, unknown> | undefined}
+ */
+export function buildThinkingConfig({ thinkingLevel = 'off', model = 'flash' }) {
+  if (!thinkingLevel || thinkingLevel === 'off') {
+    return undefined;
+  }
+
+  const modelName = getModelName(model).toLowerCase();
+  const level = thinkingLevel.toLowerCase();
+
+  const isGemini3 = modelName.includes('3') || modelName.includes('gemini-3');
+
+  if (isGemini3) {
+    return {
+      includeThoughts: true,
+      thinkingLevel: level,
+    };
+  }
+
+  const budgetMap = {
+    low: 1024,
+    medium: 4096,
+    high: 8192,
+  };
+
+  return {
+    includeThoughts: true,
+    thinkingBudget: budgetMap[level] ?? -1,
+  };
+}
 
 /**
  * Normalizes database messages into the contents structure expected by Google GenAI.
@@ -52,14 +91,16 @@ export function formatConversationHistory(rawMessages) {
  * @param {Object} options
  * @param {Array<{role: string, content: string}>} options.messages - Raw history
  * @param {'flash' | 'pro'} [options.model='flash'] - Model selection
+ * @param {'off' | 'low' | 'medium' | 'high'} [options.thinkingLevel='off'] - Reasoning level
  * @param {string} [options.customInstructions=''] - Custom project or user instructions
  * @param {Array<{name: string, content: string, mimeType?: string}>} [options.sources=[]] - Project sources
  * @param {Array<any>} [options.memories=[]] - Retrieved long-term user memories
- * @returns {AsyncGenerator<{text: string, usageMetadata: any}, void, unknown>}
+ * @returns {AsyncGenerator<{text: string, thought?: string, usageMetadata: any}, void, unknown>}
  */
 export async function* streamChatReply({
   messages,
   model = 'flash',
+  thinkingLevel = 'off',
   customInstructions = '',
   sources = [],
   memories = [],
@@ -91,10 +132,14 @@ export async function* streamChatReply({
     systemInstruction += `\n\n[USER LONG-TERM MEMORY (CROSS-CHAT PERSISTENT CONTEXT)]:\nThe following verified facts, identity, and preferences are remembered about this user across past conversations. Seamlessly incorporate them into your responses without explicitly saying "According to my memory" unless asked:\n${memoryItems}`;
   }
 
+  const thinkingConfig = buildThinkingConfig({ thinkingLevel, model });
+  const config = thinkingConfig ? { thinkingConfig } : {};
+
   yield* streamContent({
     contents,
     model,
     systemInstruction,
+    config,
   });
 }
 

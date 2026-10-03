@@ -12,12 +12,16 @@ import {
   AlertCircle,
   BookmarkPlus,
   BookOpen,
+  Brain,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { MarkdownRenderer } from '../MarkdownRenderer';
+import { ThinkingDrawer } from '../ThinkingDrawer/ThinkingDrawer';
 import { PromptFormModal } from '@/features/prompts';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore';
@@ -61,15 +65,69 @@ function formatTime(timestamp) {
 
 export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
   const user = useAuthStore((state) => state.user);
-  const { messages, isLoadingMessages, isStreaming, stopGeneration, resendPrompt } = useChatStore();
+  const {
+    messages,
+    isLoadingMessages,
+    isStreaming,
+    stopGeneration,
+    resendPrompt,
+    setActiveDrawerThought,
+  } = useChatStore();
   const createPrompt = usePromptStore((state) => state.createPrompt);
 
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
+  const [speakingId, setSpeakingId] = useState(null);
   const [savePromptData, setSavePromptData] = useState(null);
   const userScrolledUpRef = useRef(false);
+
+  // Stop any active speech on unmount
+  useEffect(() => {
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const handleToggleSpeak = (text, id) => {
+    if (!('speechSynthesis' in window)) {
+      toast.error('Text-to-speech is not supported in this browser');
+      return;
+    }
+
+    if (speakingId === id) {
+      window.speechSynthesis.cancel();
+      setSpeakingId(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const cleanText = (text || '')
+      .replace(/```[\s\S]*?```/g, 'Code block omitted.')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/[#*_~>]/g, '')
+      .trim();
+
+    if (!cleanText) return;
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    utterance.onend = () => {
+      setSpeakingId(null);
+    };
+
+    utterance.onerror = () => {
+      setSpeakingId(null);
+    };
+
+    setSpeakingId(id);
+    window.speechSynthesis.speak(utterance);
+  };
 
   const handleCopy = async (text, id) => {
     try {
@@ -263,6 +321,20 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                         </div>
                       ) : (
                         <div className={styles.aiMarkdown}>
+                          {isCurrentlyStreaming && (message.isThinking || message.thoughts) && (
+                            <div
+                              className={styles.liveThinkingIndicator}
+                              onClick={() =>
+                                setActiveDrawerThought(message.thoughts || message._id)
+                              }
+                              title="Click to view AI reasoning steps in drawer"
+                              role="button"
+                              tabIndex={0}
+                            >
+                              <Brain size={14} className={styles.pulsingBrain} />
+                              <span>Thinking & reasoning...</span>
+                            </div>
+                          )}
                           <MarkdownRenderer
                             content={message.content}
                             isStreaming={isCurrentlyStreaming}
@@ -416,6 +488,39 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                               <BookOpen size={13} />
                               <span>Save to Library</span>
                             </button>
+                            {Boolean(message.thoughts) && (
+                              <button
+                                type="button"
+                                className={cn(styles.actionBtn, styles.thinkingActionBtn)}
+                                onClick={() =>
+                                  setActiveDrawerThought(message.thoughts || message._id)
+                                }
+                                title="View AI Reasoning & Thinking Process"
+                                aria-label="View AI Reasoning & Thinking Process"
+                              >
+                                <Brain size={13} className={styles.brainIcon} />
+                                <span>Show Thinking</span>
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              className={cn(
+                                styles.actionBtn,
+                                speakingId === messageId && styles.speakingBtn,
+                              )}
+                              onClick={() => handleToggleSpeak(message.content, messageId)}
+                              title={speakingId === messageId ? 'Stop reading aloud' : 'Read aloud'}
+                              aria-label={
+                                speakingId === messageId ? 'Stop reading aloud' : 'Read aloud'
+                              }
+                            >
+                              {speakingId === messageId ? (
+                                <VolumeX size={13} />
+                              ) : (
+                                <Volume2 size={13} />
+                              )}
+                              <span>{speakingId === messageId ? 'Stop' : 'Read Aloud'}</span>
+                            </button>
                           </>
                         )}
 
@@ -489,6 +594,9 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
           await createPrompt(data);
         }}
       />
+
+      {/* AI Reasoning / Thinking Slide-Over Drawer */}
+      <ThinkingDrawer />
     </div>
 
   );

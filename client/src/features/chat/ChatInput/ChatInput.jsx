@@ -5,6 +5,7 @@ import {
   ArrowUp,
   Square,
   Zap,
+  Brain,
   Mic,
   MicOff,
   Paperclip,
@@ -36,7 +37,16 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
     insufficientCredits,
     isSimulation,
     toggleSimulation,
+    thinkingLevel,
+    setThinkingLevel,
   } = useChatStore();
+
+  const handleCycleThinking = () => {
+    const levels = ['off', 'low', 'medium', 'high'];
+    const currentIndex = levels.indexOf(thinkingLevel);
+    const nextIndex = (currentIndex + 1) % levels.length;
+    setThinkingLevel(levels[nextIndex]);
+  };
 
   const [input, setInput] = useState('');
   const [attachedContext, setAttachedContext] = useState(null);
@@ -264,6 +274,28 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
             >
               <Zap size={13} className={isSimulation ? styles.activeZap : undefined} />
               <span className={styles.simText}>{isSimulation ? 'Sim (0)' : 'Sim'}</span>
+            </button>
+
+            <button
+              type="button"
+              className={cn(
+                styles.thinkingPill,
+                thinkingLevel !== 'off' && styles.activeThinkingPill,
+              )}
+              onClick={handleCycleThinking}
+              disabled={isStreaming}
+              title={`Gemini Reasoning: ${thinkingLevel.toUpperCase()}. Click to cycle (Off, Low, Medium, High)`}
+              aria-label={`Toggle thinking level, current is ${thinkingLevel}`}
+            >
+              <Brain
+                size={13}
+                className={thinkingLevel !== 'off' ? styles.activeBrain : undefined}
+              />
+              <span className={styles.thinkingText}>
+                {thinkingLevel === 'off'
+                  ? 'Think: Off'
+                  : `Think: ${thinkingLevel.charAt(0).toUpperCase() + thinkingLevel.slice(1)}`}
+              </span>
             </button>
           </div>
 

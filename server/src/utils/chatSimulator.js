@@ -817,20 +817,70 @@ export function tokensToCredits(totalTokens) {
 }
 
 /**
+ * Generates structured reasoning thought tokens for simulated mode.
+ *
+ * @param {string} prompt
+ * @param {string} thinkingLevel
+ * @returns {string}
+ */
+export function getSimulatedThinkingProcess(prompt = '', thinkingLevel = 'medium') {
+  const cleanPrompt = (prompt || 'user request').slice(0, 70);
+  const steps = [
+    `Parse Query & Goal: Understood objective from prompt: "${cleanPrompt}${prompt?.length > 70 ? '...' : ''}".`,
+    `Context Retrieval: Scanned long-term memory facts and validated multimodal attachment bindings.`,
+    `Deconstruct Architecture: Outlined step-by-step technical implementation conforming to NexAI design tokens.`,
+  ];
+
+  if (thinkingLevel === 'high') {
+    steps.push('Deep Verification: Evaluated asynchronous edge cases, performance benchmarks, and security constraints.');
+  }
+
+  steps.push('Final Polish: Formatted response with markdown headers, typed code snippets, and follow-up prompts.');
+
+  return `### AI Reasoning & Thought Trace (${thinkingLevel.toUpperCase()} depth)\n\n` +
+    steps.map((s, i) => `${i + 1}. **Step ${i + 1}:** ${s}`).join('\n\n');
+}
+
+/**
  * Streams simulated response over Server-Sent Events with realistic delays.
  *
  * @param {Object} options
  * @param {import('express').Response} options.res
  * @param {string} options.prompt
+ * @param {Array<any>} [options.attachments]
+ * @param {Array<any>} [options.memories]
+ * @param {string} [options.thinkingLevel]
  * @param {() => boolean} options.isClientConnected
- * @returns {Promise<{ fullText: string, followUps: string[], title: string }>}
+ * @returns {Promise<{ fullText: string, thoughts: string, followUps: string[], title: string }>}
  */
-export async function streamChatSimulation({ res, prompt, attachments = [], memories = [], isClientConnected }) {
+export async function streamChatSimulation({
+  res,
+  prompt,
+  attachments = [],
+  memories = [],
+  thinkingLevel = 'off',
+  isClientConnected,
+}) {
   const { title, fullText, followUps } = getSimulatedChatContent(prompt, attachments, memories);
+  const delayMs = process.env.NODE_ENV === 'test' ? 0 : 12;
+
+  let thoughts = '';
+  if (thinkingLevel && thinkingLevel !== 'off') {
+    thoughts = getSimulatedThinkingProcess(prompt, thinkingLevel);
+    const thoughtChunks = thoughts.match(/\S+\s*/g) || [thoughts];
+    for (const tChunk of thoughtChunks) {
+      if (!isClientConnected()) {
+        break;
+      }
+      sendSse(res, 'thought', { text: tChunk });
+      if (delayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, Math.max(1, Math.floor(delayMs / 2))));
+      }
+    }
+  }
 
   // Split into realistic word/token chunks
   const chunks = fullText.match(/\S+\s*/g) || [fullText];
-  const delayMs = process.env.NODE_ENV === 'test' ? 0 : 15;
 
   for (let i = 0; i < chunks.length; i++) {
     if (!isClientConnected()) {
@@ -840,7 +890,7 @@ export async function streamChatSimulation({ res, prompt, attachments = [], memo
     const chunk = chunks[i];
     sendSse(res, 'token', { text: chunk });
 
-    // Realistic streaming interval in browser (15ms), instant in tests
+    // Realistic streaming interval in browser (12ms), instant in tests
     if (delayMs > 0) {
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
@@ -849,6 +899,7 @@ export async function streamChatSimulation({ res, prompt, attachments = [], memo
   return {
     title,
     fullText,
+    thoughts,
     followUps,
   };
 }

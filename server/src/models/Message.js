@@ -17,6 +17,10 @@ const messageSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    thoughts: {
+      type: String,
+      default: '',
+    },
     tokensUsed: {
       type: Number,
       default: 0,

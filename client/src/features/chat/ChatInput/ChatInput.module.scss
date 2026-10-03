@@ -205,20 +205,62 @@
   }
 }
 
-.simText {
+.thinkingPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: all var(--duration-fast) var(--ease-standard);
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  &.activeThinkingPill {
+    border: 1px solid var(--color-accent);
+    background-color: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-surface));
+    color: var(--color-accent);
+    font-weight: var(--weight-semibold);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--color-accent) 25%, transparent);
+
+    .activeBrain {
+      color: var(--color-accent);
+      animation: pulseBrain 2s infinite ease-in-out;
+    }
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.thinkingText {
   white-space: nowrap;
 }
 
-@keyframes pulseZap {
-  0% {
+@keyframes pulseBrain {
+  0%, 100% {
     transform: scale(1);
-    opacity: 0.8;
+    opacity: 0.85;
   }
-  100% {
+  50% {
     transform: scale(1.15);
     opacity: 1;
   }
 }
+
 
 .textarea {
   width: 100%;

@@ -36,6 +36,7 @@ export const sendMessageSchema = z.object({
     .trim()
     .min(1, 'Message content cannot be empty'),
   model: z.enum(['flash', 'pro']).optional(),
+  thinkingLevel: z.enum(['off', 'low', 'medium', 'high']).optional(),
   isSimulation: z.boolean().optional(),
   attachments: z.array(z.object({
     name: z.string().optional(),
