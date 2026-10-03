@@ -6,7 +6,7 @@ import {
   MicOff,
   ArrowUp,
   X,
-  FileText,
+  FileText, Bookmark, Image as ImageIcon, Volume2, Video,
   HelpCircle,
   Code2,
   Mail,
