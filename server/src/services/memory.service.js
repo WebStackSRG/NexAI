@@ -243,6 +243,17 @@ export const memoryService = {
       return { extractedCount: 0, savedMemories: [] };
     }
 
+    // Check user personalization setting for autonomous AI memory learning
+    try {
+      const { User } = await import('../models/User.js');
+      const userDoc = await User.findById(userId).select('settings.personalization');
+      if (userDoc?.settings?.personalization?.aiMemoryEnabled === false) {
+        return { extractedCount: 0, savedMemories: [], disabled: true };
+      }
+    } catch {
+      // Non-blocking fallback
+    }
+
     try {
       // 1. Run deterministic regex extraction first (fast & reliable)
       const { memories: deterministicMemories, forgetRequests: deterministicForgets } =
@@ -446,6 +457,193 @@ export const memoryService = {
     }
 
     return memory;
+  },
+
+  /**
+   * Updates an existing user memory and synchronizes its vector embedding.
+   *
+   * @param {string|import('mongoose').Types.ObjectId} userId
+   * @param {string} memoryId
+   * @param {Object} updates
+   * @param {string} [updates.fact]
+   * @param {string} [updates.category]
+   * @param {boolean} [updates.pinned]
+   * @param {boolean} [updates.active]
+   * @returns {Promise<import('../models/Memory.js').Memory|null>}
+   */
+  async updateUserMemory(userId, memoryId, updates = {}) {
+    const memory = await Memory.findOne({ _id: memoryId, userId });
+    if (!memory) return null;
+
+    let factChanged = false;
+    if (updates.fact !== undefined && updates.fact.trim() !== memory.fact) {
+      memory.fact = updates.fact.trim();
+      factChanged = true;
+    }
+    if (updates.category !== undefined) memory.category = updates.category;
+    if (updates.pinned !== undefined) memory.pinned = updates.pinned;
+    if (updates.active !== undefined) memory.active = updates.active;
+
+    await memory.save();
+
+    if (factChanged) {
+      try {
+        const embedding = await embedContent({ contents: memory.fact });
+        if (embedding && embedding.length > 0) {
+          const vectorId = memory.vectorId || `mem_${memory._id.toString()}`;
+          const indexed = await vectorDbService.upsert({
+            id: vectorId,
+            values: embedding,
+            metadata: {
+              userId: userId.toString(),
+              type: 'memory',
+              category: memory.category,
+              refId: memory._id.toString(),
+            },
+          });
+          if (indexed && !memory.vectorId) {
+            memory.vectorId = vectorId;
+            await memory.save();
+          }
+        }
+      } catch (vecErr) {
+        logger.warn({ error: vecErr.message, memoryId }, 'Failed to re-vectorize memory on update');
+      }
+    }
+
+    return memory;
+  },
+
+  /**
+   * Consolidates and optimizes all active memories for a user using Gemini AI.
+   * Resolves contradictions, removes duplicates, and merges fragmented notes into high-density facts.
+   *
+   * @param {string|import('mongoose').Types.ObjectId} userId
+   * @returns {Promise<{ consolidatedCount: number, previousCount?: number, memories: Array<any>, message?: string }>}
+   */
+  async consolidateUserMemories(userId) {
+    if (!userId) return { consolidatedCount: 0, memories: [] };
+
+    const activeMemories = await Memory.find({ userId, active: true }).sort({ pinned: -1, createdAt: -1 });
+    if (activeMemories.length < 2) {
+      return {
+        consolidatedCount: activeMemories.length,
+        memories: activeMemories,
+        message: 'At least 2 active memories are required to perform AI consolidation.',
+      };
+    }
+
+    const rawFacts = activeMemories
+      .map((m, i) => `${i + 1}. [${m.category}] ${m.fact}${m.pinned ? ' (PINNED)' : ''}`)
+      .join('\n');
+
+    const prompt = `You are NexAI's Memory Consolidation & Optimization Agent.
+Analyze the following list of active memories for a single user. Perform comprehensive consolidation:
+1. De-duplicate identical or overlapping statements.
+2. Resolve contradictions (e.g. if user changed location, company, or preferred tool, retain only the newest/clearest state).
+3. Synthesize fragmented points (e.g., "User uses React" and "User uses TypeScript" -> "User develops using React with TypeScript").
+4. Keep core user identity facts (Name, Role, Location) intact.
+5. Retain any explicit directives or pinned instructions.
+6. Return a concise, high-density list of facts written clearly in the third person (e.g. "User's name is Alice").
+
+Raw Memories:
+${rawFacts}
+
+You MUST return a JSON object strictly matching this schema:
+{
+  "consolidated": [
+    {
+      "fact": "Consolidated third-person factual statement",
+      "category": "identity" | "preference" | "project" | "instruction" | "fact",
+      "pinned": boolean
+    }
+  ]
+}
+
+Respond ONLY with valid raw JSON without markdown formatting.`;
+
+    try {
+      const aiResult = await generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        model: 'flash',
+        config: {
+          responseMimeType: 'application/json',
+          temperature: 0.1,
+        },
+      });
+
+      const parsed = parseExtractionJson(aiResult.text);
+      if (!parsed || !Array.isArray(parsed.consolidated) || parsed.consolidated.length === 0) {
+        return {
+          consolidatedCount: activeMemories.length,
+          memories: activeMemories,
+          message: 'Consolidation did not produce any changes.',
+        };
+      }
+
+      // Deactivate existing active memories and remove old vectors
+      for (const m of activeMemories) {
+        m.active = false;
+        await m.save();
+        if (m.vectorId) {
+          await vectorDbService.remove(m.vectorId);
+        }
+      }
+
+      // Insert the consolidated memories
+      const newMemories = [];
+      for (const item of parsed.consolidated) {
+        if (!item.fact || item.fact.length < 3) continue;
+
+        const created = await Memory.create({
+          userId,
+          fact: item.fact.trim(),
+          category: item.category || 'fact',
+          pinned: !!item.pinned,
+          confidence: 1.0,
+          active: true,
+        });
+
+        try {
+          const embedding = await embedContent({ contents: created.fact });
+          if (embedding && embedding.length > 0) {
+            const vectorId = `mem_${created._id.toString()}`;
+            const indexed = await vectorDbService.upsert({
+              id: vectorId,
+              values: embedding,
+              metadata: {
+                userId: userId.toString(),
+                type: 'memory',
+                category: created.category,
+                refId: created._id.toString(),
+              },
+            });
+            if (indexed) {
+              created.vectorId = vectorId;
+              await created.save();
+            }
+          }
+        } catch (vecErr) {
+          logger.warn({ error: vecErr.message, memoryId: created._id }, 'Vector indexing error in consolidation');
+        }
+
+        newMemories.push(created);
+      }
+
+      return {
+        consolidatedCount: newMemories.length,
+        previousCount: activeMemories.length,
+        memories: newMemories,
+        message: `Successfully consolidated ${activeMemories.length} memories into ${newMemories.length} optimized knowledge items.`,
+      };
+    } catch (err) {
+      logger.error({ error: err.message, userId }, 'Memory consolidation failed');
+      return {
+        consolidatedCount: activeMemories.length,
+        memories: activeMemories,
+        error: 'AI consolidation encountered an error. Existing memories were kept unchanged.',
+      };
+    }
   },
 
   /**

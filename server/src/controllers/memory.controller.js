@@ -34,19 +34,27 @@ export const updateMemory = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { fact, category, pinned, active } = req.body;
 
-  const memory = await Memory.findOne({ _id: id, userId: req.user._id });
+  const memory = await memoryService.updateUserMemory(req.user._id, id, {
+    fact,
+    category,
+    pinned,
+    active,
+  });
+
   if (!memory) {
     throw new ApiError(404, 'MEMORY_NOT_FOUND', 'Memory record not found');
   }
 
-  if (fact !== undefined) memory.fact = fact.trim();
-  if (category !== undefined) memory.category = category;
-  if (pinned !== undefined) memory.pinned = pinned;
-  if (active !== undefined) memory.active = active;
-
-  await memory.save();
-
   res.status(200).json({ data: memory });
+});
+
+/**
+ * Consolidates, de-duplicates, and resolves contradictions among user memories using AI.
+ * POST /api/memories/consolidate
+ */
+export const consolidateMemories = asyncHandler(async (req, res) => {
+  const result = await memoryService.consolidateUserMemories(req.user._id);
+  res.status(200).json({ data: result });
 });
 
 /**

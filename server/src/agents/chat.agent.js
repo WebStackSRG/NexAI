@@ -95,6 +95,7 @@ export function formatConversationHistory(rawMessages) {
  * @param {string} [options.customInstructions=''] - Custom project or user instructions
  * @param {Array<{name: string, content: string, mimeType?: string}>} [options.sources=[]] - Project sources
  * @param {Array<any>} [options.memories=[]] - Retrieved long-term user memories
+ * @param {Object} [options.personalization] - User global personalization settings
  * @returns {AsyncGenerator<{text: string, thought?: string, usageMetadata: any}, void, unknown>}
  */
 export async function* streamChatReply({
@@ -104,10 +105,30 @@ export async function* streamChatReply({
   customInstructions = '',
   sources = [],
   memories = [],
+  personalization,
 }) {
   const contents = formatConversationHistory(messages);
 
   let systemInstruction = CHAT_SYSTEM_PROMPT;
+
+  // 1. Inject global user personalization directives if configured
+  if (personalization?.customInstructions && personalization.customInstructions.trim()) {
+    systemInstruction += `\n\n[USER GLOBAL CUSTOM INSTRUCTIONS]:\nThe user has provided the following global directives that must be honored across all conversations:\n${personalization.customInstructions.trim()}`;
+  }
+
+  if (personalization?.responseTone && personalization.responseTone !== 'default') {
+    const toneMap = {
+      concise: 'Be extremely concise, direct, and succinct. Output solutions and code immediately with minimal preamble or pleasantries.',
+      detailed: 'Be thorough and comprehensive. Include architectural rationale, tradeoffs, and detailed breakdowns.',
+      technical: 'Adopt a senior staff engineer persona. Prioritize technical rigor, performance, security, and edge-case resilience.',
+      casual: 'Adopt an approachable, friendly, and collaborative peer tone while maintaining technical accuracy.',
+    };
+    if (toneMap[personalization.responseTone]) {
+      systemInstruction += `\n\n[USER PREFERRED RESPONSE TONE]:\n${toneMap[personalization.responseTone]}`;
+    }
+  }
+
+  // 2. Inject project-level custom instructions
   if (customInstructions && customInstructions.trim()) {
     systemInstruction += `\n\n[PROJECT CUSTOM INSTRUCTIONS]:\nFollow these custom project instructions for all responses:\n${customInstructions.trim()}`;
   }

@@ -253,6 +253,7 @@ export async function sendMessage(req, res, next) {
       customInstructions,
       sources: projectSources,
       memories,
+      personalization: req.user.settings?.personalization,
     });
 
     for await (const chunk of stream) {

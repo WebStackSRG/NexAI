@@ -12,6 +12,7 @@ import {
   updateMemory,
   deleteMemory,
   clearMemories,
+  consolidateMemories,
 } from '../controllers/memory.controller.js';
 
 const router = Router();
@@ -21,6 +22,7 @@ router.use(auth);
 
 router.get('/', getMemories);
 router.post('/', validate({ body: createMemorySchema }), createMemory);
+router.post('/consolidate', consolidateMemories);
 router.delete('/', clearMemories);
 router.patch(
   '/:id',

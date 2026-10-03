@@ -6,6 +6,7 @@ export const useMemoryStore = create((set, get) => ({
   memories: [],
   isLoading: false,
   isSaving: false,
+  isConsolidating: false,
   error: null,
 
   /**
@@ -49,6 +50,27 @@ export const useMemoryStore = create((set, get) => ({
   },
 
   /**
+   * Update an existing memory
+   * @param {string} id
+   * @param {Object} data
+   */
+  updateMemory: async (id, data) => {
+    try {
+      const response = await memoryApi.updateMemory(id, data);
+      const updated = response.data;
+      set((state) => ({
+        memories: state.memories.map((m) => (m._id === id ? { ...m, ...updated } : m)),
+      }));
+      toast.success('Memory updated successfully');
+      return updated;
+    } catch (err) {
+      const message = err.message || 'Failed to update memory';
+      toast.error(message);
+      return null;
+    }
+  },
+
+  /**
    * Delete a single memory
    * @param {string} id
    */
@@ -85,6 +107,29 @@ export const useMemoryStore = create((set, get) => ({
     } catch (err) {
       toast.error('Failed to update memory pin state');
       return false;
+    }
+  },
+
+  /**
+   * Consolidate and optimize memories using Gemini AI
+   */
+  consolidateMemories: async () => {
+    set({ isConsolidating: true });
+    try {
+      const response = await memoryApi.consolidateMemories();
+      const result = response.data;
+      if (Array.isArray(result?.memories)) {
+        set({ memories: result.memories, isConsolidating: false });
+      } else {
+        set({ isConsolidating: false });
+      }
+      toast.success(result?.message || 'Memories consolidated and optimized with AI');
+      return result;
+    } catch (err) {
+      const message = err.message || 'Failed to consolidate memories';
+      set({ isConsolidating: false });
+      toast.error(message);
+      return null;
     }
   },
 

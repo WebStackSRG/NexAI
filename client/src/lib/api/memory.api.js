@@ -34,6 +34,13 @@ export const memoryApi = {
   },
 
   /**
+   * Consolidate and optimize memories using AI
+   */
+  consolidateMemories() {
+    return apiClient.post('/memories/consolidate');
+  },
+
+  /**
    * Clear all memories for the user
    */
   clearAllMemories() {

@@ -213,5 +213,61 @@ describe('Long-Term Memory API & Workflow Tests', () => {
       expect(retrieved.length).toBeGreaterThan(0);
       expect(retrieved[0].fact).toBe("User's name is Sarah");
     });
+
+    it('should respect aiMemoryEnabled: false and skip automatic memory extraction', async () => {
+      userA.settings = {
+        personalization: {
+          aiMemoryEnabled: false,
+          customInstructions: 'Never extract memories',
+        },
+      };
+      await userA.save();
+
+      const result = await memoryService.extractAndSaveMemories({
+        userId: userA._id,
+        messageContent: 'My name is John Doe and I like Python',
+        isSimulation: false,
+      });
+
+      expect(result.extractedCount).toBe(0);
+      expect(result.disabled).toBe(true);
+
+      const memCount = await Memory.countDocuments({ userId: userA._id });
+      expect(memCount).toBe(0);
+    });
+
+    it('POST /api/memories/consolidate should return status 200 with result message', async () => {
+      await Memory.create([
+        { userId: userA._id, fact: 'User works with React', category: 'preference' },
+        { userId: userA._id, fact: 'User works with Next.js', category: 'preference' },
+      ]);
+
+      const res = await request(app)
+        .post('/api/memories/consolidate')
+        .set('Authorization', `Bearer ${tokenA}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toBeDefined();
+    });
+
+    it('PATCH /api/users/me/settings should update personalization settings', async () => {
+      const res = await request(app)
+        .patch('/api/users/me/settings')
+        .set('Authorization', `Bearer ${tokenA}`)
+        .send({
+          personalization: {
+            customInstructions: 'Always answer in TypeScript and concise bullet points.',
+            responseTone: 'concise',
+            aiMemoryEnabled: true,
+          },
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.user.settings.personalization.customInstructions).toBe(
+        'Always answer in TypeScript and concise bullet points.',
+      );
+      expect(res.body.data.user.settings.personalization.responseTone).toBe('concise');
+      expect(res.body.data.user.settings.personalization.aiMemoryEnabled).toBe(true);
+    });
   });
 });
