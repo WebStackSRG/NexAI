@@ -7,6 +7,7 @@ import { setupSse, sendSse, closeSse } from '../utils/sse.js';
 import { streamChatReply, generateChatTitle } from '../agents/chat.agent.js';
 import { streamChatSimulation } from '../utils/chatSimulator.js';
 import { deductCredits } from '../services/credit.service.js';
+import { memoryService } from '../services/memory.service.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -136,10 +137,18 @@ export async function sendMessage(req, res, next) {
         isClientConnected = false;
       });
 
+      // Retrieve relevant user long-term memories across chats
+      const memories = await memoryService.getRelevantMemories({
+        userId: req.user._id,
+        query: content,
+        limit: 8,
+      });
+
       const simResult = await streamChatSimulation({
         res,
         prompt: content,
         attachments,
+        memories,
         isClientConnected: () => isClientConnected,
       });
 
@@ -152,6 +161,18 @@ export async function sendMessage(req, res, next) {
 
       chat.updatedAt = new Date();
       await chat.save();
+
+      // Asynchronously extract and save user memories
+      memoryService
+        .extractAndSaveMemories({
+          userId: req.user._id,
+          messageContent: content,
+          chatId: chat._id,
+          isSimulation: true,
+        })
+        .catch((memErr) => {
+          logger.warn({ error: memErr.message }, 'Simulation memory extraction warning');
+        });
 
       const currentCredits = req.user.wallet?.creditsRemaining ?? 0;
 
@@ -192,6 +213,13 @@ export async function sendMessage(req, res, next) {
     // Load full message history for context
     const history = await Message.find({ chatId: chat._id }).sort({ createdAt: 1 });
 
+    // Retrieve relevant long-term memories for this user across conversations
+    const memories = await memoryService.getRelevantMemories({
+      userId: req.user._id,
+      query: content,
+      limit: 8,
+    });
+
     // If chat belongs to a project, inject project custom instructions and sources
     let customInstructions = '';
     let projectSources = [];
@@ -213,6 +241,7 @@ export async function sendMessage(req, res, next) {
       model,
       customInstructions,
       sources: projectSources,
+      memories,
     });
 
     for await (const chunk of stream) {
@@ -254,6 +283,18 @@ export async function sendMessage(req, res, next) {
     // Update chat timestamp
     chat.updatedAt = new Date();
     await chat.save();
+
+    // Asynchronously extract and learn persistent user facts/memories from conversation
+    memoryService
+      .extractAndSaveMemories({
+        userId: req.user._id,
+        messageContent: content,
+        chatId: chat._id,
+        isSimulation: false,
+      })
+      .catch((memErr) => {
+        logger.warn({ error: memErr.message }, 'Background memory extraction warning');
+      });
 
     // Deduct credits atomically and record UsageLog
     const deduction = await deductCredits({

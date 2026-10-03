@@ -261,7 +261,26 @@ This log tracks architectural and design decisions made for the NexAI project, p
      - **Sticky CodeBlock Header:** Code block header topbars (`CodeBlock.module.scss`) pinned sticky (`top: 0`) so copy button and language badge remain accessible during long multi-line code scrolling.
      - **Floating Scroll-to-Bottom:** Automated down-arrow button displayed when the user scrolls away from the stream, smoothly snapping back to the newest incoming tokens.
      - **Telemetry Inspector Drawer:** Right-side sliding panel inspecting message metadata: model identifier, input/output/total token breakdown, credits deducted, response latency in ms, and internal reasoning/thinking steps.
-     - **Message Feedback & Read Aloud:** Action buttons for Like/Dislike ratings and Web Speech audio playback on assistant message bubbles.
+    - **Message Feedback & Read Aloud:** Action buttons for Like/Dislike ratings and Web Speech audio playback on assistant message bubbles.
      - **Chat Branching:** Confirmed under Future Scope as per PRD Section 3 to preserve project completion timelines.
+
+## ADR-026: Persistent Cross-Chat Long-Term Memory and Hybrid Context Retrieval
+
+- **Date:** 2026-10-03
+- **Status:** Accepted
+- **Context:** Without cross-chat memory, users had to re-introduce their name, preferred tech stack, and personal development context in every new conversation session. A decoupled memory architecture was required to persist facts, preferences, background, and directives across chats while preserving user privacy, security, and manual transparency.
+- **Decision:**
+  1. **Dual-Tier Memory Structure:**
+     - **Short-Term Memory (In-Chat):** Sliding turn-based context windowing (`formatConversationHistory`) with multimodal asset preservation and turn normalization for the active chat session.
+     - **Long-Term Memory (Cross-Chat):** Dedicated `Memory` collection in MongoDB with 768-dim embeddings in `vectorDbService`. Scoped strictly to `userId` with categories (`identity`, `preference`, `project`, `instruction`, `fact`).
+  2. **Hybrid Context Retrieval & Injection:**
+     - Prioritizes core identity (e.g. user name, profession) and pinned memories.
+     - Performs semantic vector similarity search via `vectorDbService.query` using the user's incoming query embedding to retrieve domain-relevant memories.
+     - Injects formatted context into Gemini's `systemInstruction` across all chats (`[USER LONG-TERM MEMORY (CROSS-CHAT PERSISTENT CONTEXT)]`).
+  3. **Zero-Latency Deterministic + Background AI Extraction:**
+     - Deterministic fast-path regex captures explicit identity ("My name is...", "Call me...", "I work as...", "Remember that...") immediately.
+     - Asynchronous Gemini Flash agent (`memory.service.js`) parses nuanced conversational statements without slowing down SSE token streaming.
+  4. **User Agency & Settings Management (`MemoryManager`):**
+     - Full CRUD API at `/api/memories` and interactive UI card in `/settings` allowing users to inspect what NexAI has remembered, toggle priority pinning, add custom memories manually, or wipe memory cleanly ("Clear All").
 
 

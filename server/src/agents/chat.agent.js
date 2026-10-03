@@ -54,6 +54,7 @@ export function formatConversationHistory(rawMessages) {
  * @param {'flash' | 'pro'} [options.model='flash'] - Model selection
  * @param {string} [options.customInstructions=''] - Custom project or user instructions
  * @param {Array<{name: string, content: string, mimeType?: string}>} [options.sources=[]] - Project sources
+ * @param {Array<any>} [options.memories=[]] - Retrieved long-term user memories
  * @returns {AsyncGenerator<{text: string, usageMetadata: any}, void, unknown>}
  */
 export async function* streamChatReply({
@@ -61,6 +62,7 @@ export async function* streamChatReply({
   model = 'flash',
   customInstructions = '',
   sources = [],
+  memories = [],
 }) {
   const contents = formatConversationHistory(messages);
 
@@ -79,6 +81,14 @@ export async function* streamChatReply({
       .join('\n\n');
 
     systemInstruction += `\n\n[PROJECT KNOWLEDGE BASE / SOURCES]:\nThe user has uploaded the following project source files. Use this knowledge base as primary ground truth context to answer questions accurately:\n\n${formattedSources}`;
+  }
+
+  if (Array.isArray(memories) && memories.length > 0) {
+    const memoryItems = memories
+      .map((m) => `- ${m.fact || m}`)
+      .join('\n');
+
+    systemInstruction += `\n\n[USER LONG-TERM MEMORY (CROSS-CHAT PERSISTENT CONTEXT)]:\nThe following verified facts, identity, and preferences are remembered about this user across past conversations. Seamlessly incorporate them into your responses without explicitly saying "According to my memory" unless asked:\n${memoryItems}`;
   }
 
   yield* streamContent({

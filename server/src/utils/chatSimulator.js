@@ -4,7 +4,7 @@ import { sendSse } from './sse.js';
  * Predefined simulated responses across common developer, architectural, and UI scenarios.
  * Completely eliminates Gemini API consumption during UI testing and offline viva demos.
  */
-export function getSimulatedChatContent(prompt = '', attachments = []) {
+export function getSimulatedChatContent(prompt = '', attachments = [], memories = []) {
   if (Array.isArray(attachments) && attachments.length > 0) {
     const att = attachments[0];
     const isImage = att.mimeType?.startsWith('image/');
@@ -50,6 +50,46 @@ Feel free to ask specific questions about this ${fileType.toLowerCase()} or requ
   }
 
   const normalized = (prompt || '').toLowerCase().trim();
+
+  // Memory queries & Self-introduction
+  const nameIntroMatch = prompt.match(/(?:my name is|call me|i am called)\s+([A-Za-z\s]{2,30})/i);
+  if (nameIntroMatch) {
+    const identifiedName = nameIntroMatch[1].trim();
+    return {
+      title: `Introduction: ${identifiedName}`,
+      fullText: `Hello **${identifiedName}**! Nice to meet you.\n\nI have saved your name and details to my **cross-chat long-term memory**. Whenever you start a new conversation in NexAI, I will remember who you are and tailor our pair-programming sessions accordingly!\n\nHow can I help you with your projects today?`,
+      followUps: [
+        'What tech stack are we building today?',
+        'Tell me what you remember about me',
+        'Help me design a software architecture',
+      ],
+    };
+  }
+
+  if (
+    normalized.includes('what is my name') ||
+    normalized.includes('do you know my name') ||
+    normalized.includes('who am i') ||
+    normalized.includes('what do you remember') ||
+    normalized.includes('my memory')
+  ) {
+    const memoryBullets = Array.isArray(memories) && memories.length > 0
+      ? memories.map((m) => `* **${m.category?.toUpperCase() || 'FACT'}:** ${m.fact || m}`).join('\n')
+      : '* No personalized memories have been recorded yet. You can tell me your name, preferred tech stack, or active projects anytime!';
+
+    const identifiedName = memories.find((m) => (m.fact || '').toLowerCase().includes("user's name is"))
+      ?.fact?.replace(/user's name is\s*/i, '');
+
+    return {
+      title: 'NexAI Long-Term Memory Profile',
+      fullText: `### NexAI Long-Term Memory & Profile\n\n${identifiedName ? `You are **${identifiedName}**!` : 'Here is what I currently remember about you across all past conversations:'}\n\n${memoryBullets}\n\nYou can manage, add, or delete any of these memories anytime in **Settings > Memory & Personalization**!`,
+      followUps: [
+        'How does NexAI memory vector search work?',
+        'Remember that I prefer TypeScript and React',
+        'Start a new coding project',
+      ],
+    };
+  }
 
   // 1. Concept / Quantum Computing (ChatHero starter prompt)
   if (
@@ -785,8 +825,8 @@ export function tokensToCredits(totalTokens) {
  * @param {() => boolean} options.isClientConnected
  * @returns {Promise<{ fullText: string, followUps: string[], title: string }>}
  */
-export async function streamChatSimulation({ res, prompt, attachments = [], isClientConnected }) {
-  const { title, fullText, followUps } = getSimulatedChatContent(prompt, attachments);
+export async function streamChatSimulation({ res, prompt, attachments = [], memories = [], isClientConnected }) {
+  const { title, fullText, followUps } = getSimulatedChatContent(prompt, attachments, memories);
 
   // Split into realistic word/token chunks
   const chunks = fullText.match(/\S+\s*/g) || [fullText];

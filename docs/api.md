@@ -1773,6 +1773,131 @@ Returns a paginated list from the `ErrorLog` collection for operational monitori
 }
 ```
 
+---
+
+## Long-Term Memory & Personalization
+
+Endpoints for persistent memory across conversations. Memories are automatically extracted during chats and can be managed manually by the user.
+
+### GET `/api/memories`
+
+Returns all active long-term memories for the authenticated user.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Response `200 OK`:**
+
+```json
+{
+  "data": [
+    {
+      "_id": "67401122aabbccddeeff1122",
+      "userId": "67401122aabbccddeeff0001",
+      "fact": "User's name is Rewan",
+      "category": "identity",
+      "confidence": 0.98,
+      "pinned": true,
+      "active": true,
+      "createdAt": "2026-10-03T10:00:00.000Z",
+      "updatedAt": "2026-10-03T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+### POST `/api/memories`
+
+Manually creates a new persistent memory. Automatically indexes a 768-dim vector embedding in `vectorDbService`.
+
+- **Auth:** Bearer Token
+- **Method:** `POST`
+- **Request Body:**
+
+```json
+{
+  "fact": "Prefers TypeScript, React, and Node.js",
+  "category": "preference",
+  "pinned": false
+}
+```
+
+- **Response `201 Created`:**
+
+```json
+{
+  "data": {
+    "_id": "67401122aabbccddeeff1123",
+    "userId": "67401122aabbccddeeff0001",
+    "fact": "Prefers TypeScript, React, and Node.js",
+    "category": "preference",
+    "pinned": false,
+    "active": true,
+    "vectorId": "mem_67401122aabbccddeeff1123"
+  }
+}
+```
+
+### PATCH `/api/memories/:id`
+
+Updates a memory's fact, category, or pinned status.
+
+- **Auth:** Bearer Token
+- **Method:** `PATCH`
+- **Request Body:**
+
+```json
+{
+  "fact": "Updated fact string",
+  "pinned": true
+}
+```
+
+- **Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "_id": "67401122aabbccddeeff1123",
+    "fact": "Updated fact string",
+    "pinned": true
+  }
+}
+```
+
+### DELETE `/api/memories/:id`
+
+Deletes a single memory and removes its vector embedding from the vector store.
+
+- **Auth:** Bearer Token
+- **Method:** `DELETE`
+- **Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "message": "Memory deleted successfully"
+  }
+}
+```
+
+### DELETE `/api/memories`
+
+Clears all memories for the authenticated user.
+
+- **Auth:** Bearer Token
+- **Method:** `DELETE`
+- **Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "message": "Cleared 5 memories successfully",
+    "deletedCount": 5
+  }
+}
+```
+
+
 
 
 
