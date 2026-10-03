@@ -24,16 +24,38 @@ function extractDeterministicMemories(text) {
   }
 
   // 2. Identity: Name
-  const nameMatch = clean.match(/(?:my name is|call me|i am called|i'm called)\s+([A-Za-z\s]{2,30})/i);
-  if (nameMatch) {
-    const rawName = nameMatch[1].trim().replace(/\s+(?:and|but|who|which)\b.*/i, '');
-    if (rawName && !/^(an?|the|here|ready|tired|hungry|happy|working|building)\b/i.test(rawName)) {
-      memories.push({
-        fact: `User's name is ${rawName}`,
-        category: 'identity',
-        confidence: 0.98,
-      });
+  let identifiedName = null;
+
+  // Pattern A: "its shivam this side" / "it's shivam here"
+  const thisSideMatch = clean.match(/\b(?:it'?s|this is)\s+([A-Za-z]{2,25})\s+this side\b/i);
+  if (thisSideMatch) {
+    identifiedName = thisSideMatch[1].trim();
+  }
+
+  // Pattern B: "hello ... its shivam" / "hi, i am shivam"
+  if (!identifiedName) {
+    const greetingMatch = clean.match(/(?:hello|hi|hey|greetings)[^.!?\n]*\b(?:it'?s|this is|i'?m|i am)\s+([A-Za-z]{2,25})\b/i);
+    if (greetingMatch) {
+      identifiedName = greetingMatch[1].trim();
     }
+  }
+
+  // Pattern C: "my name is Alice" / "call me Bob" / "i am called Charlie"
+  if (!identifiedName) {
+    const directNameMatch = clean.match(/\b(?:my name is|call me|i am called|i'm called)\s+([A-Za-z]{2,25})\b/i);
+    if (directNameMatch) {
+      identifiedName = directNameMatch[1].trim();
+    }
+  }
+
+  const stopwords = /^(an?|the|here|ready|tired|hungry|happy|working|building|first|just|new|not|my|me|so|right|good|true|false|ok|okay)\b/i;
+  if (identifiedName && !stopwords.test(identifiedName)) {
+    const formattedName = identifiedName.charAt(0).toUpperCase() + identifiedName.slice(1).toLowerCase();
+    memories.push({
+      fact: `User's name is ${formattedName}`,
+      category: 'identity',
+      confidence: 0.98,
+    });
   }
 
   // 3. Identity: Profession / Role
@@ -46,11 +68,11 @@ function extractDeterministicMemories(text) {
     });
   }
 
-  // 4. Project: Building something
-  const projectMatch = clean.match(/(?:i'm building|i am building|i am working on|my project is)\s+([^.!?\n]{3,60})/i);
+  // 4. Project: Building something or working on a project/capstone
+  const projectMatch = clean.match(/\b(?:my project|capstone project|working on|building)\s+(?:is\s+)?([^.,!?\n]{3,60})/i);
   if (projectMatch) {
     memories.push({
-      fact: `User is building ${projectMatch[1].trim()}`,
+      fact: `User is working on ${projectMatch[1].trim()}`,
       category: 'project',
       confidence: 0.9,
     });
@@ -104,6 +126,12 @@ export const memoryService = {
     if (!userId) return [];
 
     try {
+      // Auto-backfill memories from past chat messages if user has none recorded yet
+      const existingCount = await Memory.countDocuments({ userId, active: true });
+      if (existingCount === 0) {
+        await this.backfillUserMemories(userId);
+      }
+
       // 1. Fetch pinned and identity memories (always highest priority context)
       const priorityMemories = await Memory.find({
         userId,
@@ -453,5 +481,48 @@ export const memoryService = {
     }
     const result = await Memory.deleteMany({ userId });
     return result.deletedCount || 0;
+  },
+
+  /**
+   * Backfills memories for a user by scanning past chat history.
+   *
+   * @param {string|import('mongoose').Types.ObjectId} userId
+   * @returns {Promise<number>}
+   */
+  async backfillUserMemories(userId) {
+    if (!userId) return 0;
+    try {
+      const { Chat } = await import('../models/Chat.js');
+      const { Message } = await import('../models/Message.js');
+
+      const userChats = await Chat.find({ userId }).select('_id');
+      const chatIds = userChats.map((c) => c._id);
+      if (chatIds.length === 0) return 0;
+
+      const pastMessages = await Message.find({
+        chatId: { $in: chatIds },
+        role: 'user',
+      })
+        .sort({ createdAt: 1 })
+        .limit(20);
+
+      let totalBackfilled = 0;
+      for (const msg of pastMessages) {
+        if (msg.content && msg.content.length > 5) {
+          const res = await this.extractAndSaveMemories({
+            userId,
+            messageContent: msg.content,
+            chatId: msg.chatId,
+            isSimulation: false,
+          });
+          totalBackfilled += res.extractedCount;
+        }
+      }
+
+      return totalBackfilled;
+    } catch (err) {
+      logger.warn({ error: err.message, userId }, 'Failed to backfill memories from history');
+      return 0;
+    }
   },
 };

@@ -148,7 +148,7 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
         aria-live="polite"
         aria-label="Message history"
       >
-        {isLoadingMessages ? (
+        {isLoadingMessages && messages.length === 0 ? (
           <div className={styles.loadingList}>
             <div className={styles.skeletonMessageUser}>
               <Skeleton width="50%" height="56px" radius="lg" />

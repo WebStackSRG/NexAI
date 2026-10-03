@@ -214,6 +214,9 @@ export const useChatStore = create((set, get) => ({
       set({ isLoadingMessages: false, error: message });
       toast.error(message);
       return [];
+    } finally {
+      // Ensure loading flag is never left true
+      set({ isLoadingMessages: false });
     }
   },
 
@@ -269,6 +272,7 @@ export const useChatStore = create((set, get) => ({
     set((state) => ({
       messages: [...state.messages, userMessage, assistantMessage],
       isStreaming: true,
+      isLoadingMessages: false,
       abortController,
       error: null,
     }));
