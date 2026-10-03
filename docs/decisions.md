@@ -238,6 +238,30 @@ This log tracks architectural and design decisions made for the NexAI project, p
      - Global error banner with an explicit "Retry" action if fetching or verification encounters network failures.
      - Low-balance and zero-balance warning banners highlighting HTTP 402 AI request gatekeeping.
   4. **Itemized Transaction Receipt Modal (`TransactionReceiptModal.jsx`):** Allows users to click any ledger row or "Receipt" button to inspect detailed cryptographic proof, order references, Razorpay payment identifiers, and printable summaries.
-  5. **Transaction Ledger Status Filtering:** Enhanced `TransactionTable.jsx` with quick status filter pills (`All`, `Success`, `Pending`) for rapid ledger auditing.
-  6. **Interactive Test-Mode Sandbox Credentials & Token Economics:** Added `TestCredentialsCard.jsx` displaying standard Razorpay test card credentials (`4111 •••• •••• 1111`) and test UPI identifiers for viva evaluators, alongside `TokenEconomicsCard.jsx` explaining source token metering (`ceil(tokens / 100)`).
+## ADR-024: Consolidated Library Reliability, In-Chat Ingestion & Multi-Chunk Vector Indexing
+
+- **Date:** 2026-10-01
+- **Status:** Accepted
+- **Context:** An internal audit and competitive knowledge management research revealed critical gaps in the existing Library implementation: (1) Vector embedding truncated content at 1,500 characters, blinding semantic search to deep sections of long documents; (2) Uploaded PDF documents were stored as placeholder text without text parsing or semantic vectorization; (3) Users had to copy-paste between Chat and Library because there was no direct "Save to Library" action on messages or code blocks; and (4) Developer file formats were restricted to basic extensions.
+- **Decision:**
+  1. **Multi-Chunk Semantic Vector Indexing:** Refactored `buildItemEmbeddingTexts` in `server/src/controllers/library.controller.js` to segment long notes, documents, and transcripts into overlapping 3,000-character chunks with shared metadata (`refId: item._id`, `chunkIndex`). Added `vectorIds` array in `LibraryItem.js` schema and `removeMany` in `vectorDb.service.js` to ensure clean lifecycle management for multi-vector items.
+  2. **Multimodal PDF & Expanded Developer File Ingestion:** Updated `FileUploaderModal.jsx` to accept all common programming and configuration formats (`.sql`, `.sh`, `.env`, `.yaml`, `.rs`, `.go`, `.java`, `.cpp`, `.cs`, etc.) using direct text reading. For PDF uploads, base64 data is transmitted to `/api/library/suggest` where Gemini Flash natively parses the document, returning authentic summaries, tags, and extracted overviews for review before saving.
+  3. **Bidirectional In-Chat & CodeBlock Capture:** Added a "Save to Library" button on both user and assistant chat message bubbles (`MessageThread.jsx`), and a "Save Snippet" button with language tagging on `CodeBlock.jsx`. Mounted `SaveItemModal` globally inside `AppLayout.jsx` with `addModalPrefill` state in `useLibraryStore`, maintaining the strict **Suggest &rarr; Review &rarr; Confirm** pattern without manual copy-pasting.
+
+## ADR-025: Dedicated Engine Strategy, Web Speech API Architecture & Chat Telemetry Inspector
+
+- **Date:** 2026-10-03
+- **Status:** Accepted
+- **Context:** Following evaluation of multimodal capabilities, rate limits, and latency targets, architectural decisions were needed regarding: (1) Default model specialization for cost-efficiency and quota longevity; (2) Audio processing strategy without burning precious API quotas; (3) Framework selection (evaluating LangChain vs native SDK); and (4) Chat UX enhancements (sticky code headers, scroll-to-bottom mechanics, message feedback, and telemetry inspection).
+- **Decision:**
+  1. **Primary AI Engine (`gemini-3.5-flash-lite`):** Selected `gemini-3.5-flash-lite` as the primary default model (`GEMINI_FLASH_MODEL`). Offers a 1,048,576-token context window, native multimodal input (text, images, OCR, PDF parsing, and audio understanding), low latency, generous free tier (1,500 RPD vs 20 RPD on 3.8 Flash), and the lowest token price ($0.30/1M input).
+  2. **Zero-Quota Voice Processing via Web Speech API:** Client-side speech dictation (`SpeechRecognition`) and text-to-speech audio playback (`window.speechSynthesis`) handle conversational voice without consuming any backend Gemini API tokens or triggering rate limits. Server-side TTS (`gemini-3.8-flash-lite-tts`) is maintained as a future opt-in server enhancement.
+  3. **Direct SDK Architecture (Zero-Dependency Independence):** Explicitly reject heavy orchestration frameworks (LangChain / LlamaIndex) in favor of the official `@google/genai` SDK. This eliminates 100+ nested npm dependencies, prevents cold-start delays on Render, and ensures the engineering logic (sliding window, hybrid Pinecone RAG, atomic credit deduction) remains authentic and defensible in viva examinations.
+  4. **Chat UX & Telemetry Inspector Drawer:**
+     - **Sticky CodeBlock Header:** Code block header topbars (`CodeBlock.module.scss`) pinned sticky (`top: 0`) so copy button and language badge remain accessible during long multi-line code scrolling.
+     - **Floating Scroll-to-Bottom:** Automated down-arrow button displayed when the user scrolls away from the stream, smoothly snapping back to the newest incoming tokens.
+     - **Telemetry Inspector Drawer:** Right-side sliding panel inspecting message metadata: model identifier, input/output/total token breakdown, credits deducted, response latency in ms, and internal reasoning/thinking steps.
+     - **Message Feedback & Read Aloud:** Action buttons for Like/Dislike ratings and Web Speech audio playback on assistant message bubbles.
+     - **Chat Branching:** Confirmed under Future Scope as per PRD Section 3 to preserve project completion timelines.
+
 

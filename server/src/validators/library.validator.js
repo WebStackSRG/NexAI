@@ -8,17 +8,21 @@ export const suggestLibrarySchema = z
     url: z.string().url('A valid URL is required for link suggestions').optional(),
     content: z.string().min(3, 'Content must be at least 3 characters').optional(),
     fileName: z.string().optional(),
+    fileBase64: z.string().optional(),
+    mimeType: z.string().optional(),
   })
   .refine(
     (data) => {
       if (data.type === 'link') return Boolean(data.url);
-      if (data.type === 'note' || data.type === 'file') return Boolean(data.content);
+      if (data.type === 'note') return Boolean(data.content);
+      if (data.type === 'file') return Boolean(data.content || data.fileBase64);
       return false;
     },
     {
-      message: 'Either a valid url (for link) or content (for note/file) must be provided',
+      message: 'Either a valid url (for link) or content/file data (for note/file) must be provided',
     },
   );
+
 
 export const generateDocumentSchema = z.object({
   prompt: z.string().min(3, 'Prompt must be at least 3 characters').max(2000),

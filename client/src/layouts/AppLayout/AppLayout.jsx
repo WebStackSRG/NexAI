@@ -5,9 +5,11 @@ import { Topbar } from './Topbar';
 import { Drawer } from '@/components/ui/Drawer';
 import { Spinner } from '@/components/ui/Spinner';
 import { CommandPalette } from '@/features/command-palette';
+import { SaveItemModal } from '@/features/library';
 import { useUiStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils/cn';
 import styles from './AppLayout.module.scss';
+
 
 export function AppLayout() {
   const isDrawerOpen = useUiStore((state) => state.isDrawerOpen);
@@ -52,6 +54,8 @@ export function AppLayout() {
       </div>
 
       <CommandPalette />
+      <SaveItemModal />
     </div>
   );
 }
+

@@ -74,6 +74,7 @@ This is the single most important section of this document. Every feature is pla
 | **AI Interview Platform**                 | Real-time interactive mock interview simulator (roles, viva prep, seniorities). Features animated voice ripple, live transcript, speech-to-text, and automated competency scorecard saved to Library.                        |
 | **Unified Search**                        | One search bar across Library, Documents, Prompts, and Chat History (keyword + semantic).                                                                                                                                    |
 | **Command Palette (Ctrl/Cmd+K)**          | Jump to any screen or trigger common actions instantly — pure frontend, zero backend latency.                                                                                                                                 |
+| **Chat Ergonomics & Telemetry Inspector** | Sticky code block headers with 1-click copy, token stream reveal animation, floating scroll-to-bottom anchor, message feedback (Like/Dislike), client-side Read Aloud (Web Speech API), and sliding right-side Telemetry Inspector Drawer (model tier, prompt/candidate/total token breakdown, credits deducted, response latency, and thought trace). |
 
 ### Phase 2 — SaaS / Business Layer (the "unique" layer for the examiner)
 
@@ -126,7 +127,8 @@ Stating these as "considered, deliberately deferred" is stronger than silently d
 | ------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | Frontend           | React + Vite, SCSS modules, Zustand                         | $0                                                                                    |
 | Backend            | Node.js + Express                                           | Render free web service (cold start ~30–60s after idle — mention proactively in viva) |
-| LLM                | Gemini 1.5 Flash (default) + Gemini 1.5 Pro (complex tasks) | Existing free/low-cost API key; usage tracked per call for credit deduction           |
+| LLM                | Gemini 3.5 Flash-Lite (default, 1M context, multimodal in, 1,500 RPD) + Gemini 3.1 Pro (complex tasks) | Official `@google/genai` SDK without third-party frameworks like LangChain; usage tracked per call for credit deduction |
+| Voice & Audio      | Browser Web Speech API (`SpeechRecognition` & `speechSynthesis`) | $0 cost, 0 API tokens consumed, client-side real-time voice; optional server TTS (`gemini-3.8-flash-lite-tts`) |
 | Embeddings         | Gemini embedding model                                      | Same key                                                                              |
 | Vector DB          | Pinecone Starter (free) or ChromaDB (self-hosted)           | Enough for single-user demo dataset                                                   |
 | Database           | MongoDB Atlas M0                                            | 512 MB, free forever                                                                  |

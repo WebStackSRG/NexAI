@@ -165,9 +165,27 @@ export const vectorDbService = {
   },
 
   /**
+   * Removes multiple vectors by their IDs.
+   *
+   * @param {string[]} ids
+   * @returns {Promise<boolean>}
+   */
+  async removeMany(ids) {
+    if (!Array.isArray(ids) || ids.length === 0) return false;
+    let allSuccess = true;
+    for (const id of ids) {
+      const ok = await this.remove(id);
+      if (!ok) allSuccess = false;
+    }
+    return allSuccess;
+  },
+
+
+  /**
    * Clears the in-memory fallback store (useful for test isolation).
    */
   clearLocalStore() {
     inMemoryStore.clear();
   },
 };
+

@@ -22,7 +22,6 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import {
   LibraryCard,
-  SaveItemModal,
   EditItemModal,
   DocGeneratorModal,
   FileUploaderModal,
@@ -30,6 +29,7 @@ import {
   InterviewViewModal,
   ItemDetailModal,
 } from '@/features/library';
+
 import { useLibraryStore } from '@/store/libraryStore';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ROUTES } from '@/constants/routes';
@@ -390,13 +390,13 @@ export default function LibraryPage() {
       )}
 
       {/* Modals */}
-      <SaveItemModal />
       <EditItemModal />
       <DocGeneratorModal />
       <FileUploaderModal />
       <DocumentViewModal />
       <InterviewViewModal />
       <ItemDetailModal />
+
 
       {/* Delete Confirmation */}
       <ConfirmDialog

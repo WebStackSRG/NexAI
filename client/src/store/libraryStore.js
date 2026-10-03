@@ -25,10 +25,12 @@ export const useLibraryStore = create((set, get) => ({
 
   // Add Note/Link / Suggest modal state
   isAddModalOpen: false,
+  addModalPrefill: null,
   isSuggesting: false,
   suggestError: null,
   suggestion: null,
   isSaving: false,
+
 
   // Document Generator modal state
   isDocGenModalOpen: false,
@@ -150,9 +152,10 @@ export const useLibraryStore = create((set, get) => ({
   /**
    * Add / Suggest modal controls
    */
-  openAddModal: () => {
+  openAddModal: (prefill = null) => {
     set({
       isAddModalOpen: true,
+      addModalPrefill: prefill,
       isSuggesting: false,
       suggestError: null,
       suggestion: null,
@@ -163,12 +166,14 @@ export const useLibraryStore = create((set, get) => ({
   closeAddModal: () => {
     set({
       isAddModalOpen: false,
+      addModalPrefill: null,
       suggestion: null,
       suggestError: null,
       isSuggesting: false,
       isSaving: false,
     });
   },
+
 
   suggestItem: async ({ type, url, content, fileName }) => {
     set({ isSuggesting: true, suggestError: null });

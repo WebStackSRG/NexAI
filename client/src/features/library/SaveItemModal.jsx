@@ -7,6 +7,7 @@ import { useLibraryStore } from '@/store/libraryStore';
 export function SaveItemModal() {
   const {
     isAddModalOpen,
+    addModalPrefill,
     closeAddModal,
     suggestItem,
     isSuggesting,
@@ -15,6 +16,7 @@ export function SaveItemModal() {
     saveItem,
     isSaving,
   } = useLibraryStore();
+
 
   const [stepSuggestion, setStepSuggestion] = useState(null);
 
@@ -72,7 +74,9 @@ export function SaveItemModal() {
           isSuggesting={isSuggesting}
           isSaving={isSaving}
           error={suggestError}
+          prefill={addModalPrefill}
         />
+
       )}
     </Modal>
   );

@@ -10,6 +10,7 @@ import {
   Edit3,
   AlertCircle,
   BookmarkPlus,
+  BookOpen,
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
@@ -20,7 +21,9 @@ import { PromptFormModal } from '@/features/prompts';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore';
 import { usePromptStore } from '@/store/promptStore';
+import { useLibraryStore } from '@/store/libraryStore';
 import { toast } from '@/store/uiStore';
+
 import { cn } from '@/lib/utils/cn';
 import styles from './MessageThread.module.scss';
 
@@ -305,6 +308,28 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                               <BookmarkPlus size={13} />
                               <span>Save to Vault</span>
                             </button>
+                            <button
+                              type="button"
+                              className={styles.actionBtn}
+                              onClick={() => {
+                                const titleHint =
+                                  message.content
+                                    .split('\n')[0]
+                                    .replace(/^[#*-]+\s*/, '')
+                                    .slice(0, 45) || 'User Note';
+                                useLibraryStore.getState().openAddModal({
+                                  type: 'note',
+                                  title: titleHint,
+                                  content: message.content,
+                                  tags: ['chat', 'note'],
+                                });
+                              }}
+                              title="Save to Library"
+                              aria-label="Save to Library"
+                            >
+                              <BookOpen size={13} />
+                              <span>Save to Library</span>
+                            </button>
                           </>
                         ) : (
                           <>
@@ -348,8 +373,31 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                               <BookmarkPlus size={13} />
                               <span>Save to Vault</span>
                             </button>
+                            <button
+                              type="button"
+                              className={styles.actionBtn}
+                              onClick={() => {
+                                const titleHint =
+                                  message.content
+                                    .split('\n')[0]
+                                    .replace(/^[#*-]+\s*/, '')
+                                    .slice(0, 45) || 'AI Solution Note';
+                                useLibraryStore.getState().openAddModal({
+                                  type: 'note',
+                                  title: titleHint,
+                                  content: message.content,
+                                  tags: ['chat', 'ai-solution'],
+                                });
+                              }}
+                              title="Save to Library"
+                              aria-label="Save to Library"
+                            >
+                              <BookOpen size={13} />
+                              <span>Save to Library</span>
+                            </button>
                           </>
                         )}
+
                       </div>
                     )}
                   </div>

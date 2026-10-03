@@ -61,14 +61,32 @@ function parseJsonOutput(text) {
  * @param {string} [options.suggestedTitle] - Initial title hint if available
  * @returns {Promise<{ title: string, summary: string, tags: string[], tokensUsed: number }>}
  */
-export async function generateLibrarySuggestion({ content, suggestedTitle = '' }) {
+export async function generateLibrarySuggestion({
+  content = '',
+  suggestedTitle = '',
+  fileBase64 = null,
+  mimeType = null,
+}) {
+  const parts = [];
+
+  if (fileBase64 && mimeType) {
+    parts.push({
+      inlineData: {
+        data: fileBase64,
+        mimeType,
+      },
+    });
+  }
+
   const promptUserMessage = suggestedTitle
     ? `Title hint: ${suggestedTitle}\n\nContent:\n${content}`
     : `Content:\n${content}`;
 
+  parts.push({ text: promptUserMessage });
+
   try {
     const result = await generateContent({
-      contents: [{ role: 'user', parts: [{ text: promptUserMessage }] }],
+      contents: [{ role: 'user', parts }],
       model: 'flash',
       systemInstruction: TAGGING_SYSTEM_PROMPT,
       config: {
@@ -76,6 +94,7 @@ export async function generateLibrarySuggestion({ content, suggestedTitle = '' }
         temperature: 0.2,
       },
     });
+
 
     const parsedJson = parseJsonOutput(result.text);
     const validated = taggingOutputSchema.parse(parsedJson);

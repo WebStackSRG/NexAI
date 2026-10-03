@@ -136,6 +136,30 @@ describe('Library API Integration Tests', () => {
       expect(logs[0].tokensUsed).toBe(150);
       expect(logs[0].creditsDeducted).toBe(2);
     });
+
+    it('should support file suggestion with fileBase64 and mimeType (PDF analysis)', async () => {
+      vi.spyOn(taggingAgent, 'generateLibrarySuggestion').mockResolvedValueOnce({
+        title: 'Uploaded AI Whitepaper',
+        summary: 'Deep dive into transformer architectures and LLM scaling laws.',
+        tags: ['ai', 'transformers', 'research'],
+        tokensUsed: 220,
+      });
+
+      const res = await request(app)
+        .post('/api/library/suggest')
+        .set('Authorization', `Bearer ${tokenA}`)
+        .send({
+          type: 'file',
+          fileName: 'ai_whitepaper.pdf',
+          fileBase64: 'JVBERi0xLjQKJcfs...',
+          mimeType: 'application/pdf',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.title).toBe('Uploaded AI Whitepaper');
+      expect(res.body.data.tags).toEqual(['ai', 'transformers', 'research']);
+      expect(res.body.data.creditsDeducted).toBe(3);
+    });
   });
 
   describe('POST /api/library (Save item)', () => {
@@ -163,7 +187,32 @@ describe('Library API Integration Tests', () => {
       expect(saved).not.toBeNull();
       expect(saved.title).toBe('Zustand State Management Guide');
     });
+
+    it('should index multiple chunk vectors for long documents and store vectorIds', async () => {
+      const mockVector = [0.1, 0.2, 0.3, 0.4];
+      vi.spyOn(geminiService, 'embedContent').mockResolvedValue(mockVector);
+
+      const longContent = 'A'.repeat(7000);
+      const res = await request(app)
+        .post('/api/library')
+        .set('Authorization', `Bearer ${tokenA}`)
+        .send({
+          type: 'note',
+          title: 'Comprehensive High-Load Architecture Guide',
+          summary: 'Detailed scaling patterns and caching.',
+          tags: ['architecture', 'scaling'],
+          content: longContent,
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.vectorIds.length).toBeGreaterThan(1);
+      expect(res.body.data.vectorId).toBe(res.body.data.vectorIds[0]);
+
+      const saved = await LibraryItem.findById(res.body.data._id);
+      expect(saved.vectorIds.length).toBeGreaterThan(1);
+    });
   });
+
 
   describe('GET /api/library & Tag Filtering', () => {
     it('should list user items and filter by tag', async () => {

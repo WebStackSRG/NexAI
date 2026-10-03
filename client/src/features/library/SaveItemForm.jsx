@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Globe, FileText, Sparkles, Check } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
@@ -8,12 +8,29 @@ import { NoteEditor } from './NoteEditor';
 import { cn } from '@/lib/utils/cn';
 import styles from './SaveItemForm.module.scss';
 
-export function SaveItemForm({ onSuggest, onDirectSave, isSuggesting, isSaving, error }) {
-  const [type, setType] = useState('link');
-  const [url, setUrl] = useState('');
-  const [noteContent, setNoteContent] = useState('');
-  const [noteTitleHint, setNoteTitleHint] = useState('');
+export function SaveItemForm({
+  onSuggest,
+  onDirectSave,
+  isSuggesting,
+  isSaving,
+  error,
+  prefill = null,
+}) {
+  const [type, setType] = useState(prefill?.type || 'link');
+  const [url, setUrl] = useState(prefill?.url || '');
+  const [noteContent, setNoteContent] = useState(prefill?.content || '');
+  const [noteTitleHint, setNoteTitleHint] = useState(prefill?.title || '');
   const [validationError, setValidationError] = useState('');
+
+  useEffect(() => {
+    if (prefill) {
+      if (prefill.type) setType(prefill.type);
+      if (prefill.url) setUrl(prefill.url);
+      if (prefill.content) setNoteContent(prefill.content);
+      if (prefill.title) setNoteTitleHint(prefill.title);
+    }
+  }, [prefill]);
+
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -77,9 +94,10 @@ export function SaveItemForm({ onSuggest, onDirectSave, isSuggesting, isSaving, 
       title,
       content: trimmed,
       summary: trimmed.slice(0, 150) + (trimmed.length > 150 ? '...' : ''),
-      tags: [],
+      tags: prefill?.tags || [],
     });
   };
+
 
   if (isSuggesting) {
     return (
@@ -203,4 +221,12 @@ SaveItemForm.propTypes = {
   isSuggesting: PropTypes.bool,
   isSaving: PropTypes.bool,
   error: PropTypes.string,
+  prefill: PropTypes.shape({
+    type: PropTypes.string,
+    url: PropTypes.string,
+    content: PropTypes.string,
+    title: PropTypes.string,
+    tags: PropTypes.arrayOf(PropTypes.string),
+  }),
 };
+

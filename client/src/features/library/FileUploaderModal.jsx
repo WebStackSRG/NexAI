@@ -32,25 +32,50 @@ export function FileUploaderModal() {
   const [dragOver, setDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileContent, setFileContent] = useState('');
+  const [fileBase64, setFileBase64] = useState('');
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
   const [tags, setTags] = useState(['file', 'upload']);
+
+  const TEXT_FILE_EXTENSIONS =
+    /\.(txt|md|markdown|json|csv|js|ts|jsx|tsx|py|html|css|scss|sass|yaml|yml|sql|sh|bash|env|xml|toml|rs|go|java|c|cpp|h|hpp|cs|php|rb|swift|kt|dart|vue|svelte|ini|conf)$/i;
 
   const handleFileProcess = (file) => {
     if (!file) return;
     setSelectedFile(file);
     setTitle(file.name.replace(/\.[^/.]+$/, ''));
+    setFileBase64('');
 
-    // Extract text content if text-based
-    if (file.type.startsWith('text/') || file.name.match(/\.(md|txt|json|csv|js|ts|jsx|tsx|py|html|css|yaml|yml)$/i)) {
+    const isPdf =
+      file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isText =
+      file.type.startsWith('text/') ||
+      file.type.includes('json') ||
+      file.type.includes('javascript') ||
+      file.type.includes('typescript') ||
+      file.type.includes('xml') ||
+      file.name.match(TEXT_FILE_EXTENSIONS);
+
+    if (isText) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const text = e.target.result || '';
         setFileContent(text);
       };
       reader.readAsText(file);
+    } else if (isPdf) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target.result || '';
+        const base64 =
+          typeof dataUrl === 'string' && dataUrl.includes(',')
+            ? dataUrl.split(',')[1]
+            : '';
+        setFileBase64(base64);
+        setFileContent(`[PDF Document: ${file.name} (${formatFileSize(file.size)})]`);
+      };
+      reader.readAsDataURL(file);
     } else {
-      // For binary / PDF files, store reference with description
       setFileContent(`[Attached File: ${file.name} (${formatFileSize(file.size)})]`);
     }
   };
@@ -82,22 +107,38 @@ export function FileUploaderModal() {
   };
 
   const handleAutoSuggest = async () => {
-    if (!fileContent && !selectedFile) return;
+    if (!selectedFile) return;
     try {
-      const suggestion = await suggestItem({
+      const payload = {
         type: 'file',
-        content: fileContent.slice(0, 3000) || selectedFile?.name || '',
-        fileName: selectedFile?.name || '',
-      });
+        fileName: selectedFile.name,
+      };
+
+      if (fileBase64) {
+        payload.fileBase64 = fileBase64;
+        payload.mimeType = selectedFile.type || 'application/pdf';
+      } else if (fileContent) {
+        payload.content = fileContent.slice(0, 4000);
+      } else {
+        payload.content = selectedFile.name;
+      }
+
+      const suggestion = await suggestItem(payload);
       if (suggestion) {
         if (suggestion.title) setTitle(suggestion.title);
         if (suggestion.summary) setSummary(suggestion.summary);
         if (suggestion.tags) setTags(suggestion.tags);
+        if (fileBase64 && suggestion.summary) {
+          setFileContent(
+            `## Document Summary\n${suggestion.summary}\n\n[Original PDF File: ${selectedFile.name} (${formatFileSize(selectedFile.size)})]`,
+          );
+        }
       }
     } catch {
       // Error handled in store
     }
   };
+
 
   const handleSave = async (e) => {
     e?.preventDefault();
@@ -155,7 +196,7 @@ export function FileUploaderModal() {
               ref={fileInputRef}
               onChange={handleInputChange}
               style={{ display: 'none' }}
-              accept=".txt,.md,.markdown,.json,.csv,.pdf,.js,.ts,.py"
+              accept=".txt,.md,.markdown,.json,.csv,.pdf,.js,.ts,.jsx,.tsx,.py,.html,.css,.scss,.yaml,.yml,.sql,.sh,.bash,.env,.xml,.toml,.rs,.go,.java,.c,.cpp,.h,.cs,.php,.rb,.swift,.kt,.dart"
             />
             <div className={styles.dropzoneIcon}>
               <UploadCloud size={32} />
@@ -164,9 +205,10 @@ export function FileUploaderModal() {
               <strong>Click to upload</strong> or drag and drop files here
             </p>
             <p className={styles.dropzoneHint}>
-              Supports Markdown (.md), Text (.txt), JSON, CSV, and PDF documents
+              Supports Code files (.js, .py, .ts, .sql, etc.), Markdown, JSON, CSV, Text, and PDF documents
             </p>
           </div>
+
         ) : (
           /* Selected File Preview & Details Form */
           <div className={styles.fileDetails}>

@@ -45,6 +45,11 @@ const libraryItemSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    vectorIds: {
+      type: [String],
+      default: [],
+    },
+
 
     // Link specific
     url: {
