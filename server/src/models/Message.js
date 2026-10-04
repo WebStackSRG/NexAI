@@ -17,10 +17,22 @@ const messageSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    thoughts: {
+      type: String,
+      default: '',
+    },
     tokensUsed: {
       type: Number,
       default: 0,
     },
+    attachments: [
+      {
+        name: { type: String, default: '' },
+        mimeType: { type: String, required: true },
+        data: { type: String, default: '' },
+        size: { type: Number, default: 0 },
+      },
+    ],
   },
   { timestamps: true },
 );

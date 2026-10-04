@@ -7,6 +7,7 @@ import { useLibraryStore } from '@/store/libraryStore';
 export function SaveItemModal() {
   const {
     isAddModalOpen,
+    addModalPrefill,
     closeAddModal,
     suggestItem,
     isSuggesting,
@@ -16,12 +17,15 @@ export function SaveItemModal() {
     isSaving,
   } = useLibraryStore();
 
+
   const [stepSuggestion, setStepSuggestion] = useState(null);
+  const [lastPayload, setLastPayload] = useState(null);
 
   // Sync with store suggestion or local state
   const activeSuggestion = suggestion || stepSuggestion;
 
   const handleSuggest = async (payload) => {
+    setLastPayload(payload);
     try {
       const result = await suggestItem(payload);
       setStepSuggestion({
@@ -30,6 +34,12 @@ export function SaveItemModal() {
       });
     } catch {
       // Handled in store toast / error state
+    }
+  };
+
+  const handleRegenerate = async () => {
+    if (lastPayload) {
+      await handleSuggest(lastPayload);
     }
   };
 
@@ -42,6 +52,7 @@ export function SaveItemModal() {
     try {
       await saveItem(itemData);
       setStepSuggestion(null);
+      setLastPayload(null);
     } catch {
       // Handled in store
     }
@@ -49,6 +60,7 @@ export function SaveItemModal() {
 
   const handleClose = () => {
     setStepSuggestion(null);
+    setLastPayload(null);
     closeAddModal();
   };
 
@@ -63,7 +75,9 @@ export function SaveItemModal() {
           suggestion={activeSuggestion}
           onSave={handleSave}
           onBack={handleBack}
+          onRegenerate={lastPayload ? handleRegenerate : undefined}
           isSaving={isSaving}
+          isRegenerating={isSuggesting}
         />
       ) : (
         <SaveItemForm
@@ -72,7 +86,9 @@ export function SaveItemModal() {
           isSuggesting={isSuggesting}
           isSaving={isSaving}
           error={suggestError}
+          prefill={addModalPrefill}
         />
+
       )}
     </Modal>
   );

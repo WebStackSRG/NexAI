@@ -2,9 +2,71 @@ import { create } from 'zustand';
 import { walletApi } from '@/lib/api/wallet.api';
 import { useAuthStore } from '@/store/authStore';
 
+export const DEFAULT_PLANS = [
+  {
+    id: 'starter_pack',
+    name: 'Starter Top-Up',
+    description: 'Perfect for quick tests, assignments, and light chat sessions',
+    amountINR: 49,
+    amountPaise: 4900,
+    credits: 500,
+    tier: 'free',
+    badge: null,
+    popular: false,
+    features: [
+      '500 AI credits (~50,000 tokens)',
+      'Gemini 3.8 Flash access',
+      'Personal Library storage',
+      'PDF & Document export',
+    ],
+  },
+  {
+    id: 'pro_pack',
+    name: 'Pro Developer Pack',
+    description: 'Best value for active development, mock interviews, and project workspaces',
+    amountINR: 99,
+    amountPaise: 9900,
+    credits: 1200,
+    tier: 'free',
+    badge: 'Popular',
+    popular: true,
+    features: [
+      '1,200 AI credits (~120,000 tokens)',
+      'Gemini Flash & Pro models',
+      'Priority SSE streaming',
+      'AI Mock Interview simulations',
+      'Full Library & Hybrid Search',
+    ],
+  },
+  {
+    id: 'power_pack',
+    name: 'Power Studio Tier',
+    description: 'Massive capacity for extensive document drafting, capstone prep, and heavy usage',
+    amountINR: 249,
+    amountPaise: 24900,
+    credits: 3500,
+    tier: 'pro_monthly',
+    badge: 'Best Value',
+    popular: false,
+    features: [
+      '3,500 AI credits (~350,000 tokens)',
+      'Pro Monthly tier upgrade',
+      'Unlimited project workspaces',
+      'Comprehensive interview analytics',
+      'Full cross-domain vector search',
+    ],
+  },
+];
+
 export const useWalletStore = create((set, get) => ({
   wallet: null,
-  plans: [],
+  governance: {
+    billingEnforcementMode: 'quota_free',
+    dailyGeminiQuotaLimit: 1500,
+    dailyRequestsUsed: 0,
+    dailyRequestsRemaining: 1500,
+  },
+  plans: DEFAULT_PLANS,
   transactions: [],
   pagination: {
     page: 1,
@@ -19,12 +81,21 @@ export const useWalletStore = create((set, get) => ({
   checkoutPlanId: null,
   error: null,
 
+  setGovernance: (governance) => set({ governance }),
+
   fetchWallet: async () => {
     set({ isLoadingWallet: true, error: null });
     try {
       const res = await walletApi.getWallet();
-      const wallet = res.data.data.wallet;
-      set({ wallet, isLoadingWallet: false });
+      const payload = res.data?.data || res.data || {};
+      const wallet = payload.wallet;
+      const governance = payload.governance;
+
+      set({
+        wallet,
+        ...(governance ? { governance } : {}),
+        isLoadingWallet: false,
+      });
 
       // Keep authStore in sync
       if (wallet && typeof wallet.creditsRemaining === 'number') {
@@ -45,14 +116,14 @@ export const useWalletStore = create((set, get) => ({
     try {
       const res = await walletApi.getPlans();
       const plans = res.data.data.plans;
-      set({ plans, isLoadingPlans: false });
+      set({ plans: plans && plans.length > 0 ? plans : DEFAULT_PLANS, isLoadingPlans: false });
       return plans;
-    } catch (err) {
+    } catch {
       set({
+        plans: DEFAULT_PLANS,
         isLoadingPlans: false,
-        error: err.response?.data?.error?.message || 'Failed to load plans',
       });
-      return [];
+      return DEFAULT_PLANS;
     }
   },
 
@@ -108,8 +179,10 @@ export const useWalletStore = create((set, get) => ({
       // 2. Try loading official Razorpay script
       const scriptLoaded = await get().loadRazorpayScript();
 
-      if (!scriptLoaded || !window.Razorpay) {
-        // Fallback simulation mode if Razorpay CDN is blocked/offline in test environment
+      const isMockKey = !keyId || keyId.includes('demo') || keyId.includes('mock');
+
+      if (isMockKey || !scriptLoaded || !window.Razorpay) {
+        // Direct simulation mode if Razorpay demo key is active or CDN is blocked
         const verifyRes = await walletApi.verifyPayment({
           razorpay_order_id: orderId,
           razorpay_payment_id: `pay_mock_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
@@ -126,7 +199,7 @@ export const useWalletStore = create((set, get) => ({
         return;
       }
 
-      // 3. Open Razorpay Checkout modal
+      // 3. Open Razorpay Checkout modal locked strictly to UPI & QR
       const options = {
         key: keyId,
         amount,
@@ -136,9 +209,28 @@ export const useWalletStore = create((set, get) => ({
         order_id: orderId,
         prefill: {
           email: user?.email || '',
+          method: 'upi',
+        },
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: 'Pay using UPI / QR',
+                instruments: [
+                  {
+                    method: 'upi',
+                  },
+                ],
+              },
+            },
+            sequence: ['block.upi'],
+            preferences: {
+              show_default_blocks: false,
+            },
+          },
         },
         theme: {
-          color: '#8b5cf6', // design token violet-500
+          color: '#22c55e', // design token green-500
         },
         modal: {
           ondismiss: () => {
@@ -227,4 +319,6 @@ export const useWalletStore = create((set, get) => ({
       onPaymentError?.(err);
     }
   },
+
+  clearError: () => set({ error: null }),
 }));

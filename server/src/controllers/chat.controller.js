@@ -5,7 +5,9 @@ import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { setupSse, sendSse, closeSse } from '../utils/sse.js';
 import { streamChatReply, generateChatTitle } from '../agents/chat.agent.js';
+import { streamChatSimulation } from '../utils/chatSimulator.js';
 import { deductCredits } from '../services/credit.service.js';
+import { memoryService } from '../services/memory.service.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -97,8 +99,18 @@ export const getMessages = asyncHandler(async (req, res) => {
  */
 export async function sendMessage(req, res, next) {
   const { id } = req.params;
-  const { content, model: requestedModel } = req.body;
+  const {
+    content,
+    model: requestedModel,
+    thinkingLevel = 'off',
+    isSimulation = false,
+    attachments = [],
+  } = req.body;
   const model = requestedModel || req.user.settings?.defaultModel || 'flash';
+  const isSimulationMode =
+    isSimulation === true ||
+    req.query.simulation === 'true' ||
+    req.headers['x-simulation'] === 'true';
 
   let sseStarted = false;
 
@@ -113,9 +125,81 @@ export async function sendMessage(req, res, next) {
       chatId: chat._id,
       role: 'user',
       content,
+      attachments: Array.isArray(attachments) ? attachments : [],
     });
 
-    // Check if chat is still using default title to auto-generate title
+    // Handle Zero-Token Simulation Mode for testing and offline demos
+    if (isSimulationMode) {
+      if (chat.title === 'New Chat') {
+        chat.title = content.slice(0, 32).trim() || 'Simulated Session';
+        await chat.save();
+      }
+
+      setupSse(res);
+      sseStarted = true;
+
+      let isClientConnected = true;
+      req.on('close', () => {
+        isClientConnected = false;
+      });
+
+      // Retrieve relevant user long-term memories across chats
+      const memories = await memoryService.getRelevantMemories({
+        userId: req.user._id,
+        query: content,
+        limit: 8,
+      });
+
+      const simResult = await streamChatSimulation({
+        res,
+        prompt: content,
+        attachments,
+        memories,
+        thinkingLevel,
+        isClientConnected: () => isClientConnected,
+      });
+
+      const assistantMessage = await Message.create({
+        chatId: chat._id,
+        role: 'assistant',
+        content: simResult.fullText,
+        thoughts: simResult.thoughts || '',
+        tokensUsed: 0,
+      });
+
+      chat.updatedAt = new Date();
+      await chat.save();
+
+      // Asynchronously extract and save user memories
+      memoryService
+        .extractAndSaveMemories({
+          userId: req.user._id,
+          messageContent: content,
+          chatId: chat._id,
+          isSimulation: true,
+        })
+        .catch((memErr) => {
+          logger.warn({ error: memErr.message }, 'Simulation memory extraction warning');
+        });
+
+      const currentCredits = req.user.wallet?.creditsRemaining ?? 0;
+
+      sendSse(res, 'done', {
+        messageId: assistantMessage._id.toString(),
+        tokensUsed: 0,
+        creditsDeducted: 0,
+        creditsRemaining: currentCredits,
+        chatTitle: chat.title,
+        thoughts: simResult.thoughts || '',
+        followUps: simResult.followUps,
+        isSimulation: true,
+      });
+
+      closeSse(res);
+      return;
+    }
+
+    // Check if chat is still using default title to auto-generate title via Gemini
     const existingMessagesCount = await Message.countDocuments({ chatId: chat._id });
     if (chat.title === 'New Chat' || existingMessagesCount <= 1) {
       const titleResult = await generateChatTitle({
@@ -138,6 +222,13 @@ export async function sendMessage(req, res, next) {
     // Load full message history for context
     const history = await Message.find({ chatId: chat._id }).sort({ createdAt: 1 });
 
+    // Retrieve relevant long-term memories for this user across conversations
+    const memories = await memoryService.getRelevantMemories({
+      userId: req.user._id,
+      query: content,
+      limit: 8,
+    });
+
     // If chat belongs to a project, inject project custom instructions and sources
     let customInstructions = '';
     let projectSources = [];
@@ -152,18 +243,27 @@ export async function sendMessage(req, res, next) {
     }
 
     let fullText = '';
+    let thoughts = '';
     let tokensUsed = 0;
 
     const stream = streamChatReply({
       messages: history,
       model,
+      thinkingLevel,
       customInstructions,
       sources: projectSources,
+      memories,
+      personalization: req.user.settings?.personalization,
     });
 
     for await (const chunk of stream) {
       if (!isClientConnected) {
         break;
+      }
+
+      if (chunk.thought) {
+        thoughts += chunk.thought;
+        sendSse(res, 'thought', { text: chunk.thought });
       }
 
       if (chunk.text) {
@@ -194,12 +294,25 @@ export async function sendMessage(req, res, next) {
       chatId: chat._id,
       role: 'assistant',
       content: fullText,
+      thoughts,
       tokensUsed,
     });
 
     // Update chat timestamp
     chat.updatedAt = new Date();
     await chat.save();
+
+    // Asynchronously extract and learn persistent user facts/memories from conversation
+    memoryService
+      .extractAndSaveMemories({
+        userId: req.user._id,
+        messageContent: content,
+        chatId: chat._id,
+        isSimulation: false,
+      })
+      .catch((memErr) => {
+        logger.warn({ error: memErr.message }, 'Background memory extraction warning');
+      });
 
     // Deduct credits atomically and record UsageLog
     const deduction = await deductCredits({
@@ -216,6 +329,7 @@ export async function sendMessage(req, res, next) {
       creditsDeducted: deduction.creditsDeducted,
       creditsRemaining: deduction.creditsRemaining,
       chatTitle: chat.title,
+      thoughts,
     });
 
     closeSse(res);

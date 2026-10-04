@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   FileText,
   Globe,
@@ -16,6 +17,16 @@ import {
   Calendar,
   Plus,
   X,
+  CheckCircle2,
+  AlertTriangle,
+  Lightbulb,
+  Target,
+  ChevronDown,
+  ChevronUp,
+  User,
+  Bot,
+  Pin,
+  MessageSquare,
 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -27,24 +38,20 @@ import { NoteEditor } from './NoteEditor';
 import { MarkdownRenderer } from '@/features/chat/MarkdownRenderer';
 import { useLibraryStore } from '@/store/libraryStore';
 import { formatDate } from '@/lib/utils/formatDate';
+import { formatFileSize } from '@/lib/utils/formatFileSize';
+import { ROUTES } from '@/constants/routes';
 import { toast } from '@/store/uiStore';
 import { cn } from '@/lib/utils/cn';
 import styles from './ItemDetailModal.module.scss';
 
-function formatFileSize(bytes) {
-  if (!bytes || bytes <= 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
-}
-
 export function ItemDetailModal() {
+  const navigate = useNavigate();
   const {
     isViewItemModalOpen,
     viewingItem,
     closeViewItemModal,
     updateItem,
+    togglePinItem,
     isUpdating,
     openDeleteDialog,
     exportPdf,
@@ -54,6 +61,8 @@ export function ItemDetailModal() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isTranscriptOpen, setIsTranscriptOpen] = useState(false);
+  const [hasCopiedReport, setHasCopiedReport] = useState(false);
 
   // Form states for editing
   const [editTitle, setEditTitle] = useState('');
@@ -76,6 +85,8 @@ export function ItemDetailModal() {
       setEditError('');
       setIsEditing(false);
       setCopied(false);
+      setIsTranscriptOpen(false);
+      setHasCopiedReport(false);
     }
   }, [viewingItem]);
 
@@ -128,6 +139,58 @@ export function ItemDetailModal() {
     }
   };
 
+  const scorecard = viewingItem?.scorecard || {};
+  const {
+    overallScore = 0,
+    rating = 'Completed',
+    categories = {},
+    strengths = [],
+    improvements = [],
+    summary: scoreSummary = viewingItem?.summary || '',
+    recommendedTopics = [],
+  } = scorecard;
+  const transcript = viewingItem?.transcript || [];
+
+  const handleCopyReport = async () => {
+    if (!viewingItem) return;
+    const reportText = `MOCK INTERVIEW EVALUATION: ${viewingItem.title}
+Score: ${overallScore}/100 (${rating})
+Role: ${viewingItem.role || 'Candidate'}
+Difficulty: ${viewingItem.difficulty || 'N/A'}
+Topic: ${viewingItem.topic || 'N/A'}
+
+SUMMARY:
+${scoreSummary}
+
+CATEGORIES:
+- Technical Accuracy: ${categories.technicalAccuracy || 0}%
+- Problem Solving: ${categories.problemSolving || 0}%
+- Communication: ${categories.communication || 0}%
+- System Design: ${categories.systemDesign || 0}%
+
+STRENGTHS:
+${strengths.map((s) => `• ${s}`).join('\n')}
+
+AREAS FOR IMPROVEMENT:
+${improvements.map((i) => `• ${i}`).join('\n')}`;
+
+    try {
+      await navigator.clipboard.writeText(reportText);
+      setHasCopiedReport(true);
+      toast.success('Interview scorecard copied');
+      setTimeout(() => setHasCopiedReport(false), 2500);
+    } catch {
+      toast.error('Failed to copy report');
+    }
+  };
+
+  const getScoreColorClass = (score) => {
+    if (score >= 85) return styles.scoreSuccess;
+    if (score >= 70) return styles.scoreAccent;
+    if (score >= 50) return styles.scoreWarning;
+    return styles.scoreDanger;
+  };
+
   const handleSave = async (e) => {
     if (e) e.preventDefault();
     if (!editTitle.trim()) {
@@ -172,6 +235,35 @@ export function ItemDetailModal() {
   const handleDelete = () => {
     closeViewItemModal();
     openDeleteDialog(viewingItem);
+  };
+
+  const handleTogglePin = () => {
+    if (viewingItem) togglePinItem(viewingItem);
+  };
+
+  const handleSendToChat = () => {
+    if (!viewingItem) return;
+    let prefill = '';
+    if (isNote) {
+      prefill = viewingItem.content || viewingItem.summary || viewingItem.title;
+    } else if (isLink) {
+      prefill = viewingItem.url
+        ? `Review this link: ${viewingItem.url}\n\nSummary: ${viewingItem.summary || ''}`
+        : viewingItem.summary || viewingItem.title;
+    } else if (isDoc) {
+      const sectionText = Array.isArray(viewingItem.sections)
+        ? viewingItem.sections.map((s) => `## ${s.heading}\n\n${s.body}`).join('\n\n')
+        : '';
+      prefill = `# ${viewingItem.title}\n\n${sectionText || viewingItem.summary || ''}`;
+    } else if (isInterview) {
+      prefill = `MOCK INTERVIEW: ${viewingItem.title}\nOverall Score: ${overallScore}/100 (${rating})\nRole: ${viewingItem.role || 'Candidate'}\nDifficulty: ${viewingItem.difficulty || 'Standard'}\n\nSummary:\n${scoreSummary || viewingItem.summary || ''}`;
+    } else {
+      prefill = `File Asset: ${viewingItem.fileName || viewingItem.title}\n${viewingItem.summary || ''}`;
+    }
+
+    closeViewItemModal();
+    navigate(ROUTES.CHAT, { state: { prefill } });
+    toast.info('Item transferred to AI Chat');
   };
 
   const handleTagClick = (tag) => {
@@ -223,6 +315,26 @@ export function ItemDetailModal() {
         <div className={styles.toolbarRight}>
           <button
             type="button"
+            className={cn(styles.toolActionBtn, viewingItem.pinned && styles.pinnedActive)}
+            onClick={handleTogglePin}
+            title={viewingItem.pinned ? 'Unpin item' : 'Pin to top'}
+          >
+            <Pin size={13} className={viewingItem.pinned ? styles.pinnedIconFill : undefined} />
+            <span>{viewingItem.pinned ? 'Pinned' : 'Pin'}</span>
+          </button>
+
+          <button
+            type="button"
+            className={styles.toolActionBtn}
+            onClick={handleSendToChat}
+            title="Use item in AI Chat"
+          >
+            <MessageSquare size={13} />
+            <span>Use in Chat</span>
+          </button>
+
+          <button
+            type="button"
             className={styles.toolActionBtn}
             onClick={handleCopy}
             title="Copy content"
@@ -257,6 +369,18 @@ export function ItemDetailModal() {
             </a>
           )}
 
+          {isFile && viewingItem.fileData && (
+            <a
+              href={viewingItem.fileData}
+              download={viewingItem.fileName || viewingItem.title || 'download'}
+              className={styles.toolActionBtn}
+              title="Download file"
+            >
+              <Download size={13} />
+              <span>Download</span>
+            </a>
+          )}
+
           <button
             type="button"
             className={cn(styles.toolActionBtn, styles.danger)}
@@ -278,7 +402,7 @@ export function ItemDetailModal() {
             </div>
 
             <div className={styles.metaRow}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <span className={styles.metaDate}>
                 <Calendar size={13} />
                 {formatDate(viewingItem.createdAt)}
               </span>
@@ -343,7 +467,7 @@ export function ItemDetailModal() {
               {viewingItem.content ? (
                 <MarkdownRenderer content={viewingItem.content} />
               ) : (
-                <p style={{ color: 'var(--color-text-muted)', fontStyle: 'italic', margin: 0 }}>
+                <p className={styles.emptyContentNotice}>
                   This note does not have detailed body content yet. Click &ldquo;Edit&rdquo; above to
                   write with the interactive markdown editor.
                 </p>
@@ -363,7 +487,7 @@ export function ItemDetailModal() {
               ) : viewingItem.content ? (
                 <MarkdownRenderer content={viewingItem.content} />
               ) : (
-                <p style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                <p className={styles.emptyContentNotice}>
                   No sections generated for this document.
                 </p>
               )}
@@ -373,7 +497,7 @@ export function ItemDetailModal() {
           {isLink && (
             <div className={styles.linkPreviewBox}>
               <div className={styles.linkInfo}>
-                <span style={{ fontWeight: 'var(--weight-semibold)', fontSize: 'var(--text-sm)' }}>
+                <span className={styles.linkTitle}>
                   Web Link Destination
                 </span>
                 <span className={styles.linkUrl}>{viewingItem.url}</span>
@@ -396,12 +520,38 @@ export function ItemDetailModal() {
                 <span>File Metadata</span>
                 <span>{formatFileSize(viewingItem.size)}</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 'var(--text-sm)' }}>
+
+              {viewingItem.fileData &&
+                (viewingItem.mimeType?.startsWith('image/') ||
+                  viewingItem.fileData.startsWith('data:image')) && (
+                  <div className={styles.detailImageContainer}>
+                    <img
+                      src={viewingItem.fileData}
+                      alt={viewingItem.fileName || viewingItem.title}
+                    />
+                  </div>
+                )}
+
+              <div className={styles.fileMetaList}>
                 <div><strong>File Name:</strong> {viewingItem.fileName || 'Unnamed File'}</div>
                 {viewingItem.mimeType && <div><strong>MIME Type:</strong> {viewingItem.mimeType}</div>}
               </div>
+
+              {viewingItem.fileData && (
+                <div className={styles.fileActionRow}>
+                  <a
+                    href={viewingItem.fileData}
+                    download={viewingItem.fileName || viewingItem.title || 'download'}
+                    className={styles.toolActionBtn}
+                  >
+                    <Download size={13} />
+                    <span>Download Original File</span>
+                  </a>
+                </div>
+              )}
+
               {viewingItem.content && (
-                <div style={{ marginTop: 'var(--space-3)', paddingTop: 'var(--space-3)', borderTop: '1px solid var(--color-border)' }}>
+                <div className={styles.fileContentRow}>
                   <MarkdownRenderer content={viewingItem.content} />
                 </div>
               )}
@@ -410,24 +560,172 @@ export function ItemDetailModal() {
 
           {isInterview && viewingItem.scorecard && (
             <div className={styles.scorecardBox}>
+              {/* Score Overview Dial & Actions */}
               <div className={styles.scoreOverview}>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: 'var(--text-md)', fontWeight: 'var(--weight-semibold)' }}>
-                    Interview Scorecard
+                  <h3 className={styles.scoreSectionHeading}>
+                    <Mic size={16} />
+                    Interview Performance Scorecard
                   </h3>
-                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+                  <div className={styles.interviewMetaSubtitle}>
                     {viewingItem.role ? `${viewingItem.role} • ` : ''}
                     {viewingItem.difficulty || 'Standard'} difficulty
+                    {viewingItem.topic ? ` • ${viewingItem.topic}` : ''}
                   </div>
                 </div>
-                <div className={styles.scorePill}>
-                  {viewingItem.scorecard.overallScore}/100
+
+                <div className={styles.interviewScoreActions}>
+                  {overallScore !== undefined && (
+                    <div className={styles.scoreDial}>
+                      <div className={cn(styles.scoreCircle, getScoreColorClass(overallScore))}>
+                        <span className={styles.scoreNum}>{overallScore}</span>
+                        <span className={styles.scoreTotal}>/100</span>
+                      </div>
+                      <span className={styles.ratingText}>{rating}</span>
+                    </div>
+                  )}
+
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleCopyReport}
+                    title="Copy evaluation report"
+                  >
+                    {hasCopiedReport ? <Check size={14} /> : <Copy size={14} />}
+                    <span>{hasCopiedReport ? 'Copied' : 'Copy Report'}</span>
+                  </Button>
                 </div>
               </div>
-              {viewingItem.scorecard.feedback && (
-                <p style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
-                  {viewingItem.scorecard.feedback}
-                </p>
+
+              {/* Evaluated Competencies */}
+              <div className={styles.competencySection}>
+                <h4 className={styles.scoreSectionHeading}>
+                  <Target size={15} />
+                  Evaluated Competencies
+                </h4>
+                <div className={styles.catGrid}>
+                  {[
+                    { label: 'Technical Accuracy', score: categories.technicalAccuracy ?? 0 },
+                    { label: 'Problem Solving', score: categories.problemSolving ?? 0 },
+                    { label: 'Communication', score: categories.communication ?? 0 },
+                    { label: 'System Design', score: categories.systemDesign ?? 0 },
+                  ].map((cat, i) => (
+                    <div key={i} className={styles.catItem}>
+                      <div className={styles.catMeta}>
+                        <span className={styles.catLabel}>{cat.label}</span>
+                        <span className={styles.catScore}>{cat.score}%</span>
+                      </div>
+                      <div className={styles.catBarBg}>
+                        <div
+                          className={cn(styles.catBarFill, getScoreColorClass(cat.score))}
+                          style={{ width: `${Math.min(100, Math.max(0, cat.score))}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Summary / Feedback */}
+              {(scoreSummary || viewingItem.scorecard.feedback) && (
+                <div className={styles.assessmentSummary}>
+                  <h4 className={styles.scoreSectionHeading}>
+                    <Lightbulb size={15} />
+                    Assessment Summary
+                  </h4>
+                  <p className={styles.assessmentBody}>
+                    {scoreSummary || viewingItem.scorecard.feedback}
+                  </p>
+
+                  {Array.isArray(recommendedTopics) && recommendedTopics.length > 0 && (
+                    <div className={styles.recommendedTopics}>
+                      {recommendedTopics.map((topic, i) => (
+                        <Badge key={i} variant="secondary" size="sm">
+                          {topic}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Observed Strengths & Areas for Growth */}
+              {(strengths.length > 0 || improvements.length > 0) && (
+                <div className={styles.feedbackGrid}>
+                  {strengths.length > 0 && (
+                    <div className={styles.feedbackCard}>
+                      <div className={styles.feedbackTitle}>
+                        <CheckCircle2 size={16} className={styles.successIcon} />
+                        <span>Observed Strengths</span>
+                      </div>
+                      <ul className={styles.bulletList}>
+                        {strengths.map((item, idx) => (
+                          <li key={idx} className={styles.bulletItem}>
+                            <span className={styles.checkIcon}>✓</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {improvements.length > 0 && (
+                    <div className={styles.feedbackCard}>
+                      <div className={styles.feedbackTitle}>
+                        <AlertTriangle size={16} className={styles.warningIcon} />
+                        <span>Areas for Growth</span>
+                      </div>
+                      <ul className={styles.bulletList}>
+                        {improvements.map((item, idx) => (
+                          <li key={idx} className={styles.bulletItem}>
+                            <span className={styles.warnIcon}>!</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Collapsible Transcript */}
+              {Array.isArray(transcript) && transcript.length > 0 && (
+                <div className={styles.transcriptSection}>
+                  <button
+                    type="button"
+                    className={styles.transcriptToggle}
+                    onClick={() => setIsTranscriptOpen(!isTranscriptOpen)}
+                  >
+                    <span>Archived Transcript ({transcript.length} turns)</span>
+                    {isTranscriptOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+
+                  {isTranscriptOpen && (
+                    <div className={styles.transcriptList}>
+                      {transcript.map((m, idx) => {
+                        const isUser = m.role === 'user';
+                        return (
+                          <div
+                            key={idx}
+                            className={cn(
+                              styles.transcriptMessage,
+                              isUser ? styles.userTurn : styles.assistantTurn,
+                            )}
+                          >
+                            <div className={styles.msgHeader}>
+                              <span className={styles.msgRole}>
+                                {isUser ? <User size={12} /> : <Bot size={12} />}
+                                {isUser ? 'Candidate' : 'Interviewer'}
+                              </span>
+                            </div>
+                            <p className={styles.msgContent}>{m.content}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -436,7 +734,7 @@ export function ItemDetailModal() {
         /* ======================== EDIT MODE ======================== */
         <form onSubmit={handleSave} className={styles.editContainer}>
           {editError && (
-            <div style={{ color: 'var(--color-danger)', fontSize: 'var(--text-xs)', padding: 'var(--space-2)', background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', borderRadius: 'var(--radius-sm)' }}>
+            <div className={styles.formErrorBanner}>
               {editError}
             </div>
           )}
@@ -477,7 +775,7 @@ export function ItemDetailModal() {
           {/* Document Section Editor */}
           {isDoc && (
             <div className={styles.formField}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div className={styles.sectionHeaderRow}>
                 <label className={styles.fieldLabel}>Document Sections</label>
                 <Button
                   type="button"
@@ -490,7 +788,7 @@ export function ItemDetailModal() {
                 </Button>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              <div className={styles.sectionsList}>
                 {editSections.map((sec, idx) => (
                   <div key={idx} className={styles.sectionEditCard}>
                     <div className={styles.sectionEditHeader}>
@@ -498,7 +796,7 @@ export function ItemDetailModal() {
                       <button
                         type="button"
                         onClick={() => handleRemoveSection(idx)}
-                        style={{ border: 'none', background: 'transparent', color: 'var(--color-danger)', cursor: 'pointer' }}
+                        className={styles.removeSectionBtn}
                         title="Remove section"
                       >
                         <X size={14} />

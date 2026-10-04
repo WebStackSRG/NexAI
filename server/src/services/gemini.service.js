@@ -60,6 +60,16 @@ export function parseGeminiError(error) {
     statusCode = 429;
     code = 'RATE_LIMIT_EXCEEDED';
     message = 'Rate limit exceeded. Please wait a moment before sending another message.';
+  } else if (
+    statusCode === 401 ||
+    code === 'UNAUTHENTICATED' ||
+    rawMessage.includes('ACCESS_TOKEN_TYPE_UNSUPPORTED') ||
+    rawMessage.includes('invalid authentication credentials')
+  ) {
+    statusCode = 401;
+    code = 'INVALID_API_KEY';
+    message =
+      'Invalid Gemini API key. Please configure a valid Google AI Studio API key (starts with "AIzaSy...") in server/.env, or toggle Simulation Mode ("Sim" button) to test offline without an API key.';
   }
 
   return new ApiError(statusCode, code, message);
@@ -121,10 +131,26 @@ export async function* streamContent({
 
   try {
     for await (const chunk of stream) {
-      const text = chunk.text || '';
       const usageMetadata = chunk.usageMetadata || null;
-      if (text || usageMetadata) {
-        yield { text, usageMetadata };
+      let text = '';
+      let thought = '';
+
+      const parts = chunk.candidates?.[0]?.content?.parts ?? [];
+      for (const part of parts) {
+        if (part.thought && typeof part.text === 'string') {
+          thought += part.text;
+        } else if (!part.thought && typeof part.text === 'string') {
+          text += part.text;
+        }
+      }
+
+      // Fallback if parts array was empty or didn't isolate text
+      if (!text && !thought && chunk.text) {
+        text = chunk.text;
+      }
+
+      if (text || thought || usageMetadata) {
+        yield { text, thought, usageMetadata };
       }
     }
   } catch (error) {

@@ -271,5 +271,38 @@ describe('Chat API Integration Tests', () => {
 
       vi.restoreAllMocks();
     });
+
+    it('should stream simulated response with 0 credits deducted when isSimulation is true', async () => {
+      // User with 0 credits should still be able to simulate
+      userA.wallet.creditsRemaining = 0;
+      await userA.save();
+
+      const chat = await Chat.create({ userId: userA._id, title: 'New Chat' });
+
+      const res = await request(app)
+        .post(`/api/chats/${chat._id}/messages`)
+        .set('Authorization', `Bearer ${tokenA}`)
+        .send({ content: 'Show me Express service code', isSimulation: true });
+
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toContain('text/event-stream');
+
+      const textOutput = res.text;
+      expect(textOutput).toContain('event: token');
+      expect(textOutput).toContain('event: done');
+      expect(textOutput).toContain('"tokensUsed":0');
+      expect(textOutput).toContain('"creditsDeducted":0');
+      expect(textOutput).toContain('followUps');
+
+      // Verify messages saved in DB
+      const messages = await Message.find({ chatId: chat._id });
+      expect(messages.length).toBe(2);
+      expect(messages[1].role).toBe('assistant');
+      expect(messages[1].tokensUsed).toBe(0);
+
+      // Verify credits remained 0 (not negative, not charged)
+      const updatedUser = await User.findById(userA._id);
+      expect(updatedUser.wallet.creditsRemaining).toBe(0);
+    });
   });
 });

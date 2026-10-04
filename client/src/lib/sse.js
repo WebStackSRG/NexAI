@@ -49,12 +49,16 @@ export function sanitizeErrorMessage(raw) {
  *
  * @param {ReadableStream<Uint8Array>} readableStream
  * @param {Object} handlers
+ * @param {(text: string) => void} [handlers.onThought]
  * @param {(text: string) => void} [handlers.onToken]
  * @param {(doneData: { messageId?: string, tokensUsed?: number, creditsDeducted?: number, creditsRemaining?: number, chatTitle?: string }) => void} [handlers.onDone]
  * @param {(errorData: { code?: string, message?: string }) => void} [handlers.onError]
  * @returns {Promise<void>}
  */
-export async function parseSseStream(readableStream, { onToken, onDone, onError } = {}) {
+export async function parseSseStream(
+  readableStream,
+  { onThought, onToken, onDone, onError } = {},
+) {
   const reader = readableStream.getReader();
   const decoder = new TextDecoder('utf-8');
 
@@ -74,7 +78,11 @@ export async function parseSseStream(readableStream, { onToken, onDone, onError 
       parsed = currentData;
     }
 
-    if (currentEvent === 'token') {
+    if (currentEvent === 'thought') {
+      const text =
+        typeof parsed === 'object' && parsed !== null && 'text' in parsed ? parsed.text : parsed;
+      onThought?.(text);
+    } else if (currentEvent === 'token') {
       const text =
         typeof parsed === 'object' && parsed !== null && 'text' in parsed ? parsed.text : parsed;
       onToken?.(text);
@@ -148,6 +156,10 @@ export async function parseSseStream(readableStream, { onToken, onDone, onError 
  * @param {string} params.content
  * @param {string} [params.model]
  * @param {AbortSignal} [params.signal]
+ * @param {string} [params.thinkingLevel='off']
+ * @param {boolean} [params.isSimulation=false]
+ * @param {AbortSignal} [params.signal]
+ * @param {(text: string) => void} [params.onThought]
  * @param {(text: string) => void} [params.onToken]
  * @param {(doneData: any) => void} [params.onDone]
  * @param {(errorData: any) => void} [params.onError]
@@ -157,7 +169,11 @@ export async function streamChatMessage({
   chatId,
   content,
   model,
+  thinkingLevel = 'off',
+  attachments = [],
+  isSimulation = false,
   signal,
+  onThought,
   onToken,
   onDone,
   onError,
@@ -176,7 +192,7 @@ export async function streamChatMessage({
   const response = await fetch(url, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ content, model }),
+    body: JSON.stringify({ content, model, thinkingLevel, isSimulation, attachments }),
     signal,
     credentials: 'include',
   });
@@ -226,7 +242,7 @@ export async function streamChatMessage({
     throw err;
   }
 
-  await parseSseStream(response.body, { onToken, onDone, onError });
+  await parseSseStream(response.body, { onThought, onToken, onDone, onError });
 }
 
 /**
@@ -236,6 +252,7 @@ export async function streamChatMessage({
  * @param {string} params.interviewId
  * @param {string} params.content
  * @param {string} [params.model]
+ * @param {boolean} [params.isSimulation]
  * @param {AbortSignal} [params.signal]
  * @param {(text: string) => void} [params.onToken]
  * @param {(doneData: any) => void} [params.onDone]
@@ -246,6 +263,7 @@ export async function streamInterviewResponse({
   interviewId,
   content,
   model,
+  isSimulation = false,
   signal,
   onToken,
   onDone,
@@ -265,7 +283,7 @@ export async function streamInterviewResponse({
   const response = await fetch(url, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ content, model }),
+    body: JSON.stringify({ content, model, isSimulation }),
     signal,
     credentials: 'include',
   });

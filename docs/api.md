@@ -1773,8 +1773,220 @@ Returns a paginated list from the `ErrorLog` collection for operational monitori
 }
 ```
 
+---
 
+## Long-Term Memory & Personalization
 
+Endpoints for persistent memory across conversations. Memories are automatically extracted during chats and can be managed manually by the user.
 
+### GET `/api/memories`
 
+Returns all active long-term memories for the authenticated user.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Response `200 OK`:**
+
+```json
+{
+  "data": [
+    {
+      "_id": "67401122aabbccddeeff1122",
+      "userId": "67401122aabbccddeeff0001",
+      "fact": "User's name is Rewan",
+      "category": "identity",
+      "confidence": 0.98,
+      "pinned": true,
+      "active": true,
+      "createdAt": "2026-10-03T10:00:00.000Z",
+      "updatedAt": "2026-10-03T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+### POST `/api/memories`
+
+Manually creates a new persistent memory. Automatically indexes a 768-dim vector embedding in `vectorDbService`.
+
+- **Auth:** Bearer Token
+- **Method:** `POST`
+- **Request Body:**
+
+```json
+{
+  "fact": "Prefers TypeScript, React, and Node.js",
+  "category": "preference",
+  "pinned": false
+}
+```
+
+- **Response `201 Created`:**
+
+```json
+{
+  "data": {
+    "_id": "67401122aabbccddeeff1123",
+    "userId": "67401122aabbccddeeff0001",
+    "fact": "Prefers TypeScript, React, and Node.js",
+    "category": "preference",
+    "pinned": false,
+    "active": true,
+    "vectorId": "mem_67401122aabbccddeeff1123"
+  }
+}
+```
+
+### PATCH `/api/memories/:id`
+
+Updates a memory's fact, category, or pinned status.
+
+- **Auth:** Bearer Token
+- **Method:** `PATCH`
+- **Request Body:**
+
+```json
+{
+  "fact": "Updated fact string",
+  "pinned": true
+}
+```
+
+- **Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "_id": "67401122aabbccddeeff1123",
+    "fact": "Updated fact string",
+    "pinned": true
+  }
+}
+```
+
+### DELETE `/api/memories/:id`
+
+Deletes a single memory and removes its vector embedding from the vector store.
+
+- **Auth:** Bearer Token
+- **Method:** `DELETE`
+- **Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "message": "Memory deleted successfully"
+  }
+}
+```
+
+### DELETE `/api/memories`
+
+Clears all memories for the authenticated user.
+
+- **Auth:** Bearer Token
+- **Method:** `DELETE`
+- **Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "message": "Cleared 5 memories successfully",
+    "deletedCount": 5
+  }
+}
+```
+
+---
+
+## Library Management
+
+### GET `/api/library`
+
+Lists library items scoped to the authenticated user with filtering, pagination, and sorting. Pinned items are always ordered first.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Query Parameters:**
+  - `type` (optional): `note` | `link` | `document` | `file` | `interview`
+  - `tab` (optional): `all` | `notes_links` | `documents` | `files` | `interviews`
+  - `tags` (optional): comma-separated string of tags
+  - `pinned` (optional): boolean
+  - `sortBy` (optional): `createdAt` | `title` | `score` (default: `createdAt`)
+  - `sortOrder` (optional): `asc` | `desc` (default: `desc`)
+  - `page` (optional): integer (default: 1)
+  - `limit` (optional): integer (default: 20)
+- **Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "items": [
+      {
+        "_id": "67401122aabbccddeeff2233",
+        "userId": "673f1234...",
+        "type": "interview",
+        "title": "Senior Frontend Engineer Mock Interview",
+        "pinned": true,
+        "metadata": {
+          "score": 88,
+          "role": "Frontend",
+          "competencies": { "technical": 85, "communication": 90 }
+        },
+        "createdAt": "2026-10-04T10:00:00.000Z"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 1
+  }
+}
+```
+
+### GET `/api/library/search`
+
+Full-text search across library items with tab filtering.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Query Parameters:**
+  - `q` (required): search string
+  - `tab` (optional): `all` | `notes_links` | `documents` | `files` | `interviews`
+  - `type` (optional): `note` | `link` | `document` | `file` | `interview`
+  - `limit` (optional): integer (default: 20)
+- **Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "items": [ ... ],
+    "total": 1
+  }
+}
+```
+
+### PATCH `/api/library/:id`
+
+Updates item metadata, title, content, or toggles pinned status.
+
+- **Auth:** Bearer Token
+- **Method:** `PATCH`
+- **Request Body:**
+```json
+{
+  "title": "Updated Title",
+  "pinned": true
+}
+```
+- **Response `200 OK`:**
+```json
+{
+  "data": {
+    "_id": "67401122aabbccddeeff2233",
+    "title": "Updated Title",
+    "pinned": true
+  }
+}
+```
 

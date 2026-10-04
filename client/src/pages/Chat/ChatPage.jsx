@@ -39,35 +39,35 @@ export default function ChatPage() {
 
   // Synchronize route param chatId with activeChatId in store
   useEffect(() => {
+    const currentStoreChatId = useChatStore.getState().activeChatId;
     if (chatId) {
-      if (chatId !== activeChatId) {
+      if (chatId !== currentStoreChatId) {
         selectChat(chatId);
       }
     } else {
-      // Navigated to /chat with no chatId: reset active chat so hero view renders
-      if (activeChatId) {
+      if (currentStoreChatId) {
         selectChat(null);
       }
     }
-  }, [chatId, activeChatId, selectChat]);
+  }, [chatId, selectChat]);
 
-  const handleSendFromHero = async (prompt) => {
+  const handleSendFromHero = async (prompt, attachments = []) => {
     const newChat = await createChat('New Chat');
     if (newChat) {
       navigate(`/chat/${newChat._id}`, { replace: true });
     }
-    await sendMessage(prompt);
+    await sendMessage(prompt, attachments);
   };
 
-  const currentChat = chats.find((c) => c._id === activeChatId);
+  const currentChat = chats.find((c) => c._id === (chatId || activeChatId));
   const pageTitle = currentChat ? currentChat.title : 'AI Chat';
 
-  // Empty chat state renders the minimalist Gemini-inspired Hero view
-  const isEmptyChat = !activeChatId || (messages.length === 0 && !isLoadingMessages);
+  // Hero view is only shown on the base /chat route when no chat session is active
+  const isHeroView = !chatId;
 
   return (
     <div className={styles.chatContainer} data-testid="chat-page">
-      {isEmptyChat ? (
+      {isHeroView ? (
         <ChatHero
           onSendPrompt={handleSendFromHero}
           initialPrompt={prefillPrompt}
@@ -88,7 +88,7 @@ export default function ChatPage() {
           {/* Full-width conversation canvas */}
           <div className={styles.threadArea}>
             <MessageThread
-              onSelectSuggestion={(prompt) => setPrefillPrompt(prompt)}
+              onSelectSuggestion={(prompt) => sendMessage(prompt)}
               onEditPrompt={(prompt) => setPrefillPrompt(prompt)}
             />
           </div>

@@ -7,17 +7,27 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
-  transition: all var(--duration-base) var(--ease-standard);
+  transition: transform var(--duration-fast) var(--ease-standard),
+              box-shadow var(--duration-fast) var(--ease-standard),
+              border-color var(--duration-fast) var(--ease-standard);
   position: relative;
+  cursor: pointer;
+  text-align: left;
 
   &:hover {
     border-color: var(--color-border-focus);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
   }
 }
 
 .favoriteCard {
-  border-color: rgba(16, 185, 129, 0.3);
+  border-color: rgba(16, 185, 129, 0.35);
 }
 
 .starterCard {
@@ -31,7 +41,7 @@
 
 .header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
   margin-bottom: var(--space-2);
@@ -42,6 +52,7 @@
   align-items: center;
   gap: var(--space-2);
   min-width: 0;
+  flex: 1;
 }
 
 .starBtn {
@@ -83,45 +94,13 @@
 .description {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  margin: 0 0 var(--space-3) 0;
-  line-height: 1.4;
+  margin: 0 0 var(--space-4) 0;
+  line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.templatePreview {
-  background-color: var(--color-bg-subtle);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-3);
-  margin-bottom: var(--space-3);
-  cursor: pointer;
-  max-height: 80px;
-  overflow: hidden;
-  position: relative;
-  transition: border-color var(--duration-fast);
-
-  &:hover {
-    border-color: var(--color-border);
-  }
-
-  code {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--color-text-secondary);
-    white-space: pre-wrap;
-    word-break: break-word;
-    display: block;
-  }
-}
-
-.tagsRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  margin-bottom: var(--space-3);
+  min-height: 2.8em;
 }
 
 .footer {

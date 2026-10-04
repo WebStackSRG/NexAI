@@ -20,10 +20,17 @@ export const libraryApi = {
   /**
    * Semantically searches the library by meaning and text keywords.
    * @param {string} q
-   * @param {string} [type]
+   * @param {string | { type?: string, tab?: string }} [filterOrType]
    */
-  searchItems(q, type) {
-    return apiClient.get('/library/search', { params: { q, ...(type ? { type } : {}) } });
+  searchItems(q, filterOrType) {
+    const params = { q };
+    if (typeof filterOrType === 'string') {
+      params.type = filterOrType;
+    } else if (filterOrType && typeof filterOrType === 'object') {
+      if (filterOrType.type) params.type = filterOrType.type;
+      if (filterOrType.tab && filterOrType.tab !== 'all') params.tab = filterOrType.tab;
+    }
+    return apiClient.get('/library/search', { params });
   },
 
   /**
@@ -78,6 +85,15 @@ export const libraryApi = {
    */
   updateItem(id, payload) {
     return apiClient.patch(`/library/${id}`, payload);
+  },
+
+  /**
+   * Toggles the pinned status of a library item.
+   * @param {string} id
+   * @param {boolean} pinned
+   */
+  togglePin(id, pinned) {
+    return apiClient.patch(`/library/${id}`, { pinned });
   },
 
   /**

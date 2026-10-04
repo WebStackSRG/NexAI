@@ -5,6 +5,7 @@ import { Select } from '@/components/ui/Select';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from '@/components/ui/Toast';
+import { MemoryManager } from '@/features/memory';
 
 export default function SettingsPage() {
   const { isDark, toggleTheme } = useTheme();
@@ -118,6 +119,9 @@ export default function SettingsPage() {
             </div>
           </Card.Body>
         </Card>
+
+        {/* Long-Term Memory & Cross-Chat Personalization Manager */}
+        <MemoryManager />
 
         <Card padding="md">
           <Card.Header>

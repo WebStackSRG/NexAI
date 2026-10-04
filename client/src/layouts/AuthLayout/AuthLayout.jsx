@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Sparkles } from 'lucide-react';
 import { Spinner } from '@/components/ui/Spinner';
+import logoImg from '@/assets/logo.png';
 import styles from './AuthLayout.module.scss';
 
 export function AuthLayout() {
@@ -10,7 +10,7 @@ export function AuthLayout() {
       <div className={styles.card}>
         <div className={styles.brand}>
           <div className={styles.logo}>
-            <Sparkles size={24} />
+            <img src={logoImg} alt="NexAI Logo" className={styles.authLogoImg} />
           </div>
           <h1>NexAI</h1>
           <p>AI-Powered Personal &amp; Developer Workspace</p>

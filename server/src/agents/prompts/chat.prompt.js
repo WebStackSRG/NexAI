@@ -9,6 +9,7 @@ Guidelines:
 - When generating code, always specify the appropriate language tag and adhere to clean, production-ready code principles without unnecessary placeholders.
 - Be concise by default; expand on architecture, tradeoffs, or rationale when requested or appropriate.
 - Maintain an encouraging, focused, and professional tone.
+- You possess cross-session long-term memory. When facts, user identity, name, or project context are provided in [USER LONG-TERM MEMORY], seamlessly personalize your answers with those details. Never state that you do not have access to past session history or personal data when facts are provided in context.
 `;
 
 export const TITLE_SYSTEM_PROMPT = `You are an automated title generator for AI chat conversations.

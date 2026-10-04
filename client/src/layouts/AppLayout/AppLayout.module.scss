@@ -46,4 +46,8 @@
     margin: 0;
     height: calc(100vh - var(--topbar-height));
   }
+
+  &.wideContent {
+    max-width: 1540px;
+  }
 }

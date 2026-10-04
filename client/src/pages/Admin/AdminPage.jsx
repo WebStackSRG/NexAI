@@ -18,6 +18,7 @@ import {
   ModelSplitChart,
   RecentTransactionsTable,
   ErrorLogsTable,
+  QuotaTelemetryCard,
 } from '@/features/admin';
 import styles from './AdminPage.module.scss';
 
@@ -25,6 +26,9 @@ export default function AdminPage() {
   const {
     stats,
     usageData,
+    systemConfig,
+    telemetry,
+    isUpdatingConfig,
     range,
     transactions,
     errors,
@@ -35,6 +39,7 @@ export default function AdminPage() {
     fetchOverview,
     fetchTransactions,
     fetchErrors,
+    updateBillingMode,
     setRange,
   } = useAdminStore();
 
@@ -55,22 +60,34 @@ export default function AdminPage() {
     }
   };
 
+  const isQuotaFree = (systemConfig?.billingEnforcementMode || 'quota_free') === 'quota_free';
+
   return (
     <div className={styles.container}>
       <PageHeader
         title="Admin Analytics & Telemetry"
         description="Live LLM token consumption metrics, model usage distribution, recharge transactions, and error logs."
         actions={
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleRefresh}
-            loading={isLoading}
-            disabled={isLoading}
-          >
-            <RefreshCw size={14} style={{ marginRight: 6 }} />
-            Refresh Data
-          </Button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <Button
+              variant={isQuotaFree ? 'secondary' : 'primary'}
+              size="sm"
+              onClick={() => updateBillingMode(isQuotaFree ? 'credit_strict' : 'quota_free')}
+              loading={isUpdatingConfig}
+            >
+              {isQuotaFree ? 'Switch to Credit-Strict SaaS' : 'Switch to Quota-Free Demo'}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleRefresh}
+              loading={isLoading}
+              disabled={isLoading}
+            >
+              <RefreshCw size={14} style={{ marginRight: 6 }} />
+              Refresh Data
+            </Button>
+          </div>
         }
       />
 
@@ -124,6 +141,16 @@ export default function AdminPage() {
             />
           </>
         )}
+      </section>
+
+      {/* Live Gemini API Quota Telemetry & Governance Switch */}
+      <section className={styles.telemetrySection}>
+        <QuotaTelemetryCard
+          telemetry={telemetry}
+          config={systemConfig}
+          onModeToggle={updateBillingMode}
+          isUpdating={isUpdatingConfig}
+        />
       </section>
 
       {/* Charts Row */}

@@ -31,4 +31,19 @@ export const adminApi = {
   getErrors(params = {}) {
     return apiClient.get('/admin/errors', { params });
   },
+
+  /**
+   * Fetches current platform governance config and live Gemini API quota telemetry.
+   */
+  getConfig() {
+    return apiClient.get('/admin/config');
+  },
+
+  /**
+   * Updates platform governance config (billingEnforcementMode / dailyGeminiQuotaLimit).
+   * @param {{ billingEnforcementMode?: 'quota_free' | 'credit_strict', dailyGeminiQuotaLimit?: number }} data
+   */
+  updateConfig(data) {
+    return apiClient.patch('/admin/config', data);
+  },
 };

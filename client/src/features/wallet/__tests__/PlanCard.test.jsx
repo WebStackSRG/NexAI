@@ -20,7 +20,7 @@ describe('PlanCard Component', () => {
 
     expect(screen.getByText('Starter Top-Up')).toBeInTheDocument();
     expect(screen.getByText('₹49')).toBeInTheDocument();
-    expect(screen.getByText(/\/ 500 credits/i)).toBeInTheDocument();
+    expect(screen.getByText(/\/ \+500 credits/i)).toBeInTheDocument();
     expect(screen.getByText('500 AI credits')).toBeInTheDocument();
     expect(screen.getByText('Gemini 3.8 Flash access')).toBeInTheDocument();
   });
@@ -41,7 +41,7 @@ describe('PlanCard Component', () => {
     fireEvent.click(rechargeBtn);
     expect(handleCheckout).toHaveBeenCalledWith(mockPlan);
 
-    const testBtn = screen.getByRole('button', { name: /instant test mode recharge/i });
+    const testBtn = screen.getByRole('button', { name: /instant 1-click test top-up/i });
     fireEvent.click(testBtn);
     expect(handleSimulate).toHaveBeenCalledWith(mockPlan);
   });

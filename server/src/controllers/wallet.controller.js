@@ -2,15 +2,20 @@ import { PLANS } from '../config/plans.js';
 import { Transaction } from '../models/Transaction.js';
 import { User } from '../models/User.js';
 import * as razorpayService from '../services/razorpay.service.js';
+import { systemConfigService } from '../services/systemConfig.service.js';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 /**
  * GET /api/wallet
- * Returns current user wallet credits, tier, and token consumption.
+ * Returns current user wallet credits, tier, token consumption, and active quota governance status.
  */
 export const getWallet = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id).select('wallet');
+  const [user, governance] = await Promise.all([
+    User.findById(req.user._id).select('wallet'),
+    systemConfigService.getPublicGovernanceStatus(),
+  ]);
+
   if (!user) {
     throw new ApiError(404, 'USER_NOT_FOUND', 'User profile not found');
   }
@@ -22,6 +27,7 @@ export const getWallet = asyncHandler(async (req, res) => {
         tier: 'free',
         totalTokensConsumed: 0,
       },
+      governance,
     },
   });
 });

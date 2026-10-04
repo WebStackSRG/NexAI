@@ -1,8 +1,13 @@
 import { ApiError } from '../utils/ApiError.js';
+import { systemConfigService } from '../services/systemConfig.service.js';
 
 /**
- * Middleware that blocks requests if user's credit balance is 0 or negative.
- * Expects `auth` middleware to have run before it to attach req.user.
+ * Middleware that governs access based on active billingEnforcementMode:
+ * - 'quota_free' (Academic/Evaluation Demo): Bypasses HTTP 402 lock when balance is 0,
+ *   allowing unconstrained execution up to the Google Gemini free-tier ceiling of 1,500 RPD.
+ * - 'credit_strict' (Commercial SaaS Mode): Enforces hard-stop when creditsRemaining <= 0 with 402.
+ *
+ * In both modes, atomic credit deduction and UsageLog telemetry remain active.
  */
 export function creditCheck(req, _res, next) {
   try {
@@ -21,11 +26,35 @@ export function creditCheck(req, _res, next) {
 
     const creditsRemaining = req.user.wallet?.creditsRemaining ?? 0;
 
-    if (creditsRemaining <= 0) {
-      throw new ApiError(402, 'INSUFFICIENT_CREDITS', 'Recharge to continue');
+    // When balance is positive, permit immediately and synchronously in all modes
+    if (creditsRemaining > 0) {
+      return next();
     }
 
-    next();
+    // Balance is 0 or negative: check active governance enforcement mode
+    const mode = systemConfigService.getBillingMode();
+
+    if (mode === 'quota_free') {
+      // In quota-free mode, verify that platform daily calls remain under the 1,500 RPD ceiling
+      return systemConfigService
+        .checkDailyQuota()
+        .then((quotaCheck) => {
+          if (!quotaCheck.allowed) {
+            return next(
+              new ApiError(
+                429,
+                'DAILY_QUOTA_EXCEEDED',
+                `Daily Gemini API quota limit of ${quotaCheck.limit} requests reached. Resets at 00:00 UTC.`,
+              ),
+            );
+          }
+          next();
+        })
+        .catch(next);
+    }
+
+    // Strict mode: halt at 0 credits requiring recharge
+    throw new ApiError(402, 'INSUFFICIENT_CREDITS', 'Recharge to continue');
   } catch (error) {
     next(error);
   }

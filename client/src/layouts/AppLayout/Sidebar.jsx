@@ -14,7 +14,6 @@ import {
   Layers,
   LogOut,
   PanelLeftClose,
-  PanelLeftOpen,
   MoreHorizontal,
   ChevronDown,
   ChevronRight,
@@ -44,6 +43,7 @@ import { toast } from '@/store/uiStore';
 import { CreateProjectModal, MoveToProjectModal } from '@/features/projects';
 import { ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils/cn';
+import logoImg from '@/assets/logo.png';
 import styles from './Sidebar.module.scss';
 
 export function Sidebar({ onItemClick, isMobile = false }) {
@@ -456,7 +456,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
                     },
                   },
                 ]}
-                align="right"
+                align="flyout"
               />
             </div>
           </>
@@ -473,14 +473,15 @@ export function Sidebar({ onItemClick, isMobile = false }) {
       {/* Brand Header: Single search icon + collapse toggle on top right */}
       <div className={styles.brandHeader}>
         {isCollapsed ? (
-          <IconButton
-            icon={<PanelLeftOpen size={18} />}
-            label="Expand sidebar"
-            size="sm"
-            variant="ghost"
+          <button
+            type="button"
+            className={styles.collapsedBrandBtn}
             onClick={toggleSidebarCollapsed}
-            className={styles.collapsedToggleBtn}
-          />
+            aria-label="Expand sidebar"
+            title="Expand sidebar"
+          >
+            <img src={logoImg} alt="NexAI Logo" className={styles.collapsedBrandLogo} />
+          </button>
         ) : (
           <>
             <div
@@ -493,16 +494,20 @@ export function Sidebar({ onItemClick, isMobile = false }) {
               tabIndex={0}
               title="NexAI"
             >
-              NexAI
+              <img src={logoImg} alt="NexAI Logo" className={styles.brandLogo} />
+              <span>NexAI</span>
             </div>
 
             <div className={styles.headerActions}>
               <IconButton
                 icon={<Search size={17} />}
-                label="Search workspace"
+                label="Search workspace and conversations"
                 size="sm"
                 variant="ghost"
-                onClick={openCommandPalette}
+                onClick={() => {
+                  onItemClick?.();
+                  navigate("/search?tab=chats");
+                }}
                 className={styles.headerActionBtn}
               />
               {!isMobile && (
@@ -520,17 +525,30 @@ export function Sidebar({ onItemClick, isMobile = false }) {
         )}
       </div>
 
-      {/* Primary Action: New chat */}
+      {/* Primary Action: New chat & Search */}
       <div className={styles.newChatWrapper}>
         {isCollapsed ? (
-          <IconButton
-            icon={<SquarePen size={18} />}
-            label="New chat"
-            variant="ghost"
-            size="md"
-            onClick={handleNewChat}
-            className={styles.collapsedNewChatBtn}
-          />
+          <div className={styles.collapsedActions}>
+            <IconButton
+              icon={<SquarePen size={18} />}
+              label="New chat"
+              variant="ghost"
+              size="md"
+              onClick={handleNewChat}
+              className={styles.collapsedNewChatBtn}
+            />
+            <IconButton
+              icon={<Search size={18} />}
+              label="Search conversations"
+              variant="ghost"
+              size="md"
+              onClick={() => {
+                onItemClick?.();
+                navigate("/search?tab=chats");
+              }}
+              className={styles.collapsedSearchBtn}
+            />
+          </div>
         ) : (
           <button
             type="button"
@@ -668,7 +686,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
                               onClick: (e) => handleDeleteProject(proj, e),
                             },
                           ]}
-                          align="right"
+                          align="flyout"
                         />
                       </div>
                     </div>
@@ -757,7 +775,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
                       onClick: () => setChatFilter('older'),
                     },
                   ]}
-                  align="right"
+                  align="flyout"
                 />
               </div>
             </div>
@@ -874,7 +892,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
                   </div>
                 }
                 items={userMenuItems}
-                align="left"
+                align="top-left"
               />
             </div>
 
@@ -905,7 +923,7 @@ export function Sidebar({ onItemClick, isMobile = false }) {
                 </div>
               }
               items={userMenuItems}
-              align="left"
+              align="flyout"
             />
             <IconButton
               icon={<Settings size={16} />}

@@ -9,18 +9,13 @@ import {
   Trash2,
   ExternalLink,
   Eye,
+  Pin,
+  MessageSquare,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils/formatDate';
+import { formatFileSize } from '@/lib/utils/formatFileSize';
 import { cn } from '@/lib/utils/cn';
 import styles from './LibraryCard.module.scss';
-
-function formatFileSize(bytes) {
-  if (!bytes || bytes <= 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
-}
 
 export function LibraryCard({
   item,
@@ -28,6 +23,8 @@ export function LibraryCard({
   onEdit,
   onDelete,
   onTagClick,
+  onTogglePin,
+  onSendToChat,
   activeTag,
 }) {
   const isNote = item.type === 'note';
@@ -75,6 +72,13 @@ export function LibraryCard({
       ? `${item.sections[0].heading}: ${item.sections[0].body}`
       : 'Click to view full details...');
 
+  const getScoreColorClass = (score) => {
+    if (score >= 85) return styles.scoreSuccess;
+    if (score >= 70) return styles.scoreAccent;
+    if (score >= 50) return styles.scoreWarning;
+    return styles.scoreDanger;
+  };
+
   const handleCardClick = () => {
     onCardClick?.(item);
   };
@@ -94,13 +98,23 @@ export function LibraryCard({
     onDelete?.(item);
   };
 
+  const handlePinClick = (e) => {
+    e.stopPropagation();
+    onTogglePin?.(item);
+  };
+
+  const handleSendToChatClick = (e) => {
+    e.stopPropagation();
+    onSendToChat?.(item);
+  };
+
   const handleExternalLink = (e) => {
     e.stopPropagation();
   };
 
   return (
     <div
-      className={styles.cardWrapper}
+      className={cn(styles.cardWrapper, item.pinned && styles.isPinned)}
       onClick={handleCardClick}
       role="button"
       tabIndex={0}
@@ -115,6 +129,12 @@ export function LibraryCard({
       {/* Minimal Top Bar with inline metadata & hover ghost actions */}
       <div className={styles.topBar}>
         <div className={styles.metaLeft}>
+          {item.pinned && (
+            <span className={styles.pinnedBadge} title="Pinned item">
+              <Pin size={10} className={styles.pinnedIconFill} />
+              <span>Pinned</span>
+            </span>
+          )}
           <span className={cn(styles.typePill, typeMeta.class)}>
             {typeMeta.icon}
             <span>{typeMeta.label}</span>
@@ -162,7 +182,12 @@ export function LibraryCard({
           {isInterview && item.scorecard?.overallScore !== undefined && (
             <>
               <span className={styles.dotSeparator}>•</span>
-              <span className={styles.scoreMeta}>
+              <span
+                className={cn(
+                  styles.scoreMeta,
+                  getScoreColorClass(item.scorecard.overallScore),
+                )}
+              >
                 Score: {item.scorecard.overallScore}/100
               </span>
             </>
@@ -171,6 +196,26 @@ export function LibraryCard({
 
         {/* Hover / Quick Ghost Action Bar */}
         <div className={styles.hoverActions}>
+          <button
+            type="button"
+            className={cn(styles.actionIconBtn, item.pinned && styles.pinnedActive)}
+            onClick={handlePinClick}
+            title={item.pinned ? 'Unpin item' : 'Pin to top'}
+            aria-label={item.pinned ? 'Unpin item' : 'Pin to top'}
+          >
+            <Pin size={13} className={item.pinned ? styles.pinnedIconFill : undefined} />
+          </button>
+
+          <button
+            type="button"
+            className={styles.actionIconBtn}
+            onClick={handleSendToChatClick}
+            title="Use in AI Chat"
+            aria-label="Use in AI Chat"
+          >
+            <MessageSquare size={13} />
+          </button>
+
           <button
             type="button"
             className={styles.actionIconBtn}
@@ -216,6 +261,13 @@ export function LibraryCard({
           </button>
         </div>
       </div>
+
+      {/* If file item has an image, render preview thumbnail */}
+      {isFile && item.fileData && (item.mimeType?.startsWith('image/') || item.fileData.startsWith('data:image')) && (
+        <div className={styles.imageCardPreview}>
+          <img src={item.fileData} alt={item.title} loading="lazy" />
+        </div>
+      )}
 
       {/* Main Content Area */}
       <h3 className={styles.title} title={item.title}>
@@ -263,13 +315,17 @@ LibraryCard.propTypes = {
     category: PropTypes.string,
     sections: PropTypes.array,
     fileName: PropTypes.string,
+    fileData: PropTypes.string,
     size: PropTypes.number,
     scorecard: PropTypes.object,
     createdAt: PropTypes.string,
+    pinned: PropTypes.bool,
   }).isRequired,
   onCardClick: PropTypes.func,
   onEdit: PropTypes.func,
   onDelete: PropTypes.func,
   onTagClick: PropTypes.func,
+  onTogglePin: PropTypes.func,
+  onSendToChat: PropTypes.func,
   activeTag: PropTypes.string,
 };

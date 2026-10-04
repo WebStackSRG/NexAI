@@ -2,7 +2,7 @@
 
 .arenaContainer {
   width: 100%;
-  max-width: 1000px;
+  max-width: 1380px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -28,6 +28,28 @@
   gap: 2px;
 }
 
+.navRow {
+  margin-bottom: var(--space-1);
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--color-text-tertiary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-standard);
+
+  &:hover {
+    color: var(--color-accent);
+  }
+}
+
 .titleRow {
   display: flex;
   align-items: center;
@@ -42,6 +64,10 @@
 
 .diffBadge {
   text-transform: capitalize;
+}
+
+.simBadge {
+  font-weight: 600;
 }
 
 .topicSubtitle {
@@ -179,7 +205,6 @@
 .questionText {
   font-size: 0.9375rem;
   color: var(--color-text-primary);
-  white-space: pre-wrap;
 }
 
 .placeholderText {
@@ -288,6 +313,7 @@
   max-height: 260px;
   overflow-y: auto;
   padding-right: var(--space-2);
+  @include custom-scrollbar;
 }
 
 .transcriptMessage {

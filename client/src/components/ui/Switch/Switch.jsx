@@ -1,7 +1,15 @@
 import { cn } from '@/lib/utils/cn';
 import styles from './Switch.module.scss';
 
-export function Switch({ checked = false, onChange, label, disabled = false, id, className }) {
+export function Switch({
+  checked = false,
+  onChange,
+  label,
+  disabled = false,
+  id,
+  className,
+  'aria-label': ariaLabel,
+}) {
   const toggle = () => {
     if (!disabled) {
       onChange?.(!checked);
@@ -22,7 +30,7 @@ export function Switch({ checked = false, onChange, label, disabled = false, id,
         type="button"
         role="switch"
         aria-checked={checked}
-        aria-label={label || 'Toggle switch'}
+        aria-label={ariaLabel || label || 'Toggle switch'}
         disabled={disabled}
         onClick={toggle}
         onKeyDown={(e) => {

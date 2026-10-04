@@ -5,9 +5,11 @@ import { Topbar } from './Topbar';
 import { Drawer } from '@/components/ui/Drawer';
 import { Spinner } from '@/components/ui/Spinner';
 import { CommandPalette } from '@/features/command-palette';
+import { SaveItemModal } from '@/features/library';
 import { useUiStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils/cn';
 import styles from './AppLayout.module.scss';
+
 
 export function AppLayout() {
   const isDrawerOpen = useUiStore((state) => state.isDrawerOpen);
@@ -21,6 +23,9 @@ export function AppLayout() {
 
   const isChatRoute =
     location.pathname === '/chat' || location.pathname.startsWith('/chat/');
+  const isWideRoute =
+    location.pathname.startsWith('/interview') ||
+    location.pathname.startsWith('/library');
 
   return (
     <div className={styles.layout}>
@@ -36,7 +41,13 @@ export function AppLayout() {
 
       <div className={styles.mainWrapper}>
         <Topbar />
-        <main className={cn(styles.content, isChatRoute && styles.chatContent)}>
+        <main
+          className={cn(
+            styles.content,
+            isChatRoute && styles.chatContent,
+            isWideRoute && styles.wideContent,
+          )}
+        >
           <Suspense
             fallback={
               <div
@@ -52,6 +63,8 @@ export function AppLayout() {
       </div>
 
       <CommandPalette />
+      <SaveItemModal />
     </div>
   );
 }
+

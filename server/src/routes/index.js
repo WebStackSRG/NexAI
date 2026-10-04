@@ -10,6 +10,7 @@ import promptRoutes from './prompt.routes.js';
 import interviewRoutes from './interview.routes.js';
 import searchRoutes from './search.routes.js';
 import walletRoutes from './wallet.routes.js';
+import memoryRoutes from './memory.routes.js';
 
 const router = Router();
 
@@ -24,6 +25,7 @@ router.use('/prompts', promptRoutes);
 router.use('/interview', interviewRoutes);
 router.use('/search', searchRoutes);
 router.use('/wallet', walletRoutes);
+router.use('/memories', memoryRoutes);
 
 export default router;
 

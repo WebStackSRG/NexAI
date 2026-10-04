@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NexAI — Project Abstract (1-Page Print Ready)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap');
+
+    @page {
+      size: A4 portrait;
+      margin: 12mm 15mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #1a1e24;
+      background: #f8fafc;
+      line-height: 1.35;
+      font-size: 10pt;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .toolbar {
+      max-width: 210mm;
+      margin: 16px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 18px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .toolbar h3 {
+      font-size: 14px;
+      color: #334155;
+      font-weight: 600;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s ease;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background: #1d4ed8;
+    }
+
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+    }
+
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      max-height: 297mm;
+      margin: 0 auto 30px auto;
+      padding: 14mm 16mm;
+      background: #ffffff;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Academic Header */
+    .header {
+      text-align: center;
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 8pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #2563eb;
+      margin-bottom: 4px;
+    }
+
+    .title {
+      font-size: 15pt;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.25;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: -0.2px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      font-size: 8.5pt;
+      color: #475569;
+      margin-top: 4px;
+      row-gap: 2px;
+    }
+
+    .meta-grid strong {
+      color: #1e293b;
+    }
+
+    /* Section Styling */
+    .section {
+      margin-bottom: 9px;
+    }
+
+    .section-title {
+      font-size: 10.5pt;
+      font-weight: 700;
+      color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 2px;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .section-title span {
+      display: inline-block;
+      width: 4px;
+      height: 12px;
+      background: #2563eb;
+      border-radius: 2px;
+    }
+
+    p, li {
+      font-size: 9.2pt;
+      color: #1f2937;
+      text-align: justify;
+      line-height: 1.34;
+    }
+
+    ul {
+      margin-left: 16px;
+      margin-top: 3px;
+    }
+
+    li {
+      margin-bottom: 4px;
+    }
+
+    li strong {
+      color: #0f172a;
+    }
+
+    .keywords {
+      margin-top: 8px;
+      padding-top: 6px;
+      border-top: 1px dashed #cbd5e1;
+      font-size: 8.5pt;
+      color: #475569;
+    }
+
+    .keywords strong {
+      color: #0f172a;
+    }
+
+    .pill {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 8pt;
+      color: #0f172a;
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+      }
+      .toolbar {
+        display: none !important;
+      }
+      .page {
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        width: 100%;
+        height: 100%;
+        max-height: 100%;
+        border: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <div>
+      <h3>NexAI — Official 1-Page Project Abstract</h3>
+      <p style="font-size: 11px; color: #64748b; margin: 0;">Calibrated for single A4 page print and direct copy-paste into Google Docs.</p>
+    </div>
+    <div class="toolbar-actions">
+      <button class="btn btn-secondary" onclick="copyAbstractText()">📋 Copy Formatted Text</button>
+      <button class="btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+    </div>
+  </div>
+
+  <div class="page" id="printable-abstract">
+    <!-- Header -->
+    <header class="header">
+      <span class="badge">Diploma Final Year Capstone Project (MSBTE K-Scheme)</span>
+      <h1 class="title">NexAI: AI-Powered Personal &amp; Developer Workspace with Utility-Metered Billing and Grounded RAG Retrieval</h1>
+      <div class="meta-grid">
+        <div><strong>Domain:</strong> Applied Generative AI, RAG &amp; Full-Stack Cloud SaaS</div>
+        <div><strong>Architecture:</strong> Monorepo (React 18 + Vite | Node.js Express | MongoDB)</div>
+        <div><strong>Validation Status:</strong> 227 Automated Tests Passing (Production Ready)</div>
+        <div><strong>Model Engine:</strong> Google Gemini API (Flash 3.8 / Pro 3.1) &amp; Pinecone Vector DB</div>
+      </div>
+    </header>
+
+    <!-- Problem Statement -->
+    <section class="section">
+      <h2 class="section-title"><span></span>1. Problem Statement (The Real-World Problem)</h2>
+      <p>Modern developers, technical students, and knowledge workers operate across an increasingly fragmented software landscape, confronting three acute industry problems:</p>
+      <ul>
+        <li><strong>Cognitive Tool &amp; Context Fragmentation:</strong> Knowledge workers constantly alternate between isolated single-purpose applications—chat LLMs (ChatGPT/Claude) for ad-hoc prompts, Notion for documentation, local scratchpads for code snippets, and platforms like Pramp or LeetCode for technical interview preparation. This absence of a shared context layer leads to severe cognitive overhead, duplicated manual effort, and orphaned knowledge assets.</li>
+        <li><strong>Inflexible Flat-Rate AI Subscriptions:</strong> Mainstream consumer AI services mandate fixed monthly fees (~$20/mo or ₹2,000/mo) irrespective of actual inference demand. Light users and students who run 15–20 queries per month pay identical subscription fees to heavy enterprise users, creating an inequitable barrier to entry with opaque token economics.</li>
+        <li><strong>"AI Wrapper" Fragility &amp; Hallucination Drift:</strong> Typical AI wrappers pass ungrounded prompts to external models and persist unreviewed responses directly into application storage, inevitably poisoning personal knowledge bases with unchecked LLM hallucinations.</li>
+      </ul>
+    </section>
+
+    <!-- Proposed Solution -->
+    <section class="section">
+      <h2 class="section-title"><span></span>2. Proposed Solution (The NexAI Architecture)</h2>
+      <p><strong>NexAI</strong> resolves these bottlenecks by unifying conversational intelligence, personal knowledge storage, developer prompt management, and technical viva preparation into a coherent, cost-metered platform:</p>
+      <ul>
+        <li><strong>Unified Distraction-Free Canvas:</strong> A responsive, Gemini-style collapsible sidebar navigation paired with a distraction-free conversational canvas featuring real-time Server-Sent Events (SSE) streaming, Markdown rendering with syntax-highlighted code execution, and Web Speech voice dictation.</li>
+        <li><strong>Polymorphic Knowledge Vault &amp; Semantic RAG:</strong> An integrated Library accommodating notes, web bookmarks, custom file uploads, structured documents, and interview transcripts. Content is embedded into 768-dimensional vectors using Gemini Embedding models and stored in vector indexes (Pinecone / Local Vector DB) for grounded natural language semantic retrieval.</li>
+        <li><strong>Prompt Vault &amp; ChatGPT-Style Project Workspaces:</strong> A reusable prompt engineering hub with dynamic variable placeholders (<span class="pill">{{variable}}</span>) for instant chat injection, combined with Project Workspaces that enforce isolated system instructions and grounded multi-file source ingestion (up to 2MB capacity).</li>
+        <li><strong>Interactive AI Mock Interview &amp; Viva Simulator:</strong> A real-time interview simulator pairing hardware-accelerated CSS voice-ripple visualizers, continuous speech-to-text, progressive viva follow-up queries, and automated competency scorecards archived directly to the user's Library.</li>
+        <li><strong>Token-Accurate Utility Metering &amp; Data Sovereignty:</strong> Every AI call traverses an atomic credit gate deducting balance strictly based on real API token usage (<span class="pill">⌈totalTokens / 100⌉</span>), integrated with a Razorpay test-mode gateway and a strict <em>Suggest &rarr; Review &rarr; Confirm</em> workflow before data persistence.</li>
+      </ul>
+    </section>
+
+    <!-- Outcomes and Results -->
+    <section class="section">
+      <h2 class="section-title"><span></span>3. Outcomes &amp; Impact</h2>
+      <ul>
+        <li><strong>Consolidated Single-Pane Workflow:</strong> Replaces four disparate developer tools with one unified workspace, eliminating cross-application context switching and accelerating research-to-code workflows.</li>
+        <li><strong>Equitable, Cost-Transparent Utility Billing:</strong> Completely democratizes generative AI access for students and indie developers through micro-metered credit recharge tiers starting at ₹49 with strict 402 Insufficient Credit safeguards and role-gated admin usage analytics.</li>
+        <li><strong>Guaranteed Groundedness &amp; Verification:</strong> Enforces human-in-the-loop confirmation on all AI summaries and documents, eliminating hallucination propagation while providing multi-tenant vector RAG retrieval.</li>
+        <li><strong>Production Hardening:</strong> Validated with <strong>227 automated tests</strong> (127 backend, 100 frontend) achieving 100% passing status across authentication, billing idempotency, SSE streaming, and complete end-to-end user journeys.</li>
+      </ul>
+    </section>
+
+    <!-- Keywords -->
+    <div class="keywords">
+      <strong>Keywords:</strong> Generative AI, Retrieval-Augmented Generation (RAG), Semantic Vector Search, Utility Metering, Full-Stack Architecture, Human-in-the-Loop, React, Node.js Express, MongoDB Atlas, Pinecone, Token Economics.
+    </div>
+  </div>
+
+  <script>
+    function copyAbstractText() {
+      const el = document.getElementById('printable-abstract');
+      // Create a range and selection to copy rich text for Google Docs / Word
+      const range = document.createRange();
+      range.selectNode(el);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          alert('Abstract copied to clipboard with rich formatting! You can now paste directly (Ctrl+V) into Google Docs or Word.');
+        } else {
+          fallbackCopy();
+        }
+      } catch (err) {
+        fallbackCopy();
+      }
+      window.getSelection().removeAllRanges();
+    }
+
+    function fallbackCopy() {
+      navigator.clipboard.writeText(document.getElementById('printable-abstract').innerText)
+        .then(() => alert('Abstract plain text copied to clipboard!'))
+        .catch(err => alert('Failed to copy. Please manually select text.'));
+    }
+  </script>
+</body>
+</html>

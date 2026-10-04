@@ -219,5 +219,25 @@ describe('libraryStore Zustand Store (Step 8)', () => {
     expect(useLibraryStore.getState().items[0]).toEqual(updatedItem);
     expect(useLibraryStore.getState().viewingItem).toEqual(updatedItem);
   });
+
+  it('opens and closes add modal with prefilled data for in-chat/snippet saving', () => {
+    const prefill = {
+      type: 'note',
+      title: 'Python Snippet',
+      content: 'def hello(): pass',
+      tags: ['snippet', 'python'],
+    };
+
+    useLibraryStore.getState().openAddModal(prefill);
+
+    expect(useLibraryStore.getState().isAddModalOpen).toBe(true);
+    expect(useLibraryStore.getState().addModalPrefill).toEqual(prefill);
+
+    useLibraryStore.getState().closeAddModal();
+
+    expect(useLibraryStore.getState().isAddModalOpen).toBe(false);
+    expect(useLibraryStore.getState().addModalPrefill).toBeNull();
+  });
 });
+
 

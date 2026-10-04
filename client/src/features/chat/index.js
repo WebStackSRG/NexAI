@@ -4,3 +4,4 @@ export { ChatSidebar } from './ChatSidebar';
 export { MessageThread } from './MessageThread';
 export { ChatInput } from './ChatInput';
 export { ChatHero } from './ChatHero';
+export { ThinkingDrawer } from './ThinkingDrawer/ThinkingDrawer';

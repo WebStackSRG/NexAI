@@ -15,12 +15,15 @@ import {
   Bot,
   User,
   Clock,
+  ArrowLeft,
+  Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { VoiceRipple } from '../VoiceRipple/VoiceRipple';
 import { toast } from '@/components/ui/Toast';
+import { MarkdownRenderer } from '@/features/chat/MarkdownRenderer/MarkdownRenderer';
 import { cn } from '@/lib/utils/cn';
 import styles from './InterviewArena.module.scss';
 
@@ -32,6 +35,7 @@ export function InterviewArena({
   onSendResponse,
   onStopStreaming,
   onConclude,
+  onReset,
   isListening = false,
   setIsListening,
   isSpeaking = false,
@@ -199,11 +203,30 @@ export function InterviewArena({
       {/* Top Session Bar */}
       <header className={styles.topBar}>
         <div className={styles.sessionInfo}>
+          {onReset && (
+            <div className={styles.navRow}>
+              <button
+                type="button"
+                className={styles.backButton}
+                onClick={onReset}
+                title="Return to Interview Setup"
+                aria-label="Back to Setup"
+              >
+                <ArrowLeft size={14} />
+                <span>Back to Setup</span>
+              </button>
+            </div>
+          )}
           <div className={styles.titleRow}>
             <h2 className={styles.roleTitle}>{session?.role || 'Technical Interview'}</h2>
             <Badge variant="accent" size="sm" className={styles.diffBadge}>
               {session?.difficulty}
             </Badge>
+            {session?.isSimulation && (
+              <Badge tone="warning" size="sm" className={styles.simBadge}>
+                ⚡ Simulation (0 Credits)
+              </Badge>
+            )}
           </div>
           <p className={styles.topicSubtitle} title={session?.topic}>
             {session?.topic}
@@ -225,6 +248,19 @@ export function InterviewArena({
           >
             {isTtsEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
+
+          {onReset && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onReset}
+              className={styles.newInterviewBtn}
+              leftIcon={<Plus size={14} />}
+              title="Configure a new interview session"
+            >
+              Practice New
+            </Button>
+          )}
 
           <Button
             variant="danger"
@@ -287,7 +323,12 @@ export function InterviewArena({
 
             <div className={styles.questionBody}>
               {latestAssistantMessage ? (
-                <p className={styles.questionText}>{latestAssistantMessage.content}</p>
+                <div className={styles.questionText}>
+                  <MarkdownRenderer
+                    content={latestAssistantMessage.content}
+                    isStreaming={isStreaming}
+                  />
+                </div>
               ) : (
                 <p className={styles.placeholderText}>Initializing interview session...</p>
               )}
@@ -354,7 +395,9 @@ export function InterviewArena({
                           })}
                         </span>
                       </div>
-                      <p className={styles.msgContent}>{m.content}</p>
+                      <div className={styles.msgContent}>
+                        <MarkdownRenderer content={m.content} />
+                      </div>
                     </div>
                   );
                 })}
@@ -453,6 +496,7 @@ InterviewArena.propTypes = {
   onSendResponse: PropTypes.func.isRequired,
   onStopStreaming: PropTypes.func.isRequired,
   onConclude: PropTypes.func.isRequired,
+  onReset: PropTypes.func,
   isListening: PropTypes.bool,
   setIsListening: PropTypes.func.isRequired,
   isSpeaking: PropTypes.bool,

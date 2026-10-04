@@ -74,17 +74,16 @@ This is the single most important section of this document. Every feature is pla
 | **AI Interview Platform**                 | Real-time interactive mock interview simulator (roles, viva prep, seniorities). Features animated voice ripple, live transcript, speech-to-text, and automated competency scorecard saved to Library.                        |
 | **Unified Search**                        | One search bar across Library, Documents, Prompts, and Chat History (keyword + semantic).                                                                                                                                    |
 | **Command Palette (Ctrl/Cmd+K)**          | Jump to any screen or trigger common actions instantly — pure frontend, zero backend latency.                                                                                                                                 |
+| **Chat Ergonomics & Telemetry Inspector** | Sticky code block headers with 1-click copy, token stream reveal animation, floating scroll-to-bottom anchor, message feedback (Like/Dislike), client-side Read Aloud (Web Speech API), and sliding right-side Telemetry Inspector Drawer (model tier, prompt/candidate/total token breakdown, credits deducted, response latency, and thought trace). |
 
 ### Phase 2 — SaaS / Business Layer (the "unique" layer for the examiner)
 
-| Feature                | Detail                                                                                                                                                                              |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Wallet & Recharge Page | Shows credit balance, tier (`free` / `pro_monthly`), recharge options (e.g. ₹49 → 500 credits)                                                                                      |
+| Wallet & Recharge Page | Shows credit balance, tier (`free` / `pro_monthly`), recharge options (e.g. ₹49 → 500 credits), and live status indicator (Quota Mode vs Credit Mode) |
 | Payment Integration    | **Razorpay Test Mode** — no real KYC or money needed for demo; test card/UPI completes a mock transaction; webhook updates `wallet.creditsRemaining` in MongoDB                     |
 | Transaction Ledger     | Every recharge stored as its own document (amount, credits added, payment ID, status, timestamp)                                                                                    |
-| Admin Dashboard        | Separate `/admin` route (role-gated). Shows: total tokens consumed, Gemini Flash vs Pro usage split (chart), mock revenue total, recent transactions, basic error/latency log count |
+| Admin Dashboard        | Separate `/admin` route (role-gated). Shows: total tokens consumed, Gemini Flash vs Pro usage split (chart), mock revenue total, recent transactions, error logs, and **Live Gemini API Free Tier Quota Telemetry (1,500 RPD progress gauge, 15 RPM indicator, daily token count, and Dual-Mode Billing Toggle: Quota-Free vs Credit-Strict)** |
 
-This phase is what turns "AI chat app" into "AI SaaS platform" in the examiner's eyes — the token ledger + webhook + admin charts are concrete, demoable engineering, not just a slide claim.
+This phase turns "AI chat app" into "AI SaaS platform" in the examiner's eyes — the token ledger + webhook + admin charts are concrete, demoable engineering, not just a slide claim. The Dual-Mode toggle allows flawless academic demonstration using 100% of Google's 1,500 daily requests without being prematurely locked out by artificial credit depletion, while still allowing 1-click demonstration of the strict credit lock and payment flow.
 
 ### Phase 3 — Depth (only if Phase 0–2 are solid and time remains)
 
@@ -126,7 +125,8 @@ Stating these as "considered, deliberately deferred" is stronger than silently d
 | ------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | Frontend           | React + Vite, SCSS modules, Zustand                         | $0                                                                                    |
 | Backend            | Node.js + Express                                           | Render free web service (cold start ~30–60s after idle — mention proactively in viva) |
-| LLM                | Gemini 1.5 Flash (default) + Gemini 1.5 Pro (complex tasks) | Existing free/low-cost API key; usage tracked per call for credit deduction           |
+| LLM                | Gemini 3.5 Flash-Lite (default, 1M context, multimodal in, 1,500 RPD) + Gemini 3.1 Pro (complex tasks) | Official `@google/genai` SDK without third-party frameworks like LangChain; usage tracked per call for credit deduction |
+| Voice & Audio      | Browser Web Speech API (`SpeechRecognition` & `speechSynthesis`) | $0 cost, 0 API tokens consumed, client-side real-time voice; optional server TTS (`gemini-3.8-flash-lite-tts`) |
 | Embeddings         | Gemini embedding model                                      | Same key                                                                              |
 | Vector DB          | Pinecone Starter (free) or ChromaDB (self-hosted)           | Enough for single-user demo dataset                                                   |
 | Database           | MongoDB Atlas M0                                            | 512 MB, free forever                                                                  |
@@ -299,6 +299,15 @@ Key design decisions:
 
 // usageLogs (feeds Admin Dashboard)
 { _id, userId, model: "flash" | "pro", feature: "chat" | "library" | "interview" | "document", tokensUsed, creditsDeducted, createdAt }
+
+// systemConfig (platform-wide runtime governance & quota toggles)
+{
+  _id: "global_config",
+  billingEnforcementMode: "quota_free" | "credit_strict", // "quota_free" (Default): Demo mode up to Google Gemini 1,500 RPD limit. "credit_strict": Halts at 0 credits requiring recharge.
+  dailyGeminiQuotaLimit: 1500,                            // Google AI Studio Free Tier RPD ceiling
+  updatedBy: ObjectId,                                    // Admin user ID
+  updatedAt
+}
 ```
 
 ---
@@ -347,6 +356,24 @@ Key design decisions:
 1. User picks a plan (e.g. ₹49 → 500 credits) on the Wallet page.
 2. Razorpay Test Mode checkout opens; test card/UPI completes payment.
 3. Razorpay webhook hits the backend → backend verifies signature → updates `wallet.creditsRemaining` and writes a `transactions` entry.
+
+**G. Dual-Mode Billing Enforcement & Live Gemini Quota Telemetry (College Demo & Production SaaS)**
+
+1. **System Governance Toggle**:
+   - Stored in `systemConfig` (with `.env` fallback `CREDIT_ENFORCEMENT_MODE=quota_free`).
+   - Switchable at runtime from `/admin` without server restarts:
+     - **Mode 1 (`quota_free` - Recommended for Evaluation/Demo)**: Bypasses the HTTP 402 `INSUFFICIENT_CREDITS` hard-stop when user credits reach 0. Instead, requests execute smoothly up to the official Google Gemini API free tier limit of **1,500 Requests Per Day (RPD)**. Real token accounting ($\lceil \text{totalTokens} / 100 \rceil$), usage logging (`UsageLog`), and user `totalTokensConsumed` continue calculating in the background so telemetry remains 100% genuine and observable.
+     - **Mode 2 (`credit_strict` - Commercial SaaS Mode)**: Hard-enforces the initial 100 starter credits. When `creditsRemaining <= 0`, requests fail fast with HTTP 402, prompting the user to recharge via Razorpay.
+2. **Admin Telemetry & Live Gemini Quota Gauge**:
+   - The `/admin` dashboard surfaces real-time Google API consumption:
+     - **Daily Quota Progress**: `Requests Today / 1,500 RPD` with percentage gauge (resets at 00:00 UTC matching Google's billing cycle).
+     - **Rate Monitoring**: Live Requests Per Minute (`RPM / 15`) and Tokens Per Minute (`TPM / 1,000,000`).
+     - **Live Token Breakdown**: Input vs Output token tallies, Flash vs Pro model distribution, and full chronological audit logs.
+     - **Interactive Mode Switch**: 1-click toggle between `Quota-Free Demo` and `Credit-Strict SaaS` modes with instant feedback.
+3. **Wallet & Header Presentation**:
+   - Topbar badge and `/wallet` screen clearly reflect the active enforcement mode:
+     - In `quota_free` mode: displays simulated credit balance alongside an active indicator: `⚡ Quota Mode: X / 1,500 Daily Calls Left`.
+     - In `credit_strict` mode: displays traditional credit balance and recharge options.
 
 ---
 

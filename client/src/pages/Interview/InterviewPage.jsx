@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, CreditCard, RotateCcw } from 'lucide-react';
+import { AlertCircle, CreditCard, RotateCcw, ArrowLeft, Plus } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Button } from '@/components/ui/Button';
 import {
@@ -31,6 +31,8 @@ export default function InterviewPage() {
     difficulty,
     topic,
     selectedModel,
+    isSimulation,
+    toggleSimulation,
     sessions,
     isListening,
     setIsListening,
@@ -59,6 +61,7 @@ export default function InterviewPage() {
       difficulty,
       topic,
       model: selectedModel,
+      isSimulation,
     });
   };
 
@@ -77,35 +80,40 @@ export default function InterviewPage() {
               <CreditCard size={14} />
               <span>{creditsRemaining} credits</span>
             </div>
-            {currentSession && (
-              <Button variant="ghost" size="sm" onClick={resetSession} className={styles.exitBtn}>
-                <RotateCcw size={14} />
-                Exit Simulation
-              </Button>
-            )}
           </div>
         }
       />
 
-      {/* Insufficient credits warning banner */}
-      {(insufficientCredits || (creditsRemaining <= 0 && !currentSession)) && (
+      {/* Insufficient credits warning banner or simulation notification */}
+      {insufficientCredits || (creditsRemaining <= 0 && !currentSession) ? (
         <div className={styles.warningBanner}>
           <div className={styles.warningLeft}>
             <AlertCircle size={18} className={styles.warningIcon} />
             <div>
-              <strong className={styles.warningTitle}>Credit Balance Depleted</strong>
+              <strong className={styles.warningTitle}>
+                {isSimulation ? 'Simulation Mode Active' : 'Credit Balance Depleted'}
+              </strong>
               <p className={styles.warningText}>
-                Live AI interviews require token metering. Recharge your wallet to continue.
+                {isSimulation
+                  ? 'Zero tokens or credits will be charged. You can run complete technical screening simulations.'
+                  : 'Live AI interviews require token metering. Recharge your wallet or switch to Simulation Mode.'}
               </p>
             </div>
           </div>
           <div className={styles.warningActions}>
+            <Button
+              variant={isSimulation ? 'secondary' : 'secondary'}
+              size="sm"
+              onClick={toggleSimulation}
+            >
+              {isSimulation ? 'Live Mode' : 'Switch to Simulation (0 Credits)'}
+            </Button>
             <Button variant="primary" size="sm" onClick={handleRechargeClick}>
               Recharge Credits
             </Button>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Main Content View Switcher */}
       <div className={styles.contentArea}>
@@ -148,6 +156,8 @@ export default function InterviewPage() {
             isStarting={isStarting}
             sessions={sessions}
             onSelectSession={loadSession}
+            isSimulation={isSimulation}
+            onToggleSimulation={toggleSimulation}
           />
         )}
       </div>

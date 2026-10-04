@@ -5,15 +5,23 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { IconButton } from '@/components/ui/IconButton';
 import { Dropdown } from '@/components/ui/Dropdown';
-import { Tag } from '@/components/ui/Tag';
 import { toast } from '@/store/uiStore';
 import { cn } from '@/lib/utils/cn';
 import styles from './PromptCard.module.scss';
 
-export function PromptCard({ prompt, onUse, onEdit, onDelete, onToggleFavorite, onClone }) {
+export function PromptCard({
+  prompt,
+  onUse,
+  onEdit,
+  onDelete,
+  onToggleFavorite,
+  onClone,
+  onViewDetails,
+}) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopyTemplate = async () => {
+  const handleCopyTemplate = async (e) => {
+    e?.stopPropagation();
     try {
       await navigator.clipboard.writeText(prompt.template);
       setCopied(true);
@@ -29,6 +37,10 @@ export function PromptCard({ prompt, onUse, onEdit, onDelete, onToggleFavorite, 
   const menuItems = isStarter
     ? [
         {
+          label: 'View details',
+          onClick: () => onViewDetails?.(prompt),
+        },
+        {
           label: copied ? 'Copied!' : 'Copy template',
           icon: copied ? <Check size={14} /> : <Copy size={14} />,
           onClick: handleCopyTemplate,
@@ -40,6 +52,10 @@ export function PromptCard({ prompt, onUse, onEdit, onDelete, onToggleFavorite, 
         },
       ]
     : [
+        {
+          label: 'View details',
+          onClick: () => onViewDetails?.(prompt),
+        },
         {
           label: copied ? 'Copied!' : 'Copy template',
           icon: copied ? <Check size={14} /> : <Copy size={14} />,
@@ -61,8 +77,32 @@ export function PromptCard({ prompt, onUse, onEdit, onDelete, onToggleFavorite, 
 
   const variableCount = prompt.variables?.length || 0;
 
+  const handleCardClick = () => {
+    onViewDetails?.(prompt);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      if (e.target === e.currentTarget) {
+        e.preventDefault();
+        onViewDetails?.(prompt);
+      }
+    }
+  };
+
   return (
-    <div className={cn(styles.card, prompt.isFavorite && styles.favoriteCard, isStarter && styles.starterCard)}>
+    <div
+      className={cn(
+        styles.card,
+        prompt.isFavorite && styles.favoriteCard,
+        isStarter && styles.starterCard,
+      )}
+      onClick={handleCardClick}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label={`View details for prompt: ${prompt.title}`}
+    >
       <div className={styles.header}>
         <div className={styles.titleGroup}>
           {isStarter ? (
@@ -78,7 +118,10 @@ export function PromptCard({ prompt, onUse, onEdit, onDelete, onToggleFavorite, 
             <button
               type="button"
               className={cn(styles.starBtn, prompt.isFavorite && styles.isFavorite)}
-              onClick={() => onToggleFavorite?.(prompt._id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFavorite?.(prompt._id);
+              }}
               title={prompt.isFavorite ? 'Remove from favorites' : 'Mark as favorite'}
               aria-label={prompt.isFavorite ? 'Remove from favorites' : 'Mark as favorite'}
             >
@@ -90,7 +133,7 @@ export function PromptCard({ prompt, onUse, onEdit, onDelete, onToggleFavorite, 
           </h3>
         </div>
 
-        <div className={styles.actions}>
+        <div className={styles.actions} onClick={(e) => e.stopPropagation()}>
           <Dropdown
             trigger={
               <IconButton
@@ -108,21 +151,6 @@ export function PromptCard({ prompt, onUse, onEdit, onDelete, onToggleFavorite, 
 
       {prompt.description && <p className={styles.description}>{prompt.description}</p>}
 
-      <div className={styles.templatePreview} onClick={handleCopyTemplate} title="Click to copy">
-        <code>{prompt.template}</code>
-      </div>
-
-      {((prompt.tags && prompt.tags.length > 0) || prompt.category) && (
-        <div className={styles.tagsRow}>
-          {prompt.category && (
-            <Tag label={prompt.category} size="sm" />
-          )}
-          {prompt.tags?.map((tag) => (
-            <Tag key={tag} label={tag} size="sm" />
-          ))}
-        </div>
-      )}
-
       <div className={styles.footer}>
         <div className={styles.variableInfo}>
           {isStarter && (
@@ -131,25 +159,28 @@ export function PromptCard({ prompt, onUse, onEdit, onDelete, onToggleFavorite, 
             </Badge>
           )}
           {variableCount > 0 ? (
-            <Badge tone="accent" size="sm">
+            <Badge tone="neutral" size="sm">
               <span className={styles.varCount}>
-                {variableCount} {variableCount === 1 ? 'variable' : 'variables'}
+                {variableCount} {variableCount === 1 ? 'var' : 'vars'}
               </span>
             </Badge>
           ) : (
             <Badge tone="neutral" size="sm">
-              Static prompt
+              Static
             </Badge>
           )}
         </div>
 
-        <div className={styles.footerActions}>
+        <div className={styles.footerActions} onClick={(e) => e.stopPropagation()}>
           {isStarter && onClone && (
             <Button
               variant="ghost"
               size="sm"
               leftIcon={<BookmarkPlus size={14} />}
-              onClick={() => onClone?.(prompt)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClone?.(prompt);
+              }}
               title="Save a copy to your vault"
             >
               Save
@@ -159,7 +190,10 @@ export function PromptCard({ prompt, onUse, onEdit, onDelete, onToggleFavorite, 
             variant="secondary"
             size="sm"
             leftIcon={<Terminal size={14} />}
-            onClick={() => onUse?.(prompt)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onUse?.(prompt);
+            }}
             className={styles.useButton}
           >
             Use Prompt
@@ -187,4 +221,5 @@ PromptCard.propTypes = {
   onDelete: PropTypes.func,
   onToggleFavorite: PropTypes.func,
   onClone: PropTypes.func,
+  onViewDetails: PropTypes.func,
 };

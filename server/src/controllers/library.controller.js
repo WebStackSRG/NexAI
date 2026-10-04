@@ -11,35 +11,61 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { logger } from '../utils/logger.js';
 
 /**
- * Builds text representation of any polymorphic library item for vector embedding.
+ * Builds one or more text representations of any polymorphic library item for multi-chunk vector embedding.
+ * Prevents the 1,500-char truncation and ensures deep document sections and notes are indexed.
  *
  * @param {any} item
- * @returns {string}
+ * @returns {string[]}
  */
-function buildItemEmbeddingText(item) {
-  const parts = [item.title || '', item.summary || '', (item.tags || []).join(' ')];
+function buildItemEmbeddingTexts(item) {
+  const metaParts = [
+    item.title ? `Title: ${item.title}` : '',
+    item.summary ? `Summary: ${item.summary}` : '',
+    Array.isArray(item.tags) && item.tags.length > 0 ? `Tags: ${item.tags.join(' ')}` : '',
+    item.topic || item.role ? `Topic: ${item.topic || ''} Role: ${item.role || ''}` : '',
+    item.scorecard?.summary ? `Scorecard: ${item.scorecard.summary}` : '',
+  ].filter(Boolean);
 
-  if (item.content) {
-    parts.push(item.content.slice(0, 1500));
-  }
+  const baseHeader = metaParts.join('\n');
+  const chunks = [];
 
+  // 1. Structured Document with Sections
   if (Array.isArray(item.sections) && item.sections.length > 0) {
-    const sectionsText = item.sections
-      .map((s) => `${s.heading}\n${s.body}`)
-      .join('\n\n')
-      .slice(0, 2000);
-    parts.push(sectionsText);
+    let currentChunk = baseHeader ? `${baseHeader}\n\n` : '';
+    for (const sec of item.sections) {
+      const sectionText = `## ${sec.heading}\n${sec.body}`;
+      if ((currentChunk + sectionText).length > 3000 && currentChunk.trim().length > 0) {
+        chunks.push(currentChunk.trim());
+        currentChunk = baseHeader ? `${baseHeader}\n\n${sectionText}\n\n` : `${sectionText}\n\n`;
+      } else {
+        currentChunk += `${sectionText}\n\n`;
+      }
+      if (chunks.length >= 4) break;
+    }
+    if (currentChunk.trim()) {
+      chunks.push(currentChunk.trim());
+    }
+  } else if (item.content && item.content.trim()) {
+    // 2. Notes, Links, and Text Files
+    const fullText = item.content.trim();
+    if (fullText.length <= 3500) {
+      chunks.push([baseHeader, fullText].filter(Boolean).join('\n\n'));
+    } else {
+      // Chunking long content with 300-char overlap
+      const chunkSize = 3000;
+      let start = 0;
+      while (start < fullText.length && chunks.length < 4) {
+        const slice = fullText.slice(start, start + chunkSize);
+        chunks.push([baseHeader, slice].filter(Boolean).join('\n\n'));
+        start += chunkSize - 300;
+      }
+    }
+  } else {
+    // 3. Fallback for items with only title/summary
+    chunks.push(baseHeader || item.title || 'Library Item');
   }
 
-  if (item.topic || item.role) {
-    parts.push(`Topic: ${item.topic || ''} Role: ${item.role || ''}`);
-  }
-
-  if (item.scorecard?.summary) {
-    parts.push(`Scorecard: ${item.scorecard.summary}`);
-  }
-
-  return parts.filter(Boolean).join('\n\n');
+  return chunks.filter(Boolean);
 }
 
 /**
@@ -47,7 +73,7 @@ function buildItemEmbeddingText(item) {
  * Metered via creditCheck and credit deduction.
  */
 export const suggestItem = asyncHandler(async (req, res) => {
-  const { type, url, content, fileName } = req.body;
+  const { type, url, content, fileName, fileBase64, mimeType } = req.body;
   let textToAnalyze = content || '';
   let extractedTitle = fileName || '';
 
@@ -60,7 +86,10 @@ export const suggestItem = asyncHandler(async (req, res) => {
   const suggestion = await generateLibrarySuggestion({
     content: textToAnalyze,
     suggestedTitle: extractedTitle,
+    fileBase64,
+    mimeType,
   });
+
 
   let creditsDeducted = 0;
   let creditsRemaining = req.user.wallet?.creditsRemaining ?? 0;
@@ -201,6 +230,7 @@ export const createItem = asyncHandler(async (req, res) => {
     fileName,
     mimeType,
     size,
+    fileData,
     scorecard,
     transcript,
     topic,
@@ -233,36 +263,49 @@ export const createItem = asyncHandler(async (req, res) => {
     fileName: fileName || '',
     mimeType: mimeType || '',
     size: size || 0,
+    fileData: fileData || '',
     scorecard: scorecard || null,
     transcript: Array.isArray(transcript) ? transcript : [],
     topic: topic || '',
     difficulty: difficulty || '',
     role: role || '',
     vectorId: null,
+    vectorIds: [],
   });
 
-  // Vector embedding & upsert
+  // Vector embedding & upsert (multi-chunk support)
   try {
-    const embedText = buildItemEmbeddingText(item);
-    const embedding = await geminiService.embedContent({ contents: embedText });
+    const embedTexts = buildItemEmbeddingTexts(item);
+    const chunkVectorIds = [];
 
-    if (embedding && embedding.length > 0) {
-      const vectorId = item._id.toString();
-      const success = await vectorDbService.upsert({
-        id: vectorId,
-        values: embedding,
-        metadata: {
-          userId: req.user._id.toString(),
-          type: 'library',
-          itemType: item.type,
-          refId: vectorId,
-        },
-      });
+    for (let i = 0; i < embedTexts.length; i++) {
+      const textChunk = embedTexts[i];
+      const embedding = await geminiService.embedContent({ contents: textChunk });
 
-      if (success) {
-        item.vectorId = vectorId;
-        await item.save();
+      if (embedding && embedding.length > 0) {
+        const chunkId = i === 0 ? item._id.toString() : `${item._id.toString()}_${i}`;
+        const success = await vectorDbService.upsert({
+          id: chunkId,
+          values: embedding,
+          metadata: {
+            userId: req.user._id.toString(),
+            type: 'library',
+            itemType: item.type,
+            refId: item._id.toString(),
+            chunkIndex: i,
+          },
+        });
+
+        if (success) {
+          chunkVectorIds.push(chunkId);
+        }
       }
+    }
+
+    if (chunkVectorIds.length > 0) {
+      item.vectorId = chunkVectorIds[0];
+      item.vectorIds = chunkVectorIds;
+      await item.save();
     }
   } catch (err) {
     logger.warn(
@@ -270,6 +313,7 @@ export const createItem = asyncHandler(async (req, res) => {
       'Vector embedding failed during library item creation; item saved in MongoDB',
     );
   }
+
 
   res.status(201).json({
     data: item,
@@ -281,7 +325,15 @@ export const createItem = asyncHandler(async (req, res) => {
  * GET /api/library
  */
 export const listItems = asyncHandler(async (req, res) => {
-  const { tag, type, tab, page = 1, limit = 20 } = req.query;
+  const {
+    tag,
+    type,
+    tab,
+    page = 1,
+    limit = 20,
+    sortBy = 'createdAt',
+    sortOrder = 'desc',
+  } = req.query;
   const filter = { userId: req.user._id };
 
   // Handle tabbed filtering
@@ -307,10 +359,20 @@ export const listItems = asyncHandler(async (req, res) => {
   const numericLimit = Math.min(100, Math.max(1, parseInt(limit, 10)));
   const skip = (numericPage - 1) * numericLimit;
 
+  const sortDirection = sortOrder === 'asc' ? 1 : -1;
+  const sortObj = { pinned: -1 };
+  if (sortBy === 'title') {
+    sortObj.title = sortDirection;
+  } else if (sortBy === 'score') {
+    sortObj['scorecard.overallScore'] = sortDirection;
+  } else {
+    sortObj.createdAt = sortDirection;
+  }
+
   // Run queries in parallel: items, total count, distinct tags, and tab breakdown counts
   const [items, total, allTags, countAll, countNotes, countDocs, countFiles, countInterviews] =
     await Promise.all([
-      LibraryItem.find(filter).sort({ createdAt: -1 }).skip(skip).limit(numericLimit).lean(),
+      LibraryItem.find(filter).sort(sortObj).skip(skip).limit(numericLimit).lean(),
       LibraryItem.countDocuments(filter),
       LibraryItem.distinct('tags', { userId: req.user._id }),
       LibraryItem.countDocuments({ userId: req.user._id }),
@@ -410,30 +472,56 @@ export const updateItem = asyncHandler(async (req, res) => {
     item.sections = sections;
     textChanged = true;
   }
+  if (req.body.fileData !== undefined) {
+    item.fileData = req.body.fileData;
+  }
+  if (req.body.pinned !== undefined) {
+    item.pinned = Boolean(req.body.pinned);
+  }
 
   await item.save();
 
   if (textChanged) {
     try {
-      const embedText = buildItemEmbeddingText(item);
-      const embedding = await geminiService.embedContent({ contents: embedText });
+      // Clean up previous chunk vectors
+      const prevIds = Array.isArray(item.vectorIds) && item.vectorIds.length > 0
+        ? item.vectorIds
+        : item.vectorId ? [item.vectorId] : [];
+      if (prevIds.length > 0) {
+        await vectorDbService.removeMany(prevIds);
+      }
 
-      if (embedding && embedding.length > 0) {
-        const vectorId = item.vectorId || item._id.toString();
-        await vectorDbService.upsert({
-          id: vectorId,
-          values: embedding,
-          metadata: {
-            userId: req.user._id.toString(),
-            type: 'library',
-            itemType: item.type,
-            refId: item._id.toString(),
-          },
-        });
-        if (!item.vectorId) {
-          item.vectorId = vectorId;
-          await item.save();
+      const embedTexts = buildItemEmbeddingTexts(item);
+      const newChunkIds = [];
+
+      for (let i = 0; i < embedTexts.length; i++) {
+        const textChunk = embedTexts[i];
+        const embedding = await geminiService.embedContent({ contents: textChunk });
+
+        if (embedding && embedding.length > 0) {
+          const chunkId = i === 0 ? item._id.toString() : `${item._id.toString()}_${i}`;
+          const success = await vectorDbService.upsert({
+            id: chunkId,
+            values: embedding,
+            metadata: {
+              userId: req.user._id.toString(),
+              type: 'library',
+              itemType: item.type,
+              refId: item._id.toString(),
+              chunkIndex: i,
+            },
+          });
+
+          if (success) {
+            newChunkIds.push(chunkId);
+          }
         }
+      }
+
+      if (newChunkIds.length > 0) {
+        item.vectorId = newChunkIds[0];
+        item.vectorIds = newChunkIds;
+        await item.save();
       }
     } catch (err) {
       logger.warn({ error: err.message, itemId: item._id }, 'Vector re-embedding failed');
@@ -459,11 +547,15 @@ export const deleteItem = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'ITEM_NOT_FOUND', 'Library item not found');
   }
 
-  if (item.vectorId) {
+  const idsToRemove = Array.isArray(item.vectorIds) && item.vectorIds.length > 0
+    ? item.vectorIds
+    : item.vectorId ? [item.vectorId] : [];
+
+  if (idsToRemove.length > 0) {
     try {
-      await vectorDbService.remove(item.vectorId);
+      await vectorDbService.removeMany(idsToRemove);
     } catch (err) {
-      logger.warn({ error: err.message, vectorId: item.vectorId }, 'Failed to remove vector');
+      logger.warn({ error: err.message, ids: idsToRemove }, 'Failed to remove vector');
     }
   }
 
@@ -476,17 +568,33 @@ export const deleteItem = asyncHandler(async (req, res) => {
   });
 });
 
+
 /**
  * Semantic search over polymorphic library items for the authenticated user.
  * Searches by conceptual meaning via vector embeddings, with MongoDB text search ranking.
  * GET /api/library/search?q=
  */
 export const searchItems = asyncHandler(async (req, res) => {
-  const { q, type } = req.query;
+  const { q, type, tab } = req.query;
   const userIdStr = req.user._id.toString();
 
   let matchedItems = [];
   const matchedIds = new Set();
+
+  let typeFilter = null;
+  if (tab) {
+    if (tab === 'notes_links') {
+      typeFilter = { $in: ['link', 'note'] };
+    } else if (tab === 'documents') {
+      typeFilter = 'document';
+    } else if (tab === 'files') {
+      typeFilter = 'file';
+    } else if (tab === 'interviews') {
+      typeFilter = 'interview';
+    }
+  } else if (type) {
+    typeFilter = type;
+  }
 
   // 1. Semantic Vector Search
   try {
@@ -508,7 +616,7 @@ export const searchItems = asyncHandler(async (req, res) => {
           _id: { $in: refIds },
           userId: req.user._id,
         };
-        if (type) queryFilter.type = type;
+        if (typeFilter) queryFilter.type = typeFilter;
 
         const docs = await LibraryItem.find(queryFilter).lean();
 
@@ -543,7 +651,7 @@ export const searchItems = asyncHandler(async (req, res) => {
         { 'sections.body': { $regex: q, $options: 'i' } },
       ],
     };
-    if (type) textFilter.type = type;
+    if (typeFilter) textFilter.type = typeFilter;
 
     const textMatches = await LibraryItem.find(textFilter)
       .sort({ createdAt: -1 })

@@ -1,27 +1,49 @@
-import { Zap, Check, ShieldCheck } from 'lucide-react';
+import { QrCode, Zap, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils/cn';
 import styles from './PlanCard.module.scss';
 
-export function PlanCard({ plan, isProcessing = false, onCheckout, onSimulate }) {
+export function PlanCard({
+  plan,
+  isCurrentTier = false,
+  isProcessing = false,
+  onCheckout,
+  onSimulate,
+}) {
   const isPopular = plan.popular || plan.badge === 'Popular';
+  const isUpgrade = !isCurrentTier && plan.tier === 'pro_monthly';
+
+  const buttonLabel = isCurrentTier
+    ? `Top-Up Credits (₹${plan.amountINR})`
+    : isUpgrade
+      ? `Upgrade to Pro Tier (₹${plan.amountINR})`
+      : `Recharge ₹${plan.amountINR}`;
 
   return (
-    <div className={cn(styles.planCard, isPopular && styles.popular)}>
-      {plan.badge && (
-        <div className={styles.popularTag}>
-          <Badge tone={isPopular ? 'accent' : 'success'}>{plan.badge}</Badge>
-        </div>
+    <div
+      className={cn(
+        styles.planCard,
+        isPopular && styles.popular,
+        isCurrentTier && styles.currentPlan,
       )}
+    >
+      <div className={styles.tagRow}>
+        {isCurrentTier && (
+          <Badge tone="success">Your Current Plan</Badge>
+        )}
+        {plan.badge && !isCurrentTier && (
+          <Badge tone={isPopular ? 'accent' : 'success'}>{plan.badge}</Badge>
+        )}
+        {plan.tier === 'pro_monthly' && !isCurrentTier && (
+          <Badge tone="accent">Tier Upgrade</Badge>
+        )}
+      </div>
 
       <div>
         <div className={styles.header}>
           <div className={styles.titleRow}>
             <h3 className={styles.title}>{plan.name}</h3>
-            {plan.tier === 'pro_monthly' && (
-              <Badge tone="accent">Pro Tier</Badge>
-            )}
           </div>
           <p className={styles.description}>{plan.description}</p>
         </div>
@@ -29,7 +51,7 @@ export function PlanCard({ plan, isProcessing = false, onCheckout, onSimulate })
         <div className={styles.priceBlock}>
           <span className={styles.price}>₹{plan.amountINR}</span>
           <span className={styles.creditsAmount}>
-            / {plan.credits?.toLocaleString()} credits
+            / +{plan.credits?.toLocaleString()} credits
           </span>
         </div>
 
@@ -45,25 +67,25 @@ export function PlanCard({ plan, isProcessing = false, onCheckout, onSimulate })
 
       <div className={styles.actions}>
         <Button
-          variant={isPopular ? 'primary' : 'secondary'}
+          variant={isPopular || isUpgrade ? 'primary' : 'secondary'}
           size="md"
-          leftIcon={<Zap size={16} />}
+          leftIcon={<QrCode size={16} />}
           loading={isProcessing}
           disabled={isProcessing}
           onClick={() => onCheckout?.(plan)}
         >
-          Recharge ₹{plan.amountINR}
+          {buttonLabel}
         </Button>
 
         <Button
           variant="ghost"
           size="sm"
           className={styles.testAction}
-          leftIcon={<ShieldCheck size={14} />}
+          leftIcon={<Zap size={14} />}
           disabled={isProcessing}
           onClick={() => onSimulate?.(plan)}
         >
-          ⚡ Instant Test Mode Recharge
+          ⚡ Instant 1-Click Test Top-Up
         </Button>
       </div>
     </div>
@@ -71,4 +93,3 @@ export function PlanCard({ plan, isProcessing = false, onCheckout, onSimulate })
 }
 
 export default PlanCard;
-

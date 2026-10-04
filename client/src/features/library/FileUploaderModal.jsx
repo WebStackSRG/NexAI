@@ -6,16 +6,9 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { TagInput } from '@/components/ui/TagInput';
 import { useLibraryStore } from '@/store/libraryStore';
+import { formatFileSize } from '@/lib/utils/formatFileSize';
 import { cn } from '@/lib/utils/cn';
 import styles from './FileUploaderModal.module.scss';
-
-function formatFileSize(bytes) {
-  if (!bytes || bytes <= 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
-}
 
 export function FileUploaderModal() {
   const {
@@ -32,25 +25,66 @@ export function FileUploaderModal() {
   const [dragOver, setDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileContent, setFileContent] = useState('');
+  const [fileBase64, setFileBase64] = useState('');
+  const [imagePreview, setImagePreview] = useState('');
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
   const [tags, setTags] = useState(['file', 'upload']);
+
+  const TEXT_FILE_EXTENSIONS =
+    /\.(txt|md|markdown|json|csv|js|ts|jsx|tsx|py|html|css|scss|sass|yaml|yml|sql|sh|bash|env|xml|toml|rs|go|java|c|cpp|h|hpp|cs|php|rb|swift|kt|dart|vue|svelte|ini|conf)$/i;
 
   const handleFileProcess = (file) => {
     if (!file) return;
     setSelectedFile(file);
     setTitle(file.name.replace(/\.[^/.]+$/, ''));
+    setFileBase64('');
+    setImagePreview('');
 
-    // Extract text content if text-based
-    if (file.type.startsWith('text/') || file.name.match(/\.(md|txt|json|csv|js|ts|jsx|tsx|py|html|css|yaml|yml)$/i)) {
+    const isImage = file.type.startsWith('image/');
+    const isPdf =
+      file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isText =
+      file.type.startsWith('text/') ||
+      file.type.includes('json') ||
+      file.type.includes('javascript') ||
+      file.type.includes('typescript') ||
+      file.type.includes('xml') ||
+      file.name.match(TEXT_FILE_EXTENSIONS);
+
+    if (isImage) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target.result || '';
+        const base64 =
+          typeof dataUrl === 'string' && dataUrl.includes(',')
+            ? dataUrl.split(',')[1]
+            : '';
+        setFileBase64(base64);
+        setImagePreview(dataUrl);
+        setFileContent(`[Image Asset: ${file.name} (${formatFileSize(file.size)})]`);
+      };
+      reader.readAsDataURL(file);
+    } else if (isText) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const text = e.target.result || '';
         setFileContent(text);
       };
       reader.readAsText(file);
+    } else if (isPdf) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target.result || '';
+        const base64 =
+          typeof dataUrl === 'string' && dataUrl.includes(',')
+            ? dataUrl.split(',')[1]
+            : '';
+        setFileBase64(base64);
+        setFileContent(`[PDF Document: ${file.name} (${formatFileSize(file.size)})]`);
+      };
+      reader.readAsDataURL(file);
     } else {
-      // For binary / PDF files, store reference with description
       setFileContent(`[Attached File: ${file.name} (${formatFileSize(file.size)})]`);
     }
   };
@@ -82,22 +116,39 @@ export function FileUploaderModal() {
   };
 
   const handleAutoSuggest = async () => {
-    if (!fileContent && !selectedFile) return;
+    if (!selectedFile) return;
     try {
-      const suggestion = await suggestItem({
+      const payload = {
         type: 'file',
-        content: fileContent.slice(0, 3000) || selectedFile?.name || '',
-        fileName: selectedFile?.name || '',
-      });
+        fileName: selectedFile.name,
+      };
+
+      if (fileBase64) {
+        payload.fileBase64 = fileBase64;
+        payload.mimeType = selectedFile.type || 'application/pdf';
+      } else if (fileContent) {
+        payload.content = fileContent.slice(0, 4000);
+      } else {
+        payload.content = selectedFile.name;
+      }
+
+      const suggestion = await suggestItem(payload);
       if (suggestion) {
         if (suggestion.title) setTitle(suggestion.title);
         if (suggestion.summary) setSummary(suggestion.summary);
         if (suggestion.tags) setTags(suggestion.tags);
+        if (fileBase64 && suggestion.summary) {
+          const typeLabel = selectedFile.type?.startsWith('image/') ? 'Image' : 'PDF';
+          setFileContent(
+            `## Document Summary\n${suggestion.summary}\n\n[Original ${typeLabel} File: ${selectedFile.name} (${formatFileSize(selectedFile.size)})]`,
+          );
+        }
       }
     } catch {
       // Error handled in store
     }
   };
+
 
   const handleSave = async (e) => {
     e?.preventDefault();
@@ -112,6 +163,11 @@ export function FileUploaderModal() {
       content: fileContent,
       summary: summary.trim(),
       tags,
+      fileData:
+        imagePreview ||
+        (fileBase64 && selectedFile.type
+          ? `data:${selectedFile.type};base64,${fileBase64}`
+          : ''),
     });
 
     handleClose();
@@ -120,6 +176,8 @@ export function FileUploaderModal() {
   const handleClose = () => {
     setSelectedFile(null);
     setFileContent('');
+    setFileBase64(null);
+    setImagePreview('');
     setTitle('');
     setSummary('');
     setTags(['file', 'upload']);
@@ -155,7 +213,7 @@ export function FileUploaderModal() {
               ref={fileInputRef}
               onChange={handleInputChange}
               style={{ display: 'none' }}
-              accept=".txt,.md,.markdown,.json,.csv,.pdf,.js,.ts,.py"
+              accept=".txt,.md,.markdown,.json,.csv,.pdf,.js,.ts,.jsx,.tsx,.py,.html,.css,.scss,.yaml,.yml,.sql,.sh,.bash,.env,.xml,.toml,.rs,.go,.java,.c,.cpp,.h,.cs,.php,.rb,.swift,.kt,.dart,image/*"
             />
             <div className={styles.dropzoneIcon}>
               <UploadCloud size={32} />
@@ -164,9 +222,10 @@ export function FileUploaderModal() {
               <strong>Click to upload</strong> or drag and drop files here
             </p>
             <p className={styles.dropzoneHint}>
-              Supports Markdown (.md), Text (.txt), JSON, CSV, and PDF documents
+              Supports Images (PNG, JPG, WebP), Code files (.js, .py, .ts, etc.), Markdown, JSON, CSV, Text, and PDF documents
             </p>
           </div>
+
         ) : (
           /* Selected File Preview & Details Form */
           <div className={styles.fileDetails}>
@@ -181,12 +240,22 @@ export function FileUploaderModal() {
               <button
                 type="button"
                 className={styles.removeFileBtn}
-                onClick={() => setSelectedFile(null)}
+                onClick={() => {
+                  setSelectedFile(null);
+                  setImagePreview('');
+                  setFileBase64(null);
+                }}
                 aria-label="Remove selected file"
               >
                 <X size={16} />
               </button>
             </div>
+
+            {imagePreview && (
+              <div className={styles.imagePreviewWrapper}>
+                <img src={imagePreview} alt={selectedFile.name} />
+              </div>
+            )}
 
             <div className={styles.aiAssistBar}>
               <Button

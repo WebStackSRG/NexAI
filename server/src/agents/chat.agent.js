@@ -1,9 +1,48 @@
 import { streamContent, generateContent } from '../services/gemini.service.js';
 import { deductCredits } from '../services/credit.service.js';
 import { CHAT_SYSTEM_PROMPT, TITLE_SYSTEM_PROMPT } from './prompts/chat.prompt.js';
+import { getModelName } from '../config/gemini.js';
 import { logger } from '../utils/logger.js';
 
 const MAX_HISTORY_MESSAGES = 20;
+
+/**
+ * Builds thinking configuration based on user preference and model capability.
+ * Follows official Google GenAI thinkingConfig documentation for Gemini 2.5 and 3.
+ *
+ * @param {Object} params
+ * @param {'off' | 'low' | 'medium' | 'high'} [params.thinkingLevel='off']
+ * @param {'flash' | 'pro'} [params.model='flash']
+ * @returns {Record<string, unknown> | undefined}
+ */
+export function buildThinkingConfig({ thinkingLevel = 'off', model = 'flash' }) {
+  if (!thinkingLevel || thinkingLevel === 'off') {
+    return undefined;
+  }
+
+  const modelName = getModelName(model).toLowerCase();
+  const level = thinkingLevel.toLowerCase();
+
+  const isGemini3 = modelName.includes('3') || modelName.includes('gemini-3');
+
+  if (isGemini3) {
+    return {
+      includeThoughts: true,
+      thinkingLevel: level,
+    };
+  }
+
+  const budgetMap = {
+    low: 1024,
+    medium: 4096,
+    high: 8192,
+  };
+
+  return {
+    includeThoughts: true,
+    thinkingBudget: budgetMap[level] ?? -1,
+  };
+}
 
 /**
  * Normalizes database messages into the contents structure expected by Google GenAI.
@@ -20,10 +59,30 @@ export function formatConversationHistory(rawMessages) {
   const firstUserIdx = sliced.findIndex((m) => m.role === 'user');
   const validMessages = firstUserIdx >= 0 ? sliced.slice(firstUserIdx) : sliced;
 
-  return validMessages.map((msg) => ({
-    role: msg.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: msg.content }],
-  }));
+  return validMessages.map((msg) => {
+    const parts = [{ text: msg.content || '' }];
+
+    if (Array.isArray(msg.attachments)) {
+      for (const att of msg.attachments) {
+        if (att.data && att.mimeType) {
+          const base64Data = att.data.includes('base64,')
+            ? att.data.split('base64,')[1]
+            : att.data;
+          parts.push({
+            inlineData: {
+              mimeType: att.mimeType,
+              data: base64Data,
+            },
+          });
+        }
+      }
+    }
+
+    return {
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts,
+    };
+  });
 }
 
 /**
@@ -32,19 +91,44 @@ export function formatConversationHistory(rawMessages) {
  * @param {Object} options
  * @param {Array<{role: string, content: string}>} options.messages - Raw history
  * @param {'flash' | 'pro'} [options.model='flash'] - Model selection
+ * @param {'off' | 'low' | 'medium' | 'high'} [options.thinkingLevel='off'] - Reasoning level
  * @param {string} [options.customInstructions=''] - Custom project or user instructions
  * @param {Array<{name: string, content: string, mimeType?: string}>} [options.sources=[]] - Project sources
- * @returns {AsyncGenerator<{text: string, usageMetadata: any}, void, unknown>}
+ * @param {Array<any>} [options.memories=[]] - Retrieved long-term user memories
+ * @param {Object} [options.personalization] - User global personalization settings
+ * @returns {AsyncGenerator<{text: string, thought?: string, usageMetadata: any}, void, unknown>}
  */
 export async function* streamChatReply({
   messages,
   model = 'flash',
+  thinkingLevel = 'off',
   customInstructions = '',
   sources = [],
+  memories = [],
+  personalization,
 }) {
   const contents = formatConversationHistory(messages);
 
   let systemInstruction = CHAT_SYSTEM_PROMPT;
+
+  // 1. Inject global user personalization directives if configured
+  if (personalization?.customInstructions && personalization.customInstructions.trim()) {
+    systemInstruction += `\n\n[USER GLOBAL CUSTOM INSTRUCTIONS]:\nThe user has provided the following global directives that must be honored across all conversations:\n${personalization.customInstructions.trim()}`;
+  }
+
+  if (personalization?.responseTone && personalization.responseTone !== 'default') {
+    const toneMap = {
+      concise: 'Be extremely concise, direct, and succinct. Output solutions and code immediately with minimal preamble or pleasantries.',
+      detailed: 'Be thorough and comprehensive. Include architectural rationale, tradeoffs, and detailed breakdowns.',
+      technical: 'Adopt a senior staff engineer persona. Prioritize technical rigor, performance, security, and edge-case resilience.',
+      casual: 'Adopt an approachable, friendly, and collaborative peer tone while maintaining technical accuracy.',
+    };
+    if (toneMap[personalization.responseTone]) {
+      systemInstruction += `\n\n[USER PREFERRED RESPONSE TONE]:\n${toneMap[personalization.responseTone]}`;
+    }
+  }
+
+  // 2. Inject project-level custom instructions
   if (customInstructions && customInstructions.trim()) {
     systemInstruction += `\n\n[PROJECT CUSTOM INSTRUCTIONS]:\nFollow these custom project instructions for all responses:\n${customInstructions.trim()}`;
   }
@@ -61,10 +145,35 @@ export async function* streamChatReply({
     systemInstruction += `\n\n[PROJECT KNOWLEDGE BASE / SOURCES]:\nThe user has uploaded the following project source files. Use this knowledge base as primary ground truth context to answer questions accurately:\n\n${formattedSources}`;
   }
 
+  if (Array.isArray(memories) && memories.length > 0) {
+    const memoryItems = memories
+      .map((m) => `- ${m.fact || m}`)
+      .join('\n');
+
+    systemInstruction += `\n\n[USER LONG-TERM MEMORY (CROSS-CHAT PERSISTENT CONTEXT)]:\nThe following verified facts, identity, and preferences are remembered about this user across past conversations. Seamlessly incorporate them into your responses without explicitly saying "According to my memory" unless asked:\n${memoryItems}`;
+  }
+
+  // Inject real-time temporal awareness (current day, date, time)
+  const now = new Date();
+  const timeString = now.toLocaleString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  });
+  systemInstruction += `\n\n[TEMPORAL CONTEXT]:\nCurrent timestamp is ${timeString}. You are fully context-aware of the current time, day, and date when responding to user greetings, scheduling, or time-sensitive questions.`;
+
+  const thinkingConfig = buildThinkingConfig({ thinkingLevel, model });
+  const config = thinkingConfig ? { thinkingConfig } : {};
+
   yield* streamContent({
     contents,
     model,
     systemInstruction,
+    config,
   });
 }
 

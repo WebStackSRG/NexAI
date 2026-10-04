@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import {
   Sparkles,
   ArrowDown,
+  ArrowRight,
   Square,
   Copy,
   Check,
@@ -10,18 +11,26 @@ import {
   Edit3,
   AlertCircle,
   BookmarkPlus,
+  BookOpen,
+  Brain,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { MarkdownRenderer } from '../MarkdownRenderer';
+import { ThinkingDrawer } from '../ThinkingDrawer/ThinkingDrawer';
 import { PromptFormModal } from '@/features/prompts';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore';
 import { usePromptStore } from '@/store/promptStore';
+import { useLibraryStore } from '@/store/libraryStore';
 import { toast } from '@/store/uiStore';
+
 import { cn } from '@/lib/utils/cn';
+import logoImg from '@/assets/logo.png';
 import styles from './MessageThread.module.scss';
 
 
@@ -56,15 +65,69 @@ function formatTime(timestamp) {
 
 export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
   const user = useAuthStore((state) => state.user);
-  const { messages, isLoadingMessages, isStreaming, stopGeneration, resendPrompt } = useChatStore();
+  const {
+    messages,
+    isLoadingMessages,
+    isStreaming,
+    stopGeneration,
+    resendPrompt,
+    setActiveDrawerThought,
+  } = useChatStore();
   const createPrompt = usePromptStore((state) => state.createPrompt);
 
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
+  const [speakingId, setSpeakingId] = useState(null);
   const [savePromptData, setSavePromptData] = useState(null);
   const userScrolledUpRef = useRef(false);
+
+  // Stop any active speech on unmount
+  useEffect(() => {
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const handleToggleSpeak = (text, id) => {
+    if (!('speechSynthesis' in window)) {
+      toast.error('Text-to-speech is not supported in this browser');
+      return;
+    }
+
+    if (speakingId === id) {
+      window.speechSynthesis.cancel();
+      setSpeakingId(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const cleanText = (text || '')
+      .replace(/```[\s\S]*?```/g, 'Code block omitted.')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/[#*_~>]/g, '')
+      .trim();
+
+    if (!cleanText) return;
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    utterance.onend = () => {
+      setSpeakingId(null);
+    };
+
+    utterance.onerror = () => {
+      setSpeakingId(null);
+    };
+
+    setSpeakingId(id);
+    window.speechSynthesis.speak(utterance);
+  };
 
   const handleCopy = async (text, id) => {
     try {
@@ -105,7 +168,12 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
   }, []);
 
   const scrollToBottom = useCallback((smooth = true) => {
-    if (messagesEndRef.current) {
+    if (containerRef.current) {
+      containerRef.current.scrollTo({
+        top: containerRef.current.scrollHeight,
+        behavior: smooth ? 'smooth' : 'auto',
+      });
+    } else if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({
         behavior: smooth ? 'smooth' : 'auto',
         block: 'end',
@@ -138,7 +206,7 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
         aria-live="polite"
         aria-label="Message history"
       >
-        {isLoadingMessages ? (
+        {isLoadingMessages && messages.length === 0 ? (
           <div className={styles.loadingList}>
             <div className={styles.skeletonMessageUser}>
               <Skeleton width="50%" height="56px" radius="lg" />
@@ -191,8 +259,21 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                     {isUser ? (
                       <Avatar name={user?.email || 'User'} size="sm" />
                     ) : (
-                      <div className={styles.aiAvatar}>
-                        <Sparkles size={16} />
+                      <div
+                        className={cn(
+                          styles.aiAvatar,
+                          isCurrentlyStreaming && !message.content && styles.aiAvatarThinking,
+                        )}
+                      >
+                        {isCurrentlyStreaming && !message.content ? (
+                          <div className={styles.geminiSpinner} aria-label="Thinking...">
+                            <span className={styles.geminiDot} />
+                            <span className={styles.geminiDot} />
+                            <span className={styles.geminiDot} />
+                          </div>
+                        ) : (
+                          <img src={logoImg} alt="NexAI" className={styles.avatarLogo} />
+                        )}
                       </div>
                     )}
                   </div>
@@ -218,10 +299,8 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                       {isUser ? (
                         <div className={styles.userText}>{message.content}</div>
                       ) : isCurrentlyStreaming && !message.content ? (
-                        <div className={styles.typingIndicator} aria-label="Thinking...">
-                          <span className={styles.dot} />
-                          <span className={styles.dot} />
-                          <span className={styles.dot} />
+                        <div className={styles.aiMarkdown}>
+                          <span className={styles.blinkingCursor} aria-hidden="true" />
                         </div>
                       ) : hasError ? (
                         <div className={styles.errorCard}>
@@ -242,7 +321,24 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                         </div>
                       ) : (
                         <div className={styles.aiMarkdown}>
-                          <MarkdownRenderer content={message.content} />
+                          {isCurrentlyStreaming && (message.isThinking || message.thoughts) && (
+                            <div
+                              className={styles.liveThinkingIndicator}
+                              onClick={() =>
+                                setActiveDrawerThought(message.thoughts || message._id)
+                              }
+                              title="Click to view AI reasoning steps in drawer"
+                              role="button"
+                              tabIndex={0}
+                            >
+                              <Brain size={14} className={styles.pulsingBrain} />
+                              <span>Thinking & reasoning...</span>
+                            </div>
+                          )}
+                          <MarkdownRenderer
+                            content={message.content}
+                            isStreaming={isCurrentlyStreaming}
+                          />
                           {isCurrentlyStreaming && (
                             <span className={styles.blinkingCursor} aria-hidden="true" />
                           )}
@@ -305,6 +401,28 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                               <BookmarkPlus size={13} />
                               <span>Save to Vault</span>
                             </button>
+                            <button
+                              type="button"
+                              className={styles.actionBtn}
+                              onClick={() => {
+                                const titleHint =
+                                  message.content
+                                    .split('\n')[0]
+                                    .replace(/^[#*-]+\s*/, '')
+                                    .slice(0, 45) || 'User Note';
+                                useLibraryStore.getState().openAddModal({
+                                  type: 'note',
+                                  title: titleHint,
+                                  content: message.content,
+                                  tags: ['chat', 'note'],
+                                });
+                              }}
+                              title="Save to Library"
+                              aria-label="Save to Library"
+                            >
+                              <BookOpen size={13} />
+                              <span>Save to Library</span>
+                            </button>
                           </>
                         ) : (
                           <>
@@ -348,15 +466,95 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
                               <BookmarkPlus size={13} />
                               <span>Save to Vault</span>
                             </button>
+                            <button
+                              type="button"
+                              className={styles.actionBtn}
+                              onClick={() => {
+                                const titleHint =
+                                  message.content
+                                    .split('\n')[0]
+                                    .replace(/^[#*-]+\s*/, '')
+                                    .slice(0, 45) || 'AI Solution Note';
+                                useLibraryStore.getState().openAddModal({
+                                  type: 'note',
+                                  title: titleHint,
+                                  content: message.content,
+                                  tags: ['chat', 'ai-solution'],
+                                });
+                              }}
+                              title="Save to Library"
+                              aria-label="Save to Library"
+                            >
+                              <BookOpen size={13} />
+                              <span>Save to Library</span>
+                            </button>
+                            {Boolean(message.thoughts) && (
+                              <button
+                                type="button"
+                                className={cn(styles.actionBtn, styles.thinkingActionBtn)}
+                                onClick={() =>
+                                  setActiveDrawerThought(message.thoughts || message._id)
+                                }
+                                title="View AI Reasoning & Thinking Process"
+                                aria-label="View AI Reasoning & Thinking Process"
+                              >
+                                <Brain size={13} className={styles.brainIcon} />
+                                <span>Show Thinking</span>
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              className={cn(
+                                styles.actionBtn,
+                                speakingId === messageId && styles.speakingBtn,
+                              )}
+                              onClick={() => handleToggleSpeak(message.content, messageId)}
+                              title={speakingId === messageId ? 'Stop reading aloud' : 'Read aloud'}
+                              aria-label={
+                                speakingId === messageId ? 'Stop reading aloud' : 'Read aloud'
+                              }
+                            >
+                              {speakingId === messageId ? (
+                                <VolumeX size={13} />
+                              ) : (
+                                <Volume2 size={13} />
+                              )}
+                              <span>{speakingId === messageId ? 'Stop' : 'Read Aloud'}</span>
+                            </button>
                           </>
                         )}
+
+                      </div>
+                    )}
+
+                    {/* Suggested follow-up prompt chips */}
+                    {!isCurrentlyStreaming && isLast && !isUser && message.followUps && message.followUps.length > 0 && (
+                      <div className={styles.followUpsRow}>
+                        <div className={styles.followUpsLabel}>
+                          <Sparkles size={13} className={styles.followUpSparkle} />
+                          <span>Suggested next steps:</span>
+                        </div>
+                        <div className={styles.followUpsList}>
+                          {message.followUps.map((chip, chipIdx) => (
+                            <button
+                              key={chipIdx}
+                              type="button"
+                              className={styles.followUpChip}
+                              onClick={() => onSelectSuggestion?.(chip)}
+                              title={`Ask: "${chip}"`}
+                            >
+                              <span>{chip}</span>
+                              <ArrowRight size={12} className={styles.chipArrow} />
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
               );
             })}
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} className={styles.scrollAnchor} />
           </div>
         )}
       </div>
@@ -396,6 +594,9 @@ export function MessageThread({ onSelectSuggestion, onEditPrompt }) {
           await createPrompt(data);
         }}
       />
+
+      {/* AI Reasoning / Thinking Slide-Over Drawer */}
+      <ThinkingDrawer />
     </div>
 
   );

@@ -15,12 +15,43 @@ export const useChatStore = create((set, get) => ({
   error: null,
   insufficientCredits: false,
   selectedModel: 'flash',
+  thinkingLevel: 'medium',
+  activeDrawerThought: null,
+  isSimulation: false,
 
   /**
    * Set the AI model to use (flash or pro)
    * @param {'flash' | 'pro'} model
    */
   setSelectedModel: (model) => set({ selectedModel: model }),
+
+  /**
+   * Set the AI thinking / reasoning depth
+   * @param {'off' | 'low' | 'medium' | 'high'} level
+   */
+  setThinkingLevel: (level) => set({ thinkingLevel: level }),
+
+  /**
+   * Set active thought text to view in the slide-over drawer
+   * @param {string | null} thought
+   */
+  setActiveDrawerThought: (thought) => set({ activeDrawerThought: thought }),
+
+  /**
+   * Toggle zero-token simulation mode
+   */
+  toggleSimulation: () =>
+    set((state) => {
+      const next = !state.isSimulation;
+      toast.info(
+        next
+          ? '🎮 Simulation Mode Active (0 Gemini tokens consumed)'
+          : '⚡ Live Gemini AI Mode Active',
+      );
+      return { isSimulation: next };
+    }),
+
+  setIsSimulation: (isSimulation) => set({ isSimulation }),
 
   /**
    * Fetch all user chat sessions
@@ -197,6 +228,9 @@ export const useChatStore = create((set, get) => ({
       set({ isLoadingMessages: false, error: message });
       toast.error(message);
       return [];
+    } finally {
+      // Ensure loading flag is never left true
+      set({ isLoadingMessages: false });
     }
   },
 
@@ -204,13 +238,13 @@ export const useChatStore = create((set, get) => ({
    * Send a message and stream the assistant response
    * @param {string} content
    */
-  sendMessage: async (content) => {
+  sendMessage: async (content, attachments = []) => {
     const trimmed = content.trim();
     if (!trimmed || get().isStreaming) {
       return;
     }
 
-    if (get().insufficientCredits) {
+    if (get().insufficientCredits && !get().isSimulation) {
       toast.error('Insufficient credits. Recharge to continue.');
       return;
     }
@@ -234,6 +268,7 @@ export const useChatStore = create((set, get) => ({
       chatId: targetChatId,
       role: 'user',
       content: trimmed,
+      attachments: Array.isArray(attachments) ? attachments : [],
       createdAt: new Date().toISOString(),
     };
 
@@ -242,6 +277,8 @@ export const useChatStore = create((set, get) => ({
       chatId: targetChatId,
       role: 'assistant',
       content: '',
+      thoughts: '',
+      isThinking: get().thinkingLevel !== 'off',
       isStreaming: true,
       createdAt: new Date().toISOString(),
     };
@@ -251,18 +288,38 @@ export const useChatStore = create((set, get) => ({
     set((state) => ({
       messages: [...state.messages, userMessage, assistantMessage],
       isStreaming: true,
+      isLoadingMessages: false,
       abortController,
       error: null,
     }));
 
     try {
       const model = get().selectedModel;
+      const thinkingLevel = get().thinkingLevel;
+      const isSimulation = get().isSimulation;
 
       await streamChatMessage({
         chatId: targetChatId,
         content: trimmed,
         model,
+        thinkingLevel,
+        attachments,
+        isSimulation,
         signal: abortController.signal,
+        onThought: (text) => {
+          set((state) => {
+            const msgs = [...state.messages];
+            const lastMsg = msgs[msgs.length - 1];
+            if (lastMsg && lastMsg.role === 'assistant') {
+              msgs[msgs.length - 1] = {
+                ...lastMsg,
+                thoughts: (lastMsg.thoughts || '') + text,
+                isThinking: true,
+              };
+            }
+            return { messages: msgs };
+          });
+        },
         onToken: (text) => {
           set((state) => {
             const msgs = [...state.messages];
@@ -271,6 +328,7 @@ export const useChatStore = create((set, get) => ({
               msgs[msgs.length - 1] = {
                 ...lastMsg,
                 content: (lastMsg.content || '') + text,
+                isThinking: false,
               };
             }
             return { messages: msgs };
@@ -284,8 +342,11 @@ export const useChatStore = create((set, get) => ({
               msgs[msgs.length - 1] = {
                 ...lastMsg,
                 _id: doneData.messageId || lastMsg._id,
+                thoughts: doneData.thoughts || lastMsg.thoughts || '',
                 tokensUsed: doneData.tokensUsed,
+                followUps: doneData.followUps || [],
                 isStreaming: false,
+                isThinking: false,
               };
             }
 

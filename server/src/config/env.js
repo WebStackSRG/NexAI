@@ -17,10 +17,13 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   // Step 3: AI & Credits
   GEMINI_API_KEY: z.string().optional(),
-  GEMINI_FLASH_MODEL: z.string().default('gemini-3.8-flash'),
+  GEMINI_FLASH_MODEL: z.string().default('gemini-3.5-flash-lite'),
   GEMINI_PRO_MODEL: z.string().default('gemini-3.1-pro-preview'),
   GEMINI_EMBED_MODEL: z.string().default('gemini-embedding-001'),
   CREDITS_PER_100_TOKENS: z.coerce.number().default(1),
+  CREDIT_ENFORCEMENT_MODE: z
+    .enum(['quota_free', 'credit_strict'])
+    .default(process.env.NODE_ENV === 'test' ? 'credit_strict' : 'quota_free'),
 
   // Subsequent steps
   PINECONE_API_KEY: z.string().optional(),

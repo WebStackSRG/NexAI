@@ -30,6 +30,10 @@
     .title {
       color: var(--color-accent);
     }
+
+    .imageCardPreview img {
+      transform: scale(1.03);
+    }
   }
 
   &:focus-visible {
@@ -106,9 +110,43 @@
 
 .scoreMeta {
   font-size: var(--text-xs);
-  color: var(--color-success);
   font-weight: var(--weight-medium);
   white-space: nowrap;
+
+  &.scoreSuccess {
+    color: var(--color-success);
+  }
+  &.scoreAccent {
+    color: var(--color-accent);
+  }
+  &.scoreWarning {
+    color: var(--color-warning);
+  }
+  &.scoreDanger {
+    color: var(--color-danger);
+  }
+}
+
+.pinnedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  color: var(--color-accent);
+  background-color: color-mix(in srgb, var(--color-accent) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+}
+
+.pinnedActive {
+  color: var(--color-accent) !important;
+  opacity: 1 !important;
+}
+
+.pinnedIconFill {
+  fill: currentColor;
 }
 
 .title {
@@ -222,5 +260,25 @@
 
   &:focus-visible {
     @include focus-ring;
+  }
+}
+
+.imageCardPreview {
+  width: 100%;
+  height: 120px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: var(--space-2);
+  background-color: var(--color-bg-base);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 }

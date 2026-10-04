@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useChatStore } from '@/store/chatStore';
 import {
   Search,
   X,
@@ -81,6 +82,9 @@ function getLibraryTypeIcon(type) {
 
 export default function SearchPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { chats: allChats, fetchChats } = useChatStore();
+
   const {
     query,
     activeTab,
@@ -96,6 +100,18 @@ export default function SearchPage() {
     removeRecentSearch,
     clearRecentSearches,
   } = useSearchStore();
+
+  useEffect(() => {
+    fetchChats();
+  }, [fetchChats]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
+    if (tabParam && ['all', 'library', 'prompts', 'chats'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [location.search, setActiveTab]);
 
   const [localInput, setLocalInput] = useState(query);
   const debouncedInput = useDebounce(localInput, 300);
@@ -160,7 +176,7 @@ export default function SearchPage() {
             type="text"
             value={localInput}
             onChange={(e) => setLocalInput(e.target.value)}
-            placeholder="Search keywords, conceptual meaning, tags, or message history..."
+            placeholder={activeTab === 'chats' ? "Search conversations and chat history..." : "Search keywords, conceptual meaning, tags, or message history..."}
             className={styles.searchInput}
             autoFocus
           />
@@ -286,13 +302,65 @@ export default function SearchPage() {
         </div>
       )}
 
-      {/* Empty State: Initial Prompt */}
-      {!isLoading && !localInput.trim() && (
+      {/* Empty State: Initial Prompt for other tabs */}
+      {!isLoading && !localInput.trim() && activeTab !== 'chats' && (
         <EmptyState
           icon={<Search size={32} />}
           title="Search your entire workspace"
           description="Type keywords, technical terms, or natural concepts. Unified Search combines vector semantic similarity with full-text indexing."
         />
+      )}
+
+      {/* Default Chat List when on Chats tab and no search query */}
+      {!isLoading && !localInput.trim() && activeTab === 'chats' && (
+        <div className={styles.categoryGroup}>
+          <div className={styles.groupTitle}>
+            <MessageSquare size={16} />
+            <span>All Conversations ({allChats.length})</span>
+          </div>
+          <div className={styles.cardsList}>
+            {allChats.length === 0 ? (
+              <EmptyState
+                icon={<MessageSquare size={32} />}
+                title="No conversations yet"
+                description="Start a new chat to begin exploring with NexAI."
+                action={
+                  <Button variant="primary" size="sm" onClick={() => navigate(ROUTES.CHAT)}>
+                    Start New Chat
+                  </Button>
+                }
+              />
+            ) : (
+              allChats.map((chat) => (
+                <div
+                  key={chat._id}
+                  className={styles.resultCard}
+                  onClick={() => handleChatClick(chat)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div>
+                    <div className={styles.cardHeader}>
+                      <h4 className={styles.cardTitle}>{chat.title || 'Untitled Chat'}</h4>
+                      {chat.pinned && <Badge tone="accent">Pinned</Badge>}
+                    </div>
+
+                    <p className={styles.cardSnippet}>
+                      Click to resume this conversation and continue chatting.
+                    </p>
+                  </div>
+
+                  <div className={styles.cardFooter}>
+                    <span>{new Date(chat.updatedAt || chat.createdAt).toLocaleDateString()}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      Resume Chat <ArrowRight size={12} />
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       )}
 
       {/* Empty State: No Matches */}

@@ -45,6 +45,16 @@ const libraryItemSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    vectorIds: {
+      type: [String],
+      default: [],
+    },
+    pinned: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
 
     // Link specific
     url: {
@@ -81,6 +91,10 @@ const libraryItemSchema = new mongoose.Schema(
     size: {
       type: Number,
       default: 0,
+    },
+    fileData: {
+      type: String,
+      default: '',
     },
 
     // Interview specific (Step 9 preparation)

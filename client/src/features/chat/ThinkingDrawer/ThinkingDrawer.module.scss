@@ -1,0 +1,153 @@
+@use '@/styles/abstracts' as *;
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: color-mix(in srgb, var(--color-bg-base) 60%, transparent);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100;
+  animation: fadeIn 0.2s var(--ease-standard) forwards;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(520px, 92vw);
+  background-color: var(--color-bg-surface);
+  border-left: 1px solid var(--color-border);
+  box-shadow: -8px 0 32px color-mix(in srgb, var(--color-bg-base) 40%, transparent);
+  z-index: 101;
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-bg-elevated);
+}
+
+.titleArea {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+
+  .brainIcon {
+    color: var(--color-accent);
+    animation: gentlePulse 2.5s infinite ease-in-out;
+  }
+
+  .title {
+    font-size: 15px;
+    font-weight: var(--weight-semibold);
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-standard);
+
+  &:hover {
+    background-color: var(--color-bg-surface);
+    border-color: var(--color-border);
+    color: var(--color-text-primary);
+  }
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-5);
+  @include custom-scrollbar;
+}
+
+.metaInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  background-color: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+
+  .sparkleIcon {
+    color: var(--color-accent);
+    flex-shrink: 0;
+  }
+}
+
+.contentWrapper {
+  font-size: 13.5px;
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-primary);
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+  color: var(--color-text-muted);
+  gap: var(--space-2);
+
+  p {
+    margin: 0;
+    font-size: 13px;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes gentlePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}

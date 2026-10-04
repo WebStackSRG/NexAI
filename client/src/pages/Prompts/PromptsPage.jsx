@@ -9,6 +9,8 @@ import {
   RefreshCw,
   Sparkles,
   BookOpen,
+  ChevronDown,
+  Tag as TagIcon,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -16,11 +18,14 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Tabs } from '@/components/ui/Tabs';
+import { Dropdown } from '@/components/ui/Dropdown';
+import { Tag } from '@/components/ui/Tag';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import {
   PromptCard,
   PromptFormModal,
   VariableFillModal,
+  PromptDetailModal,
 } from '@/features/prompts';
 import { usePromptStore } from '@/store/promptStore';
 import { toast } from '@/store/uiStore';
@@ -52,6 +57,7 @@ export default function PromptsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState(null);
   const [activePromptForUse, setActivePromptForUse] = useState(null);
+  const [detailPrompt, setDetailPrompt] = useState(null);
   const [deletingPrompt, setDeletingPrompt] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -203,61 +209,83 @@ export default function PromptsPage() {
 
       {/* Toolbar: Search input, category filter, tag filters, favorite toggle */}
       <div className={styles.toolbar}>
-        <div className={styles.searchWrapper}>
-          <Input
-            leftIcon={<Search size={16} />}
-            placeholder="Search prompts by title, content, tags, or category..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className={styles.searchInput}
-          />
+        <div className={styles.searchRow}>
+          <div className={styles.searchWrapper}>
+            <Input
+              leftIcon={<Search size={16} />}
+              placeholder="Search prompts by title, description, or tags..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className={styles.searchInput}
+            />
+          </div>
+
+          <div className={styles.quickFilters}>
+            <button
+              type="button"
+              className={cn(styles.filterPill, favoritesOnly && styles.activePill)}
+              onClick={() => setFavoritesOnly(!favoritesOnly)}
+              aria-pressed={favoritesOnly}
+            >
+              <Star size={14} fill={favoritesOnly ? 'currentColor' : 'none'} />
+              <span>Favorites</span>
+            </button>
+
+            {allTags.length > 0 && (
+              <Dropdown
+                trigger={
+                  <button
+                    type="button"
+                    className={cn(styles.filterPill, selectedTag && styles.activePill)}
+                    aria-label="Filter by tag"
+                  >
+                    <TagIcon size={13} />
+                    <span>{selectedTag ? `#${selectedTag}` : 'Tags'}</span>
+                    <ChevronDown size={13} />
+                  </button>
+                }
+                items={[
+                  {
+                    label: 'All Tags (Reset)',
+                    onClick: () => setSelectedTag(null),
+                    active: selectedTag === null,
+                  },
+                  { divider: true },
+                  ...allTags.map((tag) => ({
+                    label: `#${tag}`,
+                    onClick: () => setSelectedTag(selectedTag === tag ? null : tag),
+                    active: selectedTag === tag,
+                  })),
+                ]}
+                align="right"
+              />
+            )}
+          </div>
         </div>
 
-        {/* Category Pills & Filters */}
-        <div className={styles.filtersWrapper}>
-          <span className={styles.filterGroupLabel}>Categories:</span>
-          {PROMPT_CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              className={cn(styles.filterPill, selectedCategory === cat.id && styles.activePill)}
-              onClick={() => setSelectedCategory(cat.id)}
-            >
-              {cat.label}
-            </button>
-          ))}
-
-          <button
-            type="button"
-            className={cn(styles.filterPill, favoritesOnly && styles.activePill)}
-            onClick={() => setFavoritesOnly(!favoritesOnly)}
-            aria-pressed={favoritesOnly}
-          >
-            <Star size={14} fill={favoritesOnly ? 'currentColor' : 'none'} />
-            <span>Favorites</span>
-          </button>
-
-          {allTags.length > 0 && (
-            <>
+        {/* Category Pills & Active Tag Filter */}
+        <div className={styles.categoriesRow}>
+          <div className={styles.categoryPills}>
+            {PROMPT_CATEGORIES.map((cat) => (
               <button
+                key={cat.id}
                 type="button"
-                className={cn(styles.filterPill, selectedTag === null && styles.activePill)}
-                onClick={() => setSelectedTag(null)}
+                className={cn(styles.filterPill, selectedCategory === cat.id && styles.activePill)}
+                onClick={() => setSelectedCategory(cat.id)}
               >
-                All Tags
+                {cat.label}
               </button>
+            ))}
+          </div>
 
-              {allTags.slice(0, 8).map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  className={cn(styles.filterPill, selectedTag === tag && styles.activePill)}
-                  onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                >
-                  #{tag}
-                </button>
-              ))}
-            </>
+          {selectedTag && (
+            <div className={styles.activeTagChip}>
+              <Tag
+                label={`#${selectedTag}`}
+                removable
+                onRemove={() => setSelectedTag(null)}
+              />
+            </div>
           )}
         </div>
       </div>
@@ -270,7 +298,6 @@ export default function PromptsPage() {
               <div key={i} className={styles.skeletonCard}>
                 <Skeleton height="24px" width="60%" radius="md" />
                 <Skeleton height="16px" width="90%" radius="sm" />
-                <Skeleton height="60px" width="100%" radius="md" />
                 <Skeleton height="32px" width="40%" radius="sm" />
               </div>
             ))}
@@ -340,11 +367,31 @@ export default function PromptsPage() {
                 onDelete={(p) => setDeletingPrompt(p)}
                 onToggleFavorite={(id) => toggleFavorite(id)}
                 onClone={handleCloneStarter}
+                onViewDetails={(p) => setDetailPrompt(p)}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Detail Modal when a prompt card is clicked */}
+      {detailPrompt && (
+        <PromptDetailModal
+          open={Boolean(detailPrompt)}
+          onClose={() => setDetailPrompt(null)}
+          prompt={detailPrompt}
+          onUse={(p) => setActivePromptForUse(p)}
+          onEdit={(p) => handleOpenEdit(p)}
+          onDelete={(p) => setDeletingPrompt(p)}
+          onToggleFavorite={(id) => {
+            toggleFavorite(id);
+            setDetailPrompt((prev) =>
+              prev && prev._id === id ? { ...prev, isFavorite: !prev.isFavorite } : prev,
+            );
+          }}
+          onClone={handleCloneStarter}
+        />
+      )}
 
       {/* Form Modal for Creating & Editing */}
       <PromptFormModal

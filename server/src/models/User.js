@@ -54,6 +54,23 @@ const userSchema = new mongoose.Schema(
         type: Boolean,
         default: false,
       },
+      personalization: {
+        customInstructions: {
+          type: String,
+          default: '',
+          trim: true,
+          maxlength: 2000,
+        },
+        responseTone: {
+          type: String,
+          enum: ['default', 'concise', 'detailed', 'technical', 'casual'],
+          default: 'default',
+        },
+        aiMemoryEnabled: {
+          type: Boolean,
+          default: true,
+        },
+      },
     },
   },
   { timestamps: true },

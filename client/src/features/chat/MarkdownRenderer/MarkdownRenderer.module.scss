@@ -125,3 +125,29 @@
     }
   }
 }
+
+@keyframes tokenLiquidReveal {
+  0% {
+    opacity: 0.5;
+    filter: blur(2.5px);
+    transform: translateY(1.5px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0);
+  }
+}
+
+.streamingContent {
+  p:last-child,
+  li:last-child,
+  h1:last-child,
+  h2:last-child,
+  h3:last-child,
+  h4:last-child,
+  blockquote:last-child {
+    animation: tokenLiquidReveal 200ms cubic-bezier(0.2, 0, 0, 1) forwards;
+  }
+}
+

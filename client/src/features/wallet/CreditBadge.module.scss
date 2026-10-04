@@ -1,0 +1,98 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
+  color: var(--color-accent);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  outline: none;
+
+  &:hover {
+    background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+    border-color: var(--color-accent);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--color-accent) 25%, transparent);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--color-focus-ring);
+  }
+
+  &.sm {
+    padding: 2px var(--space-2);
+    font-size: 11px;
+    gap: var(--space-1);
+  }
+
+  &.lg {
+    padding: var(--space-1-5) var(--space-4);
+    font-size: var(--text-sm);
+    gap: var(--space-2);
+  }
+
+  &.low {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: var(--color-danger);
+
+    &:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: var(--color-danger);
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+    }
+  }
+
+  &.quotaMode {
+    background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+    border-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
+
+    &:hover {
+      background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+      box-shadow: 0 2px 8px color-mix(in srgb, var(--color-accent) 25%, transparent);
+    }
+  }
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+.label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.quotaPill {
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-accent) 25%, transparent);
+  margin-right: 2px;
+}
+
+.value {
+  font-weight: var(--weight-bold);
+}
+
+.unit {
+  opacity: 0.85;
+}
+
+.callsLeft {
+  font-size: 11px;
+  opacity: 0.85;
+  font-weight: var(--weight-normal);
+  margin-left: 2px;
+}

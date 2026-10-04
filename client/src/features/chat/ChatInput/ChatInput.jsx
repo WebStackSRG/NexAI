@@ -5,8 +5,7 @@ import {
   ArrowUp,
   Square,
   Zap,
-  Sparkles,
-  Cpu,
+  Brain,
   Mic,
   MicOff,
   Paperclip,
@@ -14,13 +13,16 @@ import {
   Bookmark,
   X,
   Terminal,
+  Image as ImageIcon,
+  Volume2,
+  Video,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { IconButton } from '@/components/ui/IconButton';
 import { PromptPickerModal, VariableFillModal } from '@/features/prompts';
 import { AttachContextModal } from './AttachContextModal';
+import { AttachedContextPreview } from './AttachedContextPreview';
 import { useChatStore } from '@/store/chatStore';
-import { useAuthStore } from '@/store/authStore';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils/cn';
@@ -28,23 +30,34 @@ import styles from './ChatInput.module.scss';
 
 export function ChatInput({ prefillValue, onClearPrefill }) {
   const navigate = useNavigate();
-  const user = useAuthStore((state) => state.user);
   const {
     sendMessage,
     isStreaming,
     stopGeneration,
     insufficientCredits,
-    selectedModel,
-    setSelectedModel,
+    isSimulation,
+    toggleSimulation,
+    thinkingLevel,
+    setThinkingLevel,
   } = useChatStore();
+
+  const handleCycleThinking = () => {
+    const levels = ['off', 'low', 'medium', 'high'];
+    const currentIndex = levels.indexOf(thinkingLevel);
+    const nextIndex = (currentIndex + 1) % levels.length;
+    setThinkingLevel(levels[nextIndex]);
+  };
 
   const [input, setInput] = useState('');
   const [attachedContext, setAttachedContext] = useState(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
   const [selectedPromptForVariables, setSelectedPromptForVariables] = useState(null);
+  const [isMultiline, setIsMultiline] = useState(false);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  const hasContent = Boolean(input.trim() || attachedContext);
 
   const insertCompiledPrompt = (compiledText) => {
     setInput((prev) => (prev ? `${prev}\n\n${compiledText}` : compiledText));
@@ -75,13 +88,6 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
     },
   });
 
-  // Initialize model from user settings if available
-  useEffect(() => {
-    if (user?.settings?.defaultModel) {
-      setSelectedModel(user.settings.defaultModel);
-    }
-  }, [user?.settings?.defaultModel, setSelectedModel]);
-
   // Handle external prefill (e.g. from prompt vault or suggestion chips)
   useEffect(() => {
     if (prefillValue) {
@@ -97,7 +103,10 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 180)}px`;
+      const scrollHeight = textareaRef.current.scrollHeight;
+      const newHeight = Math.min(Math.max(scrollHeight, 28), 220);
+      textareaRef.current.style.height = `${newHeight}px`;
+      setIsMultiline(scrollHeight > 38);
     }
   }, [input]);
 
@@ -116,8 +125,9 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
 
     setInput('');
     setAttachedContext(null);
+    setIsMultiline(false);
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = '28px';
     }
     await sendMessage(messageToSend);
   };
@@ -131,28 +141,52 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (
-        file.type.startsWith('text/') ||
-        file.name.match(/\.(md|txt|json|csv|js|ts|jsx|tsx|py|html|css|yaml|yml)$/i)
-      ) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          setAttachedContext({
-            name: file.name,
-            type: 'file',
-            content: event.target.result || '',
-          });
-        };
-        reader.readAsText(file);
-      } else {
+    if (!file) return;
+
+    const isText =
+      file.type.startsWith('text/') ||
+      file.name.match(/\.(md|txt|json|csv|js|ts|jsx|tsx|py|html|css|yaml|yml|sql|sh|env)$/i);
+
+    if (isText) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
         setAttachedContext({
           name: file.name,
           type: 'file',
-          content: `[File attachment: ${file.name}]`,
+          mimeType: file.type || 'text/plain',
+          content: event.target.result || '',
         });
-      }
+      };
+      reader.readAsText(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target.result || '';
+        const mimeType =
+          file.type ||
+          (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream');
+
+        const type = file.type.startsWith('image/')
+          ? 'image'
+          : file.type.startsWith('audio/')
+            ? 'audio'
+            : file.type.startsWith('video/')
+              ? 'video'
+              : file.name.toLowerCase().endsWith('.pdf') || file.type.includes('pdf')
+                ? 'pdf'
+                : 'file';
+
+        setAttachedContext({
+          name: file.name,
+          type,
+          mimeType,
+          data: dataUrl,
+          size: file.size,
+        });
+      };
+      reader.readAsDataURL(file);
     }
+
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -177,72 +211,45 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
       )}
 
       <form className={styles.composerForm} onSubmit={handleSubmit}>
-        <div className={styles.toolbar}>
-          <div className={styles.leftToolbar}>
-            <div className={styles.modelSelector}>
-              <button
-                type="button"
-                className={cn(styles.modelPill, selectedModel === 'flash' && styles.activeModel)}
-                onClick={() => setSelectedModel('flash')}
-                disabled={isStreaming}
-                title="Gemini Flash (fast and cost-effective)"
-              >
-                <Sparkles size={14} />
-                <span>Flash</span>
-              </button>
-              <button
-                type="button"
-                className={cn(styles.modelPill, selectedModel === 'pro' && styles.activeModel)}
-                onClick={() => setSelectedModel('pro')}
-                disabled={isStreaming}
-                title="Gemini Pro (deep reasoning and complex tasks)"
-              >
-                <Cpu size={14} />
-                <span>Pro</span>
-              </button>
-            </div>
+        {/* Attached context / media preview */}
+        {attachedContext && (
+          <AttachedContextPreview
+            context={attachedContext}
+            onRemove={() => setAttachedContext(null)}
+          />
+        )}
 
-            {attachedContext && (
-              <div className={styles.fileBadge} title={attachedContext.name}>
-                {attachedContext.type === 'document' ? (
-                  <Bookmark size={12} />
-                ) : (
-                  <FileText size={12} />
-                )}
-                <span className={styles.fileName}>
-                  {attachedContext.name}
-                  {attachedContext.category ? ` (${attachedContext.category})` : ''}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setAttachedContext(null)}
-                  className={styles.removeFileBtn}
-                  aria-label="Remove attached context"
-                >
-                  <X size={11} />
-                </button>
-              </div>
-            )}
-          </div>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          style={{ display: 'none' }}
+          aria-label="Attach file"
+          accept="image/*,audio/*,video/*,.pdf,.txt,.md,.markdown,.json,.csv,.js,.ts,.jsx,.tsx,.py,.html,.css,.yaml,.yml,.sql"
+        />
 
-          <div className={styles.rightToolbar}>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              style={{ display: 'none' }}
-              aria-label="Attach file"
-              accept=".txt,.md,.markdown,.json,.csv,.pdf,.js,.ts,.py"
-            />
-            <IconButton
-              type="button"
-              icon={<Terminal size={16} />}
-              label="Use prompt template"
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsPickerOpen(true)}
-              className={styles.toolBtn}
-            />
+        <div className={styles.inputArea}>
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={insufficientCredits}
+            placeholder={
+              insufficientCredits
+                ? 'Recharge your credits to send messages...'
+                : isSimulation
+                  ? 'Simulation (0 tokens) — Message NexAI...'
+                  : 'Message NexAI... (Enter to send, Shift + Enter for new line)'
+            }
+            className={styles.textarea}
+            aria-label="Chat input message"
+          />
+        </div>
+
+        <div className={styles.bottomToolbar}>
+          <div className={styles.leftControls}>
             <IconButton
               type="button"
               icon={<Paperclip size={16} />}
@@ -252,13 +259,63 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
               onClick={() => setIsAttachModalOpen(true)}
               className={styles.toolBtn}
             />
+
+            <button
+              type="button"
+              className={cn(styles.simPill, isSimulation && styles.activeSimPill)}
+              onClick={toggleSimulation}
+              disabled={isStreaming}
+              title={
+                isSimulation
+                  ? 'Simulation Mode active (0 Gemini tokens consumed)'
+                  : 'Enable Zero-Token Simulation Mode for testing'
+              }
+              aria-label="Toggle simulation mode"
+            >
+              <Zap size={13} className={isSimulation ? styles.activeZap : undefined} />
+              <span className={styles.simText}>{isSimulation ? 'Sim (0)' : 'Sim'}</span>
+            </button>
+
+            <button
+              type="button"
+              className={cn(
+                styles.thinkingPill,
+                thinkingLevel !== 'off' && styles.activeThinkingPill,
+              )}
+              onClick={handleCycleThinking}
+              disabled={isStreaming}
+              title={`Gemini Reasoning: ${thinkingLevel.toUpperCase()}. Click to cycle (Off, Low, Medium, High)`}
+              aria-label={`Toggle thinking level, current is ${thinkingLevel}`}
+            >
+              <Brain
+                size={13}
+                className={thinkingLevel !== 'off' ? styles.activeBrain : undefined}
+              />
+              <span className={styles.thinkingText}>
+                {thinkingLevel === 'off'
+                  ? 'Think: Off'
+                  : `Think: ${thinkingLevel.charAt(0).toUpperCase() + thinkingLevel.slice(1)}`}
+              </span>
+            </button>
+          </div>
+
+          <div className={styles.rightControls}>
+            <IconButton
+              type="button"
+              icon={<Terminal size={15} />}
+              label="Use prompt template"
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsPickerOpen(true)}
+              className={styles.toolBtn}
+            />
             <IconButton
               type="button"
               icon={
                 isListening ? (
-                  <MicOff size={16} className={styles.activeMicIcon} />
+                  <MicOff size={15} className={styles.activeMicIcon} />
                 ) : (
-                  <Mic size={16} />
+                  <Mic size={15} />
                 )
               }
               label={
@@ -274,46 +331,28 @@ export function ChatInput({ prefillValue, onClearPrefill }) {
               onClick={toggleListening}
               className={cn(styles.toolBtn, isListening && styles.listeningMic)}
             />
-          </div>
-        </div>
 
-        <div className={styles.inputRow}>
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={insufficientCredits}
-            placeholder={
-              insufficientCredits
-                ? 'Recharge your credits to send messages...'
-                : 'Message NexAI... (Enter to send, Shift + Enter for new line)'
-            }
-            className={styles.textarea}
-            aria-label="Chat input message"
-          />
-
-          <div className={styles.submitWrapper}>
             {isStreaming ? (
               <IconButton
-                icon={<Square size={16} fill="currentColor" />}
+                icon={<Square size={14} fill="currentColor" />}
                 label="Stop generating"
                 variant="secondary"
-                size="md"
+                size="sm"
                 onClick={stopGeneration}
                 className={styles.stopButton}
               />
             ) : (
-              <IconButton
-                type="submit"
-                icon={<ArrowUp size={18} />}
-                label="Send message"
-                variant="primary"
-                size="md"
-                disabled={(!input.trim() && !attachedContext) || insufficientCredits}
-                className={styles.sendButton}
-              />
+              hasContent && (
+                <IconButton
+                  type="submit"
+                  icon={<ArrowUp size={16} />}
+                  label="Send message"
+                  variant="primary"
+                  size="sm"
+                  disabled={!hasContent || (insufficientCredits && !isSimulation)}
+                  className={styles.sendButton}
+                />
+              )
             )}
           </div>
         </div>

@@ -14,9 +14,13 @@
     border-color var(--duration-fast) var(--ease-standard),
     box-shadow var(--duration-fast) var(--ease-standard);
 
+  &:hover {
+    border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+  }
+
   &:focus-within {
     border-color: var(--color-accent);
-    @include focus-ring;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 14%, transparent);
   }
 }
 

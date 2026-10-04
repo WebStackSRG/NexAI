@@ -214,3 +214,93 @@ This log tracks architectural and design decisions made for the NexAI project, p
      - Credit exhaustion gate (HTTP 402 `INSUFFICIENT_CREDITS`)
   2. **Code Cleanliness & Build Polish:** Fixed CSS property syntax warnings in `client/src/features/wallet/PlanCard.module.scss`, verified zero debug `console.log` in production runtime code, and ensured complete parity in `.env.example` configurations.
   3. **Viva Defense Guide (`docs/viva-prep.md`):** Authored an in-depth viva examination defense guide detailing system architecture diagrams, RAG pipeline mechanics, the 5 core moats explaining why NexAI is not an AI wrapper, and model answers for the top 10 toughest capstone defense questions.
+
+## ADR-022: Formal 1-Page Academic & Executive Project Abstract
+
+- **Date:** 2026-09-28
+- **Status:** Accepted
+- **Context:** Final diploma/capstone submission and examiner review require a formal, high-impact one-page project abstract articulating the real-world problem statement, the system architecture solution, and verified outcomes. The document must strictly adhere to a single-page printable constraint (A4) and be directly exportable or importable to Google Docs.
+- **Decision:**
+  1. Authored standard academic markdown abstract in `docs/ABSTRACT.md` conforming to capstone project submission standards.
+  2. Created a dedicated print-optimized HTML interface (`docs/ABSTRACT.html`) with CSS `@page { size: A4; margin: 12mm 15mm; }`, professional typography, and a "Copy Formatted Text" clipboard engine allowing 1-click rich-text paste directly into Google Docs without formatting degradation.
+  3. Structured the content into four distinct pillars: Project Metadata, Problem Statement (Real-World Inefficiencies), Proposed Solution (NexAI Subsystems), and Quantifiable Outcomes & Impact.
+
+## ADR-023: Wallet Section Polish, Real-Time Sync, Itemized Receipts & Sandbox Helpers
+
+- **Date:** 2026-09-29
+- **Status:** Accepted
+- **Context:** To ensure full alignment with `docs/BUILD_GUIDE.md` (Step 11), `docs/PRD.md` (Phase 2), and `docs/viva-prep.md` (Defense Demonstration Flow), the Wallet & Billing client feature suite required comprehensive loading, error/retry, and empty state handling (Rule 13), manual live balance synchronization, itemized transaction receipt dialogs, and a developer sandbox credential helper for seamless offline or viva test-mode checkout execution.
+- **Decision:**
+  1. **CreditBadge Export & Component Alignment:** Implemented and exported `CreditBadge` from `client/src/features/wallet/` in accordance with `docs/BUILD_GUIDE.md` specifications, with automatic low-balance visual cues.
+  2. **Live Balance Sync:** Added a "Sync Balance" action on `WalletPage.jsx` with spinning refresh animation, allowing instant live balance reconciliation after AI token usage without full browser reloads.
+  3. **Data View Completeness (Rule 13):**
+     - Skeletons for stats and transaction table rows during network loads.
+     - Global error banner with an explicit "Retry" action if fetching or verification encounters network failures.
+     - Low-balance and zero-balance warning banners highlighting HTTP 402 AI request gatekeeping.
+  4. **Itemized Transaction Receipt Modal (`TransactionReceiptModal.jsx`):** Allows users to click any ledger row or "Receipt" button to inspect detailed cryptographic proof, order references, Razorpay payment identifiers, and printable summaries.
+## ADR-024: Consolidated Library Reliability, In-Chat Ingestion & Multi-Chunk Vector Indexing
+
+- **Date:** 2026-10-01
+- **Status:** Accepted
+- **Context:** An internal audit and competitive knowledge management research revealed critical gaps in the existing Library implementation: (1) Vector embedding truncated content at 1,500 characters, blinding semantic search to deep sections of long documents; (2) Uploaded PDF documents were stored as placeholder text without text parsing or semantic vectorization; (3) Users had to copy-paste between Chat and Library because there was no direct "Save to Library" action on messages or code blocks; and (4) Developer file formats were restricted to basic extensions.
+- **Decision:**
+  1. **Multi-Chunk Semantic Vector Indexing:** Refactored `buildItemEmbeddingTexts` in `server/src/controllers/library.controller.js` to segment long notes, documents, and transcripts into overlapping 3,000-character chunks with shared metadata (`refId: item._id`, `chunkIndex`). Added `vectorIds` array in `LibraryItem.js` schema and `removeMany` in `vectorDb.service.js` to ensure clean lifecycle management for multi-vector items.
+  2. **Multimodal PDF & Expanded Developer File Ingestion:** Updated `FileUploaderModal.jsx` to accept all common programming and configuration formats (`.sql`, `.sh`, `.env`, `.yaml`, `.rs`, `.go`, `.java`, `.cpp`, `.cs`, etc.) using direct text reading. For PDF uploads, base64 data is transmitted to `/api/library/suggest` where Gemini Flash natively parses the document, returning authentic summaries, tags, and extracted overviews for review before saving.
+  3. **Bidirectional In-Chat & CodeBlock Capture:** Added a "Save to Library" button on both user and assistant chat message bubbles (`MessageThread.jsx`), and a "Save Snippet" button with language tagging on `CodeBlock.jsx`. Mounted `SaveItemModal` globally inside `AppLayout.jsx` with `addModalPrefill` state in `useLibraryStore`, maintaining the strict **Suggest &rarr; Review &rarr; Confirm** pattern without manual copy-pasting.
+
+## ADR-025: Dedicated Engine Strategy, Web Speech API Architecture & Chat Telemetry Inspector
+
+- **Date:** 2026-10-03
+- **Status:** Accepted
+- **Context:** Following evaluation of multimodal capabilities, rate limits, and latency targets, architectural decisions were needed regarding: (1) Default model specialization for cost-efficiency and quota longevity; (2) Audio processing strategy without burning precious API quotas; (3) Framework selection (evaluating LangChain vs native SDK); and (4) Chat UX enhancements (sticky code headers, scroll-to-bottom mechanics, message feedback, and telemetry inspection).
+- **Decision:**
+  1. **Primary AI Engine (`gemini-3.5-flash-lite`):** Selected `gemini-3.5-flash-lite` as the primary default model (`GEMINI_FLASH_MODEL`). Offers a 1,048,576-token context window, native multimodal input (text, images, OCR, PDF parsing, and audio understanding), low latency, generous free tier (1,500 RPD vs 20 RPD on 3.8 Flash), and the lowest token price ($0.30/1M input).
+  2. **Zero-Quota Voice Processing via Web Speech API:** Client-side speech dictation (`SpeechRecognition`) and text-to-speech audio playback (`window.speechSynthesis`) handle conversational voice without consuming any backend Gemini API tokens or triggering rate limits. Server-side TTS (`gemini-3.8-flash-lite-tts`) is maintained as a future opt-in server enhancement.
+  3. **Direct SDK Architecture (Zero-Dependency Independence):** Explicitly reject heavy orchestration frameworks (LangChain / LlamaIndex) in favor of the official `@google/genai` SDK. This eliminates 100+ nested npm dependencies, prevents cold-start delays on Render, and ensures the engineering logic (sliding window, hybrid Pinecone RAG, atomic credit deduction) remains authentic and defensible in viva examinations.
+  4. **Chat UX & Telemetry Inspector Drawer:**
+     - **Sticky CodeBlock Header:** Code block header topbars (`CodeBlock.module.scss`) pinned sticky (`top: 0`) so copy button and language badge remain accessible during long multi-line code scrolling.
+     - **Floating Scroll-to-Bottom:** Automated down-arrow button displayed when the user scrolls away from the stream, smoothly snapping back to the newest incoming tokens.
+     - **Telemetry Inspector Drawer:** Right-side sliding panel inspecting message metadata: model identifier, input/output/total token breakdown, credits deducted, response latency in ms, and internal reasoning/thinking steps.
+    - **Message Feedback & Read Aloud:** Action buttons for Like/Dislike ratings and Web Speech audio playback on assistant message bubbles.
+     - **Chat Branching:** Confirmed under Future Scope as per PRD Section 3 to preserve project completion timelines.
+
+## ADR-026: Persistent Cross-Chat Long-Term Memory and Hybrid Context Retrieval
+
+- **Date:** 2026-10-03
+- **Status:** Accepted
+- **Context:** Without cross-chat memory, users had to re-introduce their name, preferred tech stack, and personal development context in every new conversation session. A decoupled memory architecture was required to persist facts, preferences, background, and directives across chats while preserving user privacy, security, and manual transparency.
+- **Decision:**
+  1. **Dual-Tier Memory Structure:**
+     - **Short-Term Memory (In-Chat):** Sliding turn-based context windowing (`formatConversationHistory`) with multimodal asset preservation and turn normalization for the active chat session.
+     - **Long-Term Memory (Cross-Chat):** Dedicated `Memory` collection in MongoDB with 768-dim embeddings in `vectorDbService`. Scoped strictly to `userId` with categories (`identity`, `preference`, `project`, `instruction`, `fact`).
+  2. **Hybrid Context Retrieval & Injection:**
+     - Prioritizes core identity (e.g. user name, profession) and pinned memories.
+     - Performs semantic vector similarity search via `vectorDbService.query` using the user's incoming query embedding to retrieve domain-relevant memories.
+     - Injects formatted context into Gemini's `systemInstruction` across all chats (`[USER LONG-TERM MEMORY (CROSS-CHAT PERSISTENT CONTEXT)]`).
+  3. **Zero-Latency Deterministic + Background AI Extraction:**
+     - Deterministic fast-path regex captures explicit identity ("My name is...", "Call me...", "I work as...", "Remember that...") immediately.
+     - Asynchronous Gemini Flash agent (`memory.service.js`) parses nuanced conversational statements without slowing down SSE token streaming.
+  4. **User Agency & Settings Management (`MemoryManager`):**
+     - Full CRUD API at `/api/memories` and interactive UI card in `/settings` allowing users to inspect what NexAI has remembered, toggle priority pinning, add custom memories manually, or wipe memory cleanly ("Clear All").
+
+## ADR-027: Dual-Mode Quota Governance, 1,500 RPD Evaluation Mode & Admin Live Gemini Telemetry
+
+- **Date:** 2026-10-03
+- **Status:** Accepted (Documented & Ready for Implementation Approval)
+- **Context:** During college viva evaluations and live testing, users and evaluators frequently hit the artificial 100 starter credit limit (~10,000 tokens), prematurely halting interactive feature demonstrations (Chat, Mock Interviews, Document generation) with HTTP 402 `INSUFFICIENT_CREDITS`. However, the underlying Google Gemini API free tier allows up to 1,500 Requests Per Day (RPD), 15 RPM, and 1,000,000 TPM without financial cost. A solution was needed to allow unconstrained college demonstrations while strictly preserving the commercial token-billing architecture and payment gateway for evaluators.
+- **Decision:**
+  1. **Dual-Mode System Setting (`systemConfig`):**
+     - Introduce platform setting `billingEnforcementMode`: `'quota_free'` (Default for Academic/Demo) vs `'credit_strict'` (Commercial SaaS).
+     - Environment variable fallback: `CREDIT_ENFORCEMENT_MODE=quota_free`.
+     - In `quota_free` mode: `creditCheck.js` bypasses HTTP 402 rejection as long as daily Gemini requests remain under 1,500 RPD, while `credit.service.js` continues to atomically compute tokens, deduct simulated credits, and write `UsageLog` entries.
+     - In `credit_strict` mode: standard 100 credit limit is enforced, blocking requests at 0 balance and requiring Razorpay test recharge.
+  2. **1-Click Admin Mode Toggle:**
+     - Exposed directly in the `/admin` header, allowing the presenter to flip between `Quota-Free Demo` and `Credit-Strict SaaS` modes with zero downtime or server restarts.
+  3. **Live Gemini Quota Telemetry in Admin Dashboard:**
+     - Visual progress meter for `Requests Today / 1,500 RPD` resetting at 00:00 UTC.
+     - Rate-limit safety metrics: live RPM gauge (15 RPM limit) and TPM counter.
+     - Real-time token consumption logs with per-call transparency.
+  4. **Transparent Wallet & Topbar UI:**
+     - Clearly communicates mode status: `⚡ Quota Mode: X / 1,500 Daily Calls Left`, allowing evaluators to see simulated credit deductions alongside real quota headroom.
+
+
