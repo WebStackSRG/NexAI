@@ -49,6 +49,11 @@ const libraryItemSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    pinned: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
 
 
     // Link specific

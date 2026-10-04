@@ -1897,9 +1897,96 @@ Clears all memories for the authenticated user.
 }
 ```
 
+---
 
+## Library Management
 
+### GET `/api/library`
 
+Lists library items scoped to the authenticated user with filtering, pagination, and sorting. Pinned items are always ordered first.
 
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Query Parameters:**
+  - `type` (optional): `note` | `link` | `document` | `file` | `interview`
+  - `tab` (optional): `all` | `notes_links` | `documents` | `files` | `interviews`
+  - `tags` (optional): comma-separated string of tags
+  - `pinned` (optional): boolean
+  - `sortBy` (optional): `createdAt` | `title` | `score` (default: `createdAt`)
+  - `sortOrder` (optional): `asc` | `desc` (default: `desc`)
+  - `page` (optional): integer (default: 1)
+  - `limit` (optional): integer (default: 20)
+- **Response `200 OK`:**
 
+```json
+{
+  "data": {
+    "items": [
+      {
+        "_id": "67401122aabbccddeeff2233",
+        "userId": "673f1234...",
+        "type": "interview",
+        "title": "Senior Frontend Engineer Mock Interview",
+        "pinned": true,
+        "metadata": {
+          "score": 88,
+          "role": "Frontend",
+          "competencies": { "technical": 85, "communication": 90 }
+        },
+        "createdAt": "2026-10-04T10:00:00.000Z"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 1
+  }
+}
+```
+
+### GET `/api/library/search`
+
+Full-text search across library items with tab filtering.
+
+- **Auth:** Bearer Token
+- **Method:** `GET`
+- **Query Parameters:**
+  - `q` (required): search string
+  - `tab` (optional): `all` | `notes_links` | `documents` | `files` | `interviews`
+  - `type` (optional): `note` | `link` | `document` | `file` | `interview`
+  - `limit` (optional): integer (default: 20)
+- **Response `200 OK`:**
+
+```json
+{
+  "data": {
+    "items": [ ... ],
+    "total": 1
+  }
+}
+```
+
+### PATCH `/api/library/:id`
+
+Updates item metadata, title, content, or toggles pinned status.
+
+- **Auth:** Bearer Token
+- **Method:** `PATCH`
+- **Request Body:**
+```json
+{
+  "title": "Updated Title",
+  "pinned": true
+}
+```
+- **Response `200 OK`:**
+```json
+{
+  "data": {
+    "_id": "67401122aabbccddeeff2233",
+    "title": "Updated Title",
+    "pinned": true
+  }
+}
+```
 

@@ -6,16 +6,9 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { TagInput } from '@/components/ui/TagInput';
 import { useLibraryStore } from '@/store/libraryStore';
+import { formatFileSize } from '@/lib/utils/formatFileSize';
 import { cn } from '@/lib/utils/cn';
 import styles from './FileUploaderModal.module.scss';
-
-function formatFileSize(bytes) {
-  if (!bytes || bytes <= 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
-}
 
 export function FileUploaderModal() {
   const {

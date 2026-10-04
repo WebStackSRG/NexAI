@@ -84,7 +84,7 @@ ${improvements.map((i) => `• ${i}`).join('\n')}`;
 
   return (
     <Modal
-      isOpen={isViewInterviewModalOpen}
+      open={isViewInterviewModalOpen}
       onClose={closeViewInterviewModal}
       title=""
       size="lg"

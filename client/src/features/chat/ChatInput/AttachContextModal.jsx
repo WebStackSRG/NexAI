@@ -8,13 +8,133 @@ import {
   Upload,
   Search,
   Check,
+  Globe,
+  Mic,
+  Video,
+  Volume2,
+  FileCode,
+  FileImage,
+  FileSpreadsheet,
+  Archive,
+  PackageOpen,
+  X,
 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
-import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { libraryApi } from '@/lib/api/library.api';
 import { cn } from '@/lib/utils/cn';
 import styles from './AttachContextModal.module.scss';
+
+// ─── helpers ────────────────────────────────────────────────────────────────
+
+function formatBytes(bytes) {
+  if (!bytes || isNaN(bytes)) return null;
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+const CODE_EXTS = /\.(js|ts|jsx|tsx|py|java|go|rb|php|c|cpp|cs|swift|kt|rs|sh|json|yaml|yml|toml|sql|html|css|scss|less|xml|md)$/i;
+const SPREADSHEET_EXTS = /\.(xls|xlsx|csv|ods)$/i;
+const ARCHIVE_EXTS = /\.(zip|tar|gz|rar|7z)$/i;
+
+/**
+ * Returns { icon, label, colorKey } for a library item.
+ * colorKey maps to a CSS modifier class in the SCSS.
+ */
+function getFileTypeMeta(item) {
+  const mime = item.mimeType || '';
+  const name = item.fileName || item.title || '';
+
+  // ── By library type ──────────────────────────────────────────────
+  if (item.type === 'note') {
+    return { icon: <FileText size={15} />, label: 'Note', colorKey: 'note' };
+  }
+  if (item.type === 'link') {
+    return { icon: <Globe size={15} />, label: 'Link', colorKey: 'link' };
+  }
+  if (item.type === 'document') {
+    return { icon: <BookOpen size={15} />, label: 'Doc', colorKey: 'document' };
+  }
+  if (item.type === 'interview') {
+    return { icon: <Mic size={15} />, label: 'Interview', colorKey: 'interview' };
+  }
+
+  // ── type === 'file' → inspect mime / extension ───────────────────
+  if (mime === 'application/pdf' || name.toLowerCase().endsWith('.pdf')) {
+    return { icon: <FileText size={15} />, label: 'PDF', colorKey: 'pdf' };
+  }
+  if (mime.startsWith('image/')) {
+    return { icon: <FileImage size={15} />, label: 'Image', colorKey: 'image' };
+  }
+  if (mime.startsWith('video/')) {
+    return { icon: <Video size={15} />, label: 'Video', colorKey: 'video' };
+  }
+  if (mime.startsWith('audio/')) {
+    return { icon: <Volume2 size={15} />, label: 'Audio', colorKey: 'audio' };
+  }
+  if (CODE_EXTS.test(name)) {
+    return { icon: <FileCode size={15} />, label: 'Code', colorKey: 'code' };
+  }
+  if (SPREADSHEET_EXTS.test(name)) {
+    return { icon: <FileSpreadsheet size={15} />, label: 'Sheet', colorKey: 'sheet' };
+  }
+  if (ARCHIVE_EXTS.test(name)) {
+    return { icon: <Archive size={15} />, label: 'Archive', colorKey: 'archive' };
+  }
+
+  return { icon: <Paperclip size={15} />, label: 'File', colorKey: 'file' };
+}
+
+function getHostname(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return null;
+  }
+}
+
+// ─── sub-components ──────────────────────────────────────────────────────────
+
+function SkeletonRow() {
+  return (
+    <div className={styles.skeletonRow}>
+      <div className={cn(styles.skeletonBox, styles.skeletonIcon)} />
+      <div className={styles.skeletonLines}>
+        <div className={cn(styles.skeletonBox, styles.skeletonTitle)} />
+        <div className={cn(styles.skeletonBox, styles.skeletonSub)} />
+      </div>
+      <div className={cn(styles.skeletonBox, styles.skeletonBtn)} />
+    </div>
+  );
+}
+
+function ItemIcon({ item, meta }) {
+  const isImage =
+    item.type === 'file' &&
+    (item.mimeType?.startsWith('image/') || item.fileData?.startsWith('data:image'));
+
+  if (isImage && item.fileData) {
+    return (
+      <div className={cn(styles.itemIcon, styles[`icon_${meta.colorKey}`], styles.iconThumb)}>
+        <img src={item.fileData} alt={item.title} className={styles.thumbImg} />
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn(styles.itemIcon, styles[`icon_${meta.colorKey}`])}>
+      {meta.icon}
+    </div>
+  );
+}
+
+ItemIcon.propTypes = {
+  item: PropTypes.object.isRequired,
+  meta: PropTypes.object.isRequired,
+};
+
+// ─── main component ───────────────────────────────────────────────────────────
 
 export function AttachContextModal({ open, onClose, onSelect, onUploadLocal }) {
   const [items, setItems] = useState([]);
@@ -50,7 +170,6 @@ export function AttachContextModal({ open, onClose, onSelect, onUploadLocal }) {
     if (tabFilter === 'documents' && item.type !== 'document') return false;
     if (tabFilter === 'files' && item.type !== 'file') return false;
     if (tabFilter === 'notes' && !['note', 'link'].includes(item.type)) return false;
-
     if (!search.trim()) return true;
     const query = search.toLowerCase();
     return (
@@ -62,7 +181,7 @@ export function AttachContextModal({ open, onClose, onSelect, onUploadLocal }) {
 
   const getItemContent = (item) => {
     if (item.content) return item.content;
-    if (item.sections && item.sections.length > 0) {
+    if (item.sections?.length > 0) {
       return item.sections.map((s) => `${s.heading}:\n${s.body}`).join('\n\n');
     }
     return item.summary || '';
@@ -72,23 +191,26 @@ export function AttachContextModal({ open, onClose, onSelect, onUploadLocal }) {
     onSelect({
       id: item._id,
       name: item.title,
-      type: item.type,
+      type: item.type === 'file' && item.mimeType?.startsWith('image/')
+        ? 'image'
+        : item.type === 'file' && (item.mimeType === 'application/pdf' || item.fileName?.toLowerCase().endsWith('.pdf'))
+          ? 'pdf'
+          : item.type,
       category: item.category,
+      mimeType: item.mimeType,
+      data: item.fileData,
+      size: item.size,
       content: getItemContent(item),
     });
     onClose();
   };
 
-  const renderIcon = (type) => {
-    switch (type) {
-      case 'document':
-        return <BookOpen size={15} />;
-      case 'file':
-        return <Paperclip size={15} />;
-      default:
-        return <FileText size={15} />;
-    }
-  };
+  const TABS = [
+    { key: 'all', label: 'All Items' },
+    { key: 'documents', label: 'Documents' },
+    { key: 'files', label: 'Files' },
+    { key: 'notes', label: 'Notes & Links' },
+  ];
 
   return (
     <Modal
@@ -103,93 +225,134 @@ export function AttachContextModal({ open, onClose, onSelect, onUploadLocal }) {
       className={styles.modalContainer}
     >
       <div className={styles.container}>
-        <div className={styles.topActions}>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              onClose();
-              onUploadLocal?.();
-            }}
-            leftIcon={<Upload size={14} />}
-            fullWidth
-          >
-            Upload New File from Device
-          </Button>
-        </div>
+
+        {/* Upload zone */}
+        <button
+          type="button"
+          className={styles.uploadZone}
+          onClick={() => { onClose(); onUploadLocal?.(); }}
+        >
+          <Upload size={16} className={styles.uploadIcon} />
+          <span className={styles.uploadLabel}>Upload New File from Device</span>
+          <span className={styles.uploadHint}>Images · PDFs · Code · Docs</span>
+        </button>
 
         <div className={styles.divider}>
           <span>OR CHOOSE FROM YOUR LIBRARY</span>
         </div>
 
+        {/* Search */}
         <div className={styles.searchBarWrapper}>
           <Search size={14} className={styles.searchIcon} />
           <input
             type="text"
-            placeholder="Search saved notes, documents, and files..."
+            placeholder="Search notes, documents, files…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className={styles.searchInput}
           />
+          {search && (
+            <button
+              type="button"
+              className={styles.searchClear}
+              onClick={() => setSearch('')}
+              aria-label="Clear search"
+            >
+              <X size={12} />
+            </button>
+          )}
         </div>
 
+        {/* Tab filters */}
         <div className={styles.tabFilters}>
-          <button
-            type="button"
-            className={cn(styles.tabChip, tabFilter === 'all' && styles.activeTab)}
-            onClick={() => setTabFilter('all')}
-          >
-            All Items
-          </button>
-          <button
-            type="button"
-            className={cn(styles.tabChip, tabFilter === 'documents' && styles.activeTab)}
-            onClick={() => setTabFilter('documents')}
-          >
-            Documents
-          </button>
-          <button
-            type="button"
-            className={cn(styles.tabChip, tabFilter === 'files' && styles.activeTab)}
-            onClick={() => setTabFilter('files')}
-          >
-            Files
-          </button>
-          <button
-            type="button"
-            className={cn(styles.tabChip, tabFilter === 'notes' && styles.activeTab)}
-            onClick={() => setTabFilter('notes')}
-          >
-            Notes & Links
-          </button>
+          {TABS.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              className={cn(styles.tabChip, tabFilter === key && styles.activeTab)}
+              onClick={() => setTabFilter(key)}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
+        {/* Items list */}
         <div className={styles.itemsList}>
           {isLoading ? (
-            <div className={styles.emptyText}>Loading library items...</div>
+            Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)
           ) : filteredItems.length === 0 ? (
-            <div className={styles.emptyText}>
-              {search ? 'No library items match your search.' : 'No library items found.'}
+            <div className={styles.emptyState}>
+              <PackageOpen size={32} className={styles.emptyIcon} />
+              <p className={styles.emptyTitle}>
+                {search ? 'No results found' : 'Your library is empty'}
+              </p>
+              <p className={styles.emptyHint}>
+                {search
+                  ? `Nothing matched "${search}". Try a different term.`
+                  : 'Upload a file or save notes to your library first.'}
+              </p>
             </div>
           ) : (
-            filteredItems.map((item) => (
-              <div key={item._id} className={styles.itemRow} onClick={() => handleSelectItem(item)}>
-                <div className={styles.itemIcon}>{renderIcon(item.type)}</div>
-                <div className={styles.itemMeta}>
-                  <div className={styles.itemTitleRow}>
-                    <span className={styles.itemTitle}>{item.title}</span>
-                    {item.category && (
-                      <Badge variant="accent" size="sm">
-                        {item.category}
-                      </Badge>
-                    )}
+            filteredItems.map((item) => {
+              const meta = getFileTypeMeta(item);
+              const hostname = item.type === 'link' && item.url ? getHostname(item.url) : null;
+              const sizeLabel = item.size ? formatBytes(item.size) : null;
+
+              return (
+                <div
+                  key={item._id}
+                  className={cn(styles.itemRow, styles[`row_${meta.colorKey}`])}
+                  onClick={() => handleSelectItem(item)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') handleSelectItem(item);
+                  }}
+                  aria-label={`Attach ${item.title}`}
+                >
+                  {/* Colored left accent bar */}
+                  <div className={styles.rowAccent} />
+
+                  <ItemIcon item={item} meta={meta} />
+
+                  <div className={styles.itemMeta}>
+                    <div className={styles.itemTitleRow}>
+                      <span className={styles.itemTitle}>{item.title}</span>
+                      {item.category && (
+                        <Badge variant="accent" size="sm">{item.category}</Badge>
+                      )}
+                    </div>
+
+                    {/* Sub-info line */}
+                    <div className={styles.itemSubRow}>
+                      <span className={cn(styles.typePill, styles[`pill_${meta.colorKey}`])}>
+                        {meta.label}
+                      </span>
+                      {hostname && (
+                        <span className={styles.subHint}>{hostname}</span>
+                      )}
+                      {sizeLabel && (
+                        <span className={styles.subHint}>{sizeLabel}</span>
+                      )}
+                      {item.summary && !hostname && !sizeLabel && (
+                        <span className={styles.itemSummary}>{item.summary}</span>
+                      )}
+                    </div>
                   </div>
-                  {item.summary && <span className={styles.itemSummary}>{item.summary}</span>}
+
+                  <button
+                    type="button"
+                    className={styles.attachBtn}
+                    onClick={(e) => { e.stopPropagation(); handleSelectItem(item); }}
+                    aria-label={`Attach ${item.title}`}
+                  >
+                    <Check size={12} />
+                    <span>Attach</span>
+                  </button>
                 </div>
-                <Button size="sm" variant="ghost" leftIcon={<Check size={13} />}>
-                  Attach
-                </Button>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

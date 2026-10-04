@@ -63,6 +63,7 @@ export const updateLibraryItemSchema = z.object({
   fileData: z.string().optional(),
   category: z.enum(['resume', 'report', 'spec', 'notes', 'other']).optional(),
   sections: z.array(sectionSchema).optional(),
+  pinned: z.boolean().optional(),
 });
 
 export const queryLibrarySchema = z.object({
@@ -71,9 +72,12 @@ export const queryLibrarySchema = z.object({
   tab: z.enum(['all', 'notes_links', 'documents', 'files', 'interviews']).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
+  sortBy: z.enum(['createdAt', 'title', 'score']).default('createdAt'),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
 export const searchLibrarySchema = z.object({
   q: z.string().min(1, 'Query parameter "q" is required and cannot be empty'),
   type: z.enum(['link', 'note', 'document', 'file', 'interview']).optional(),
+  tab: z.enum(['all', 'notes_links', 'documents', 'files', 'interviews']).optional(),
 });
