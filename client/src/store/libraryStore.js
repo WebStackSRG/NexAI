@@ -17,11 +17,14 @@ export const useLibraryStore = create((set, get) => ({
   },
   searchQuery: '',
   isLoading: false,
+  isLoadingMore: false,
   isSearching: false,
   error: null,
   page: 1,
   totalPages: 1,
   total: 0,
+  sortBy: 'createdAt',
+  sortOrder: 'desc',
 
   // Add Note/Link / Suggest modal state
   isAddModalOpen: false,
@@ -68,10 +71,21 @@ export const useLibraryStore = create((set, get) => ({
   /**
    * Fetches paginated library items, optionally filtering by active tag and tab.
    */
-  fetchItems: async ({ tag = get().activeTag, tab = get().activeTab, page = 1 } = {}) => {
-    set({ isLoading: true, error: null });
+  fetchItems: async ({
+    tag = get().activeTag,
+    tab = get().activeTab,
+    page = 1,
+    append = false,
+    sortBy = get().sortBy,
+    sortOrder = get().sortOrder,
+  } = {}) => {
+    if (append) {
+      set({ isLoadingMore: true, error: null });
+    } else {
+      set({ isLoading: true, error: null });
+    }
     try {
-      const params = { page, limit: 24 };
+      const params = { page, limit: 24, sortBy, sortOrder };
       if (tag) {
         params.tag = tag;
       }
@@ -82,23 +96,69 @@ export const useLibraryStore = create((set, get) => ({
       const items = response.data || [];
       const meta = response.meta || {};
 
-      set({
-        items,
-        tags: meta.tags || get().tags,
-        counts: meta.counts || get().counts,
-        page: meta.page || 1,
+      set((state) => ({
+        items: append ? [...state.items, ...items] : items,
+        tags: meta.tags || state.tags,
+        counts: meta.counts || state.counts,
+        page: meta.page || page,
         totalPages: meta.totalPages || 1,
-        total: meta.total || items.length,
+        total: meta.total !== undefined ? meta.total : items.length,
         isLoading: false,
+        isLoadingMore: false,
         error: null,
-      });
+      }));
       return items;
     } catch (err) {
       const message = err.message || 'Failed to load library items';
-      set({ isLoading: false, error: message });
+      set({ isLoading: false, isLoadingMore: false, error: message });
       toast.error(message);
       return [];
     }
+  },
+
+  /**
+   * Sets sorting options and re-fetches items from page 1.
+   */
+  setSorting: ({ sortBy, sortOrder }) => {
+    const newSortBy = sortBy !== undefined ? sortBy : get().sortBy;
+    const newSortOrder = sortOrder !== undefined ? sortOrder : get().sortOrder;
+    set({ sortBy: newSortBy, sortOrder: newSortOrder, page: 1 });
+    get().fetchItems({ page: 1, sortBy: newSortBy, sortOrder: newSortOrder });
+  },
+
+  /**
+   * Toggles pinned status for an item with optimistic updates.
+   */
+  togglePinItem: async (item) => {
+    if (!item?._id) return;
+    const nextPinned = !item.pinned;
+    set((state) => ({
+      items: state.items
+        .map((it) => (it._id === item._id ? { ...it, pinned: nextPinned } : it))
+        .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)),
+      viewingItem: state.viewingItem?._id === item._id ? { ...state.viewingItem, pinned: nextPinned } : state.viewingItem,
+    }));
+    try {
+      await libraryApi.togglePin(item._id, nextPinned);
+      toast.success(nextPinned ? 'Item pinned to top' : 'Item unpinned');
+    } catch (err) {
+      set((state) => ({
+        items: state.items
+          .map((it) => (it._id === item._id ? { ...it, pinned: item.pinned } : it))
+          .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)),
+        viewingItem: state.viewingItem?._id === item._id ? { ...state.viewingItem, pinned: item.pinned } : state.viewingItem,
+      }));
+      toast.error(err.message || 'Failed to update pin');
+    }
+  },
+
+  /**
+   * Loads the next page of items and appends to the current list.
+   */
+  loadMoreItems: async () => {
+    const { page, totalPages, isLoadingMore, isLoading, isSearching, fetchItems } = get();
+    if (isLoadingMore || isLoading || isSearching || page >= totalPages) return;
+    return fetchItems({ page: page + 1, append: true });
   },
 
   /**
@@ -123,12 +183,7 @@ export const useLibraryStore = create((set, get) => ({
     set({ isSearching: true, error: null });
     try {
       const tab = get().activeTab;
-      let type = undefined;
-      if (tab === 'documents') type = 'document';
-      else if (tab === 'files') type = 'file';
-      else if (tab === 'interviews') type = 'interview';
-
-      const response = await libraryApi.searchItems(trimmed, type);
+      const response = await libraryApi.searchItems(trimmed, { tab });
       const items = response.data || [];
       set({ items, isSearching: false, error: null });
       return items;
@@ -320,22 +375,22 @@ export const useLibraryStore = create((set, get) => ({
   },
 
   /**
-   * Document View & PDF Export actions
+   * Document View & Interview View actions (delegated to unified ItemDetailModal)
    */
   openViewDocModal: (item) => {
-    set({ isViewDocModalOpen: true, viewingDoc: item });
+    get().openViewItemModal(item);
   },
 
   closeViewDocModal: () => {
-    set({ isViewDocModalOpen: false, viewingDoc: null });
+    get().closeViewItemModal();
   },
 
   openViewInterviewModal: (item) => {
-    set({ isViewInterviewModalOpen: true, viewingInterview: item });
+    get().openViewItemModal(item);
   },
 
   closeViewInterviewModal: () => {
-    set({ isViewInterviewModalOpen: false, viewingInterview: null });
+    get().closeViewItemModal();
   },
 
   /**

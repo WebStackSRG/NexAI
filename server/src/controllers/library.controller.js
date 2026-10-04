@@ -325,7 +325,15 @@ export const createItem = asyncHandler(async (req, res) => {
  * GET /api/library
  */
 export const listItems = asyncHandler(async (req, res) => {
-  const { tag, type, tab, page = 1, limit = 20 } = req.query;
+  const {
+    tag,
+    type,
+    tab,
+    page = 1,
+    limit = 20,
+    sortBy = 'createdAt',
+    sortOrder = 'desc',
+  } = req.query;
   const filter = { userId: req.user._id };
 
   // Handle tabbed filtering
@@ -351,10 +359,20 @@ export const listItems = asyncHandler(async (req, res) => {
   const numericLimit = Math.min(100, Math.max(1, parseInt(limit, 10)));
   const skip = (numericPage - 1) * numericLimit;
 
+  const sortDirection = sortOrder === 'asc' ? 1 : -1;
+  const sortObj = { pinned: -1 };
+  if (sortBy === 'title') {
+    sortObj.title = sortDirection;
+  } else if (sortBy === 'score') {
+    sortObj['scorecard.overallScore'] = sortDirection;
+  } else {
+    sortObj.createdAt = sortDirection;
+  }
+
   // Run queries in parallel: items, total count, distinct tags, and tab breakdown counts
   const [items, total, allTags, countAll, countNotes, countDocs, countFiles, countInterviews] =
     await Promise.all([
-      LibraryItem.find(filter).sort({ createdAt: -1 }).skip(skip).limit(numericLimit).lean(),
+      LibraryItem.find(filter).sort(sortObj).skip(skip).limit(numericLimit).lean(),
       LibraryItem.countDocuments(filter),
       LibraryItem.distinct('tags', { userId: req.user._id }),
       LibraryItem.countDocuments({ userId: req.user._id }),
@@ -457,6 +475,9 @@ export const updateItem = asyncHandler(async (req, res) => {
   if (req.body.fileData !== undefined) {
     item.fileData = req.body.fileData;
   }
+  if (req.body.pinned !== undefined) {
+    item.pinned = Boolean(req.body.pinned);
+  }
 
   await item.save();
 
@@ -554,11 +575,26 @@ export const deleteItem = asyncHandler(async (req, res) => {
  * GET /api/library/search?q=
  */
 export const searchItems = asyncHandler(async (req, res) => {
-  const { q, type } = req.query;
+  const { q, type, tab } = req.query;
   const userIdStr = req.user._id.toString();
 
   let matchedItems = [];
   const matchedIds = new Set();
+
+  let typeFilter = null;
+  if (tab) {
+    if (tab === 'notes_links') {
+      typeFilter = { $in: ['link', 'note'] };
+    } else if (tab === 'documents') {
+      typeFilter = 'document';
+    } else if (tab === 'files') {
+      typeFilter = 'file';
+    } else if (tab === 'interviews') {
+      typeFilter = 'interview';
+    }
+  } else if (type) {
+    typeFilter = type;
+  }
 
   // 1. Semantic Vector Search
   try {
@@ -580,7 +616,7 @@ export const searchItems = asyncHandler(async (req, res) => {
           _id: { $in: refIds },
           userId: req.user._id,
         };
-        if (type) queryFilter.type = type;
+        if (typeFilter) queryFilter.type = typeFilter;
 
         const docs = await LibraryItem.find(queryFilter).lean();
 
@@ -615,7 +651,7 @@ export const searchItems = asyncHandler(async (req, res) => {
         { 'sections.body': { $regex: q, $options: 'i' } },
       ],
     };
-    if (type) textFilter.type = type;
+    if (typeFilter) textFilter.type = typeFilter;
 
     const textMatches = await LibraryItem.find(textFilter)
       .sort({ createdAt: -1 })

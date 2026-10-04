@@ -110,9 +110,43 @@
 
 .scoreMeta {
   font-size: var(--text-xs);
-  color: var(--color-success);
   font-weight: var(--weight-medium);
   white-space: nowrap;
+
+  &.scoreSuccess {
+    color: var(--color-success);
+  }
+  &.scoreAccent {
+    color: var(--color-accent);
+  }
+  &.scoreWarning {
+    color: var(--color-warning);
+  }
+  &.scoreDanger {
+    color: var(--color-danger);
+  }
+}
+
+.pinnedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  color: var(--color-accent);
+  background-color: color-mix(in srgb, var(--color-accent) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+}
+
+.pinnedActive {
+  color: var(--color-accent) !important;
+  opacity: 1 !important;
+}
+
+.pinnedIconFill {
+  fill: currentColor;
 }
 
 .title {

@@ -12,6 +12,7 @@ import {
   Layers,
   ChevronDown,
   X,
+  ArrowUpDown,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { SearchBar } from '@/components/common/SearchBar';
@@ -20,13 +21,12 @@ import { Button } from '@/components/ui/Button';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { toast } from '@/store/uiStore';
 import {
   LibraryCard,
   EditItemModal,
   DocGeneratorModal,
   FileUploaderModal,
-  DocumentViewModal,
-  InterviewViewModal,
   ItemDetailModal,
 } from '@/features/library';
 
@@ -57,9 +57,15 @@ export default function LibraryPage() {
     activeTab,
     counts,
     isLoading,
+    isLoadingMore,
     isSearching,
     error,
+    page,
+    totalPages,
+    total,
+    searchQuery,
     fetchItems,
+    loadMoreItems,
     searchItems,
     setActiveTag,
     setActiveTab,
@@ -67,17 +73,57 @@ export default function LibraryPage() {
     openEditModal,
     openDocGenModal,
     openUploadModal,
-    openViewDocModal,
-    openViewInterviewModal,
     openViewItemModal,
-    exportPdf,
     openDeleteDialog,
     closeDeleteDialog,
     confirmDeleteItem,
     isConfirmDeleteOpen,
     itemToDelete,
     isDeleting,
+    sortBy,
+    sortOrder,
+    setSorting,
+    togglePinItem,
   } = useLibraryStore();
+
+  const handleSendToChat = (item) => {
+    let prefill = '';
+    if (item.type === 'note') {
+      prefill = item.content || item.summary || item.title;
+    } else if (item.type === 'link') {
+      prefill = item.url
+        ? `Review this link: ${item.url}\n\nSummary: ${item.summary || ''}`
+        : item.summary || item.title;
+    } else if (item.type === 'document') {
+      const sectionText = Array.isArray(item.sections)
+        ? item.sections.map((s) => `## ${s.heading}\n\n${s.body}`).join('\n\n')
+        : '';
+      prefill = `# ${item.title}\n\n${sectionText || item.summary || ''}`;
+    } else if (item.type === 'interview') {
+      prefill = `MOCK INTERVIEW: ${item.title}\nOverall Score: ${item.scorecard?.overallScore ?? 0}/100\n\nSummary:\n${item.summary || item.scorecard?.feedback || ''}`;
+    } else {
+      prefill = `File Asset: ${item.fileName || item.title}\n${item.summary || ''}`;
+    }
+
+    navigate(ROUTES.CHAT, { state: { prefill } });
+    toast.info('Item transferred to AI Chat');
+  };
+
+  const sortOptions = [
+    { id: 'createdAt_desc', label: 'Newest First', sortBy: 'createdAt', sortOrder: 'desc' },
+    { id: 'createdAt_asc', label: 'Oldest First', sortBy: 'createdAt', sortOrder: 'asc' },
+    { id: 'title_asc', label: 'Title (A-Z)', sortBy: 'title', sortOrder: 'asc' },
+    { id: 'title_desc', label: 'Title (Z-A)', sortBy: 'title', sortOrder: 'desc' },
+    { id: 'score_desc', label: 'Highest Score', sortBy: 'score', sortOrder: 'desc' },
+  ];
+
+  const currentSortKey = `${sortBy}_${sortOrder}`;
+  const sortLabel = sortOptions.find((o) => o.id === currentSortKey)?.label || 'Sort By';
+
+  const sortDropdownItems = sortOptions.map((opt) => ({
+    label: opt.label,
+    onClick: () => setSorting({ sortBy: opt.sortBy, sortOrder: opt.sortOrder }),
+  }));
 
   const [localSearch, setLocalSearch] = useState('');
   const debouncedSearch = useDebounce(localSearch, 350);
@@ -286,6 +332,24 @@ export default function LibraryPage() {
             />
           </div>
 
+          <Dropdown
+            align="right"
+            trigger={
+              <Button
+                variant="secondary"
+                size="md"
+                leftIcon={<ArrowUpDown size={14} />}
+                rightIcon={<ChevronDown size={14} />}
+                className={styles.sortBtn}
+                title="Sort items"
+                aria-label="Sort items"
+              >
+                {sortLabel}
+              </Button>
+            }
+            items={sortDropdownItems}
+          />
+
           {tags && tags.length > 0 && (
             <FilterPopover
               tags={tags}
@@ -370,31 +434,55 @@ export default function LibraryPage() {
           action={emptyDetails.action}
         />
       ) : (
-        /* Items Grid */
-        <div className={styles.grid}>
-          {items.map((item) => (
-            <LibraryCard
-              key={item._id}
-              item={item}
-              activeTag={activeTag}
-              onCardClick={openViewItemModal}
-              onTagClick={(tag) => setActiveTag(tag)}
-              onEdit={openEditModal}
-              onDelete={openDeleteDialog}
-              onViewDoc={openViewDocModal}
-              onViewInterview={openViewInterviewModal}
-              onExportPdf={exportPdf}
-            />
-          ))}
-        </div>
+        <>
+          <div className={styles.grid}>
+            {items.map((item) => (
+              <LibraryCard
+                key={item._id}
+                item={item}
+                activeTag={activeTag}
+                onCardClick={openViewItemModal}
+                onTagClick={(tag) => setActiveTag(tag)}
+                onEdit={openEditModal}
+                onDelete={openDeleteDialog}
+                onTogglePin={togglePinItem}
+                onSendToChat={handleSendToChat}
+              />
+            ))}
+          </div>
+
+          {page < totalPages && !searchQuery && (
+            <div className={styles.loadMoreContainer}>
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={loadMoreItems}
+                disabled={isLoadingMore}
+                className={styles.loadMoreBtn}
+              >
+                {isLoadingMore ? (
+                  <>
+                    <RefreshCw size={14} className={styles.spinIcon} />
+                    <span>Loading more items...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Load More Items</span>
+                    <span className={styles.pageCountHint}>
+                      ({items.length} of {total})
+                    </span>
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Modals */}
       <EditItemModal />
       <DocGeneratorModal />
       <FileUploaderModal />
-      <DocumentViewModal />
-      <InterviewViewModal />
       <ItemDetailModal />
 
 
